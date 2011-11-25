@@ -1,5 +1,5 @@
 class Tags
-  require 'mp4info'
+  require 'lib/mp4info'
   attr_accessor :artist, :title, :time, :track, :disc, :comment, :seconds
   
   def to_s

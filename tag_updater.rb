@@ -3,8 +3,8 @@
 require 'optparse'
 require 'csv'
 require 'ostruct'
-require 'tools.rb'
-require 'taggers.rb'
+require 'lib/tools.rb'
+require 'lib/taggers.rb'
 
 class TagDb
   attr_accessor :data, :dir, :db, :debug

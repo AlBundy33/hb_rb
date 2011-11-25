@@ -6,7 +6,7 @@ require 'ostruct'
 
 class Handbrake
   require 'fileutils'  
-  require 'tools.rb'
+  require 'lib/tools.rb'
   include Tools
 
   HANDBRAKE_CLI = File.expand_path("HandbrakeCLI")
