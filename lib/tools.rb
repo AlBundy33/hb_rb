@@ -3,7 +3,7 @@ module Tools
     private
     @@platform = nil
     
-    public 
+    public
     # constant for windows-platform
     WINDOWS = :WINDOWS
     # constant for osx-platform
@@ -25,22 +25,23 @@ module Tools
     # the uname-command known from linux
     def self.uname()
       if whereis("ver.dll") and ENV['COMSPEC']
-        return %x[ver].strip
+        uname = %x[ver]
       elsif command?("uname")
-        return %x[uname -a].strip
+        uname = %x[uname -a]
+      else
+        uname = RUBY_PLATFORM
       end
-      return RUBY_PLATFORM
+      uname.strip
     end
-  
+
     # returns the current platform
     def self.platform
       return @@platform if @@platform
-      if RUBY_PLATFORM.casecmp("java") == 0
-        current = uname()
-      else
-        current = RUBY_PLATFORM
-      end
+
+      current = RUBY_PLATFORM
+      current = uname() if current.casecmp("java") == 0
       current = current.downcase
+
       if current =~ /win32|mswin|mingw|bccwin|wince|windows/
         @@platform = WINDOWS
       elsif current =~ /darwin/
@@ -84,6 +85,9 @@ module Tools
       return (not f.nil? and File.executable?(f))
     end
   
+    # find the specified file in PATH
+    #
+    # +name+ the file to find
     def self.whereis(name)
       # split path
       paths = ENV["PATH"].split(File::PATH_SEPARATOR)
@@ -139,6 +143,10 @@ module Tools
   end
   
   class TimeTool
+    
+    # converts the given time (HH:MM:SS) to seconds
+    #
+    # +time+ the time-string
     def self.timeToSeconds(time)
       return -1 if time.nil? or time.strip.empty?
       times = time.split(/:/).reverse
@@ -149,6 +157,9 @@ module Tools
       return seconds
     end
     
+    # converts the given seconds into a time string (HH:MM:SS)
+    #
+    # +seconds+ the seconds to convert
     def self.secondsToTime(seconds)
       return "unknown" if seconds.nil?
       t = seconds
