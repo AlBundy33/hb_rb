@@ -1,0 +1,40 @@
+#!/bin/bash
+###########
+# This script always works the same way: it works inside the current folder,
+# so first you need to "cd /someplace" so that the script will work only there
+# it only works on the files in that folder, not buried in other folders
+# You may need to adjust the hardcoded location of the AP binary in AP_bin.
+###########
+# eliminate the #comment marks preceding each section to activate that portion
+###########
+
+#the hardcoded location of the AtomicParsley binary
+AP_bin="/Users/$USER/Desktop/AtomicParsley/AtomicParsley"
+
+#which files are allowable to be processed:
+include=".mp4\|.m4a\|.m4b\|.m4p\|.m4v\|.3gp\|.3g2"
+
+#this is the main loop, this is always uncommented
+ls -1 | grep -i "$include" | while read a_file; do
+
+############ 1
+##this will print a tree of each file
+  echo "$a_file"
+  ap_output=`$AP_bin "$a_file" -T`
+  echo "$ap_output"
+
+############ 2
+##this will get a tree of each file & search for an atom called 'wide'
+#  ap_output=`$AP_bin "$a_file" -T | grep wide`
+#  if [ -n "$ap_output" ]; then
+#    echo "$a_file"
+#    echo "$ap_output"
+#  fi
+
+############ 3
+##this set a copyright notice of "©2006" at movie level in english for each file
+#  echo $a_file
+#  "$AP_bin" "$a_file" --ISO-copyright movie "©2006" lang=eng
+
+#this ends the main loop, so this is also always uncommented
+done

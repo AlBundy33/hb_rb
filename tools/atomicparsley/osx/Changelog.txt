@@ -1,0 +1,57 @@
+What's new in version AtomicParsley 0.9:
+
+¥ new scanning method based on known atoms, basic properties and their parents
+¥ better separation of atom version/flags
+¥ allow negatives in 3gp asset coordinates (by switching cli args to high ascii)
+¥ new optimization routine for arranging 'moov' and 'udta'
+¥ implement utilization of padding for fast metadata updating
+¥ added user defined limits for padding behavior
+¥ for 3gp assets added support for multiple tags differing in language setting
+¥ added ability to set 'stik' to any 8-bit number; added 'Audiobook' setting
+¥ list standard genres & stik; bugfixes to standard genre setting
+¥ switch text output for rtng's "Lyrics" to "Content"
+¥ show file brands (major & minor) with "AP file --brands"
+¥ fix removing of some metadata from cli
+¥ prevent optimizing on PSP files, but allow it to dynamically update at end-of-file (but not faac)
+¥ slight bugfixes to win32 printing of uuid atoms with high-bit characters
+¥ added '©too' encoding tool tag
+¥ moved 'mmp4' file brand to older 3gp(5) grouping that doesn't support 'albm' asset
+¥ added 'kddi' brand to 3gp2 grouping supporting all 3gp assets
+¥ added ability to remove a language specific atom with --manualAtomRemove "moov.udta.ATOM:[eng]" where 'eng' is the target elimination language
+¥ better tree with track level details to reflect 'drmX' atoms as protected codecs
+¥ bugfix to APar_DetermineDynamicUpdate when delta was between 0 & -8 with no available padding - a full rewrite is required.
+¥ show language setting for 3gp assets in tree printout
+¥ fix reading language setting for classification/clsf in AParScanAtoms
+¥ new FindAtom routine that can find ----.name atoms of reverseDNS & atoms with an index like trak[2]; reduced complexity in finding an atom; comes with new CreateSparseAtom routine
+¥ simplified creation of req. moov.udta.meta.hdlr when tagging iTunes-style metadata
+¥ added "AP file -t 1" to show all tags irrespective of major brand
+¥ change to --manualAtomRemove to 3gp assets (now "moov.udta.ATOM:lang=eng") to accommodate removing reverseDNS atoms: "moov.udta.meta.ilst.----.name:[iTunNORM]"
+¥ better memory management
+¥ cleaner method of listing iTunes-style metadata; added sfID iTMS storefront lookup
+¥ extended limits of certain numbers (trackhum, bpm, season) past 256 to 16-bit
+¥ limit corruption of 3rd party 'cprt.data' atom & force to 9bytes
+¥ switch to fseeko for 2.5G < file < 4.2GB; corresponding changes from float to double for things like progress bar
+¥ fix co64 reduction offsets
+¥ added stik value for "Booklet"
+¥ only allow using padding when cli arg "--overWrite" is given
+¥ list padding amount (plus other stuff) with '-t +'
+¥ win32 build can now output utf8 if the program name ends with "-utf8.exe" (does not support unicode filenames; only raw utf8 text input & output)
+¥ AP -h now shows brief shorthelp, --longhelp shows the extended output (--longhelp gets translated on win32 to utf16 for atom names)
+¥ bugfix to removing non-existing atoms
+¥ any form of rewrite now requires a mod to the tree/atom contents now
+¥ added ability to force image dimensions on Mac OS X;
+¥ more accurate track level details (-T 1) and dates (-T +dates)
+¥ --stik Audiobook now changes file extension to '.m4b' (+macosx Finder code 'M4B ')
+¥ change limit for text strings to 255 characters (instead of bytes)
+¥ added ability to set copyright notices in multiple languages at movie & track levels
+¥ implement a proper uuid mechanism (sha1-based hash)
+¥ added ability to embed files on a uuid atom
+¥ nearly all memory are plugged (some Cocoa ones aren't)
+¥ added 'pgap' gapless playback atom setting
+¥ accommodate/duplicate NULL space at end of file (possibly part of iTunes7 gapless mechanism)
+¥ fixed clipping when setting unicode characters
+¥ fixed progress bar errata under some circumstances
+¥ drop the cygwin build (it still compiles there, but AP-win32 works *much* better)
+
+What's new in version AtomicParsley 0.9-rerelease:
+¥ corrections to documentation for spelling and capabilities only

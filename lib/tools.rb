@@ -81,6 +81,7 @@ module Tools
     #
     # +cmd+ the command
     def self.command?(cmd)
+      return true if File.executable?(cmd)
       f = whereis(cmd)
       return (not f.nil? and File.executable?(f))
     end
@@ -107,6 +108,22 @@ module Tools
         return "/dev/null"
       end
     end
+  end
+  
+  def self.getTool(name, executable)
+    platform = OS::platform().to_s.downcase
+    path = File.join(File.expand_path("tools"), name, platform)
+    cmd = File.join(path, executable)
+    return cmd if OS::command?(cmd)
+
+    if OS::windows?()
+      %w(bat cmd exe com).each do |e|
+        wincmd = cmd + "." + e
+        return wincmd if OS::command?(wincmd)
+      end
+    end
+
+    return nil
   end
   
   class Tee
@@ -207,6 +224,51 @@ module Tools
         end
       end
       self
+    end
+  end
+
+  class Log
+    DEBUG = 8
+    INFO = 4
+    WARNING = 2
+    ERROR = 1
+    ALL = 999
+
+    @@level = ALL
+
+    def self.level=(l)
+      @@level = l
+    end
+    
+    def self.level
+      @@level
+    end
+
+    def self.debug(msg)
+      log(DEBUG, msg)
+    end  
+    def self.info(msg)
+      log(INFO, msg)      
+    end
+    def self.warn(msg)
+      log(WARNING, msg)
+    end
+    def self.error(msg)
+      log(ERROR, msg)
+    end
+    private
+    LEVEL_NAMES = {
+      DEBUG => :DEBUG,
+      INFO => :INFO,
+      WARNING => :WARNING,
+      ERROR => :ERROR
+    }
+    def self.log(level, msg)
+      printf("[%s] - %s - %7s: %s\n",
+        Time.now.strftime("%Y-%m-%d, %H:%M:%S"), 
+        File.basename($0), 
+        LEVEL_NAMES[level], 
+        msg) if @@level >= level
     end
   end
 end

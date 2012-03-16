@@ -8,12 +8,15 @@ class Handbrake
   require 'fileutils'  
   require 'lib/tools.rb'
   include Tools
-
-  HANDBRAKE_CLI = File.expand_path("HandbrakeCLI")
+  
+  HANDBRAKE_CLI = Tools::getTool("handbrake", "HandBrakeCLI")
+  
+  IPOD_COMPATIBILITY = true 
 
   attr_accessor :options
   
   def initialize(options)
+    raise "handbrake not found" if HANDBRAKE_CLI.nil?
     @options = options
   end
 
@@ -31,7 +34,7 @@ class Handbrake
     dvd = Dvd.new(path)
     title = nil
     output.each_line do |line|
-      puts "### #{line}" if options.debug and options.verbose
+      Tools::Log::debug("### #{line}") if options.debug and options.verbose
       if line.match(title_pattern)
         info = line.scan(title_pattern)[0]
         title = Title.new(info[0])
@@ -85,28 +88,27 @@ class Handbrake
 
     dvd.titles().each do |title|
       if titleMatcher.matches(title) and (!mainFeatureOnly or (mainFeatureOnly and title.mainFeature))
-        puts "\n#{title}"
+        Tools::Log::info("#{title}")
         tracks = audioMatcher.filter(title.audioTracks)
         subtitles = subtitleMatcher.filter(title.subtitles)
         
         duration = TimeTool::timeToSeconds(title.duration)
         if minLength >= 0 and duration < minLength
-          puts "skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})"
+          Tools::Log::info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
           next
         end
         if maxLength >= 0 and duration > maxLength
-          puts "skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})"
+          Tools::Log::info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
           next
         end
         if tracks.empty?() or tracks.length < audioMatcher.languages.length
-          puts "skipping title because it contains not all wanted audio-tracks"
+          Tools::Log::info("skipping title because it contains not all wanted audio-tracks")
           next
         end
         if skipDuplicates and title.blocks() >= 0 and ripped.include?(title.blocks())
-          puts "skipping because disc contains it twice"
+          Tools::Log::info("skipping because disc contains it twice")
           next
         end
-        ripped.push(title.blocks())
 
         extra_arguments = xtraArgs
         outputFile = File.expand_path(output)
@@ -129,7 +131,9 @@ class Handbrake
           x264_quality = "20.0"
 
           # iPod
-          x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
+          if IPOD_COMPATIBILITY
+            x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
+          end
           
           # https://forum.handbrake.fr/viewtopic.php?f=6&t=19426
           # ultrafast
@@ -159,10 +163,12 @@ class Handbrake
             command << " --quality #{x264_quality}"
           end
           # tune encoder
-          command << " -x "
-          command << "#{x264_quality_opts}:" unless x264_quality_opts.nil?
+          command << " -x " if IPOD_COMPATIBILITY or not x264_quality_opts.nil?
+          command << "#{x264_quality_opts}:" if not x264_quality_opts.nil?
+          
           # append for iPod-compatibility
-          command << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
+          command << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0" if IPOD_COMPATIBILITY
+
           command << " --decomb"
           command << " --detelecine"
           command << " --maxWidth 1024"
@@ -183,18 +189,28 @@ class Handbrake
         command << " --subtitle #{subtitles.join(",")}" if ! subtitles.empty?()
         command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
         command << " 2>&1"
-
+        
+        ripped.push(title.blocks())
         if ! File.exists? outputFile or force
-          puts command
+          Tools::Log::info(command)
           if ! debug
             parentDir = File.dirname(outputFile)
             FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
             system command
-            # user should decide what to do...
-            #File.rename("#{outputFile}.tmp", outputFile) if not File.exists? outputFile and File.exists? "#{outputFile}.tmp"
+            if File.exists?(outputFile)
+              if File.size(outputFile) < (1 * 1024 * 1024)
+                Tools::Log::warn("file-size only #{File.size(outputFile) / 1024} KB - removing file")
+                File.delete(outputFile)
+                ripped.delete(title.blocks())
+              else
+                Tools::Log::info("file #{outputFile} created")
+              end
+            else
+              Tools::Log::warn("file #{outputFile} not created")
+            end
           end
         else
-          puts "skipping title because \"#{outputFile}\" already exists"
+          Tools::Log::info("skipping title because \"#{outputFile}\" already exists")
         end
       end
     end
@@ -358,7 +374,7 @@ optparse = OptionParser.new do |opts|
     options.force = arg
   end  
 
-  opts.on("--titles TITLES", Array, "the titles languages") do |arg|
+  opts.on("--titles TITLES", Array, "the titles# to rip") do |arg|
     options.titles = arg
   end
   
@@ -422,12 +438,8 @@ if ! options.titles.nil?()
   titles = tmp
 end
 
-if options.languages.nil?()
-  options.languages = ["deu"]
-end
-if options.subtitles.nil?()
-  options.subtitles = []
-end
+options.languages = ["deu"] if options.languages.nil?()
+options.subtitles = [] if options.subtitles.nil?()
 
 if options.input.nil?() or (!options.checkOnly and options.output.nil?())
   puts optparse
