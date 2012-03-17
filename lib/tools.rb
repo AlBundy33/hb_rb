@@ -81,6 +81,7 @@ module Tools
     #
     # +cmd+ the command
     def self.command?(cmd)
+      return false if cmd.nil?
       return true if File.executable?(cmd)
       f = whereis(cmd)
       return (not f.nil? and File.executable?(f))
@@ -267,7 +268,7 @@ module Tools
       printf("[%s] - %s - %7s: %s\n",
         Time.now.strftime("%Y-%m-%d, %H:%M:%S"), 
         File.basename($0), 
-        LEVEL_NAMES[level], 
+        LEVEL_NAMES[level] || level, 
         msg) if @@level >= level
     end
   end

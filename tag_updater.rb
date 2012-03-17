@@ -9,7 +9,7 @@ require 'lib/taggers.rb'
 class TagDb
   attr_accessor :data, :dir, :db, :debug
   DB_NAME = "tags.csv"
-  INFO_DATA = [ "path", "name", "title", "season", "episode", "disc", "descr" ]
+  INFO_DATA = [ "path", "name", "title", "season", "episode", "disc", "track", "descr" ]
 
   def initialize(dir, debug)
     @data = {}
@@ -55,16 +55,22 @@ class TagDb
   end
   
   def updateTags(pattern)
-    pattern = "**/.mp4" if pattern.nil?
+    pattern = "**/*.mp4" if pattern.nil?  
     Dir["#{dir}/#{pattern}"].each do |f|
       next if not File.exists? f
       file = filename(f)
       info = data[file]
-      next if info.nil?
+      if info.nil?
+        Tools::Log::warn("found no tags for #{file}")
+        next
+      end
       cmd = TaggerFactory.newTagger().createCommand(f, info)
-      next if cmd.nil?
-      cmd = Tee::command(cmd,File.expand_path("tag.log"),true)
-      puts "#{cmd}"
+      if cmd.nil?
+        Tools::Log::warn("could not create command to tag file #{file}")
+        next
+      end
+      cmd = Tools::Tee::command(cmd,File.expand_path("tag.log"),true)
+      Tools::Log::info("#{cmd}")
       %x[#{cmd}] if not debug
     end
   end
@@ -77,6 +83,7 @@ class TagDb
   
   def updateDb()
     Dir["#{dir}/**/*.mp4"].each { |f|
+      Tools::Log::info("updating #{f}")
       mp4 = filename(f)
       tmp = mp4.split("/")
       info = data[mp4]
@@ -84,8 +91,11 @@ class TagDb
 
       info["path"] = mp4
       info["name"] = tmp[0]
-      info["season"] = tmp[1].gsub(/[^0-9]/, "")
-      info["disc"] = tmp[2].gsub!(/.*_S([0-9]+)D([0-9]+) - title ([0-9]+)\.mp4/, "\\2")
+      #info["season"] = tmp[1].gsub(/[^0-9]/, "")
+      pattern = /.*_S([0-9]+)D([0-9]+)T([0-9]+).mp4/
+      info["season"] = tmp[2].gsub(pattern, "\\1")
+      info["disc"] = tmp[2].gsub(pattern, "\\2")
+      info["track"] = tmp[2].gsub(pattern, "\\3")
 
       data[info["path"]] = info
     }
@@ -132,7 +142,7 @@ optparse = OptionParser.new do |opts|
   opts.on("--dir DIRECTORY", "the directory containing the mp4-files") do |arg|
     options.directory = arg
   end
-  opts.on("--files PATTERN", "the pattern for the file to update") do |arg|
+  opts.on("--files PATTERN", "the pattern for the files to update") do |arg|
     options.pattern = arg
   end
   opts.on("--debug", "debug-mode") do |arg|

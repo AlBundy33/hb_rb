@@ -1,5 +1,3 @@
-require 'tools.rb'
-include Tools
 class Tagger
 
   @command = nil
@@ -13,7 +11,7 @@ class Tagger
   end
   
   def available?()
-    return OS::command?(@command)
+    return Tools::OS::command?(@command)
   end
   
   def to_s
@@ -34,6 +32,7 @@ class AtomicParsley < Tagger
 
   def createCommand(file, tagInfo)
     cmd = "#{@command} \"#{file}\""
+    cmd << " --overWrite"
     tagInfo.each do |key, value|
       arg = ARG_MAP[key]
       next if arg.nil?()
