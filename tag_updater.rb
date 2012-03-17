@@ -92,7 +92,7 @@ class TagDb
       info["path"] = mp4
       info["name"] = tmp[0]
       #info["season"] = tmp[1].gsub(/[^0-9]/, "")
-      pattern = /.*_S([0-9]+)D([0-9]+)T([0-9]+).mp4/
+      pattern = /.*_S([0-9]+)D([0-9]+)T([0-9]+)\.mp4/
       info["season"] = tmp[2].gsub(pattern, "\\1")
       info["disc"] = tmp[2].gsub(pattern, "\\2")
       info["track"] = tmp[2].gsub(pattern, "\\3")
