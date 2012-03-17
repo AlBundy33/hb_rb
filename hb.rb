@@ -9,6 +9,8 @@ class Handbrake
   require 'lib/tools.rb'
   include Tools
   
+  L = Tools::Loggers.console()
+  
   HANDBRAKE_CLI = Tools::getTool("handbrake", "HandBrakeCLI")
   
   IPOD_COMPATIBILITY = true 
@@ -34,7 +36,7 @@ class Handbrake
     dvd = Dvd.new(path)
     title = nil
     output.each_line do |line|
-      Tools::Log::debug("### #{line}") if options.debug and options.verbose
+      L.debug("### #{line}") if options.debug and options.verbose
       if line.match(title_pattern)
         info = line.scan(title_pattern)[0]
         title = Title.new(info[0])
@@ -88,25 +90,25 @@ class Handbrake
 
     dvd.titles().each do |title|
       if titleMatcher.matches(title) and (!mainFeatureOnly or (mainFeatureOnly and title.mainFeature))
-        Tools::Log::info("#{title}")
+        L.info("#{title}")
         tracks = audioMatcher.filter(title.audioTracks)
         subtitles = subtitleMatcher.filter(title.subtitles)
         
         duration = TimeTool::timeToSeconds(title.duration)
         if minLength >= 0 and duration < minLength
-          Tools::Log::info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+          L.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
           next
         end
         if maxLength >= 0 and duration > maxLength
-          Tools::Log::info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+          L.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
           next
         end
         if tracks.empty?() or tracks.length < audioMatcher.languages.length
-          Tools::Log::info("skipping title because it contains not all wanted audio-tracks")
+          L.info("skipping title because it contains not all wanted audio-tracks")
           next
         end
         if skipDuplicates and title.blocks() >= 0 and ripped.include?(title.blocks())
-          Tools::Log::info("skipping because disc contains it twice")
+          L.info("skipping because disc contains it twice")
           next
         end
 
@@ -192,25 +194,25 @@ class Handbrake
         
         ripped.push(title.blocks())
         if ! File.exists? outputFile or force
-          Tools::Log::info(command)
+          L.info(command)
           if ! debug
             parentDir = File.dirname(outputFile)
             FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
             system command
             if File.exists?(outputFile)
               if File.size(outputFile) < (1 * 1024 * 1024)
-                Tools::Log::warn("file-size only #{File.size(outputFile) / 1024} KB - removing file")
+                L.warn("file-size only #{File.size(outputFile) / 1024} KB - removing file")
                 File.delete(outputFile)
                 ripped.delete(title.blocks())
               else
-                Tools::Log::info("file #{outputFile} created")
+                L.info("file #{outputFile} created")
               end
             else
-              Tools::Log::warn("file #{outputFile} not created")
+              L.warn("file #{outputFile} not created")
             end
           end
         else
-          Tools::Log::info("skipping title because \"#{outputFile}\" already exists")
+          L.info("skipping title because \"#{outputFile}\" already exists")
         end
       end
     end

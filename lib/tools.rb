@@ -1,4 +1,5 @@
 module Tools
+  require 'logger'
   class OS
     private
     @@platform = nil
@@ -227,49 +228,18 @@ module Tools
       self
     end
   end
-
-  class Log
-    DEBUG = 8
-    INFO = 4
-    WARNING = 2
-    ERROR = 1
-    ALL = 999
-
-    @@level = ALL
-
-    def self.level=(l)
-      @@level = l
-    end
-    
-    def self.level
-      @@level
+  
+  class Loggers
+    def self.console
+      return @consoleLogger if @consoleLogger
+      return @consoleLogger = createLogger
     end
 
-    def self.debug(msg)
-      log(DEBUG, msg)
-    end  
-    def self.info(msg)
-      log(INFO, msg)      
-    end
-    def self.warn(msg)
-      log(WARNING, msg)
-    end
-    def self.error(msg)
-      log(ERROR, msg)
-    end
-    private
-    LEVEL_NAMES = {
-      DEBUG => :DEBUG,
-      INFO => :INFO,
-      WARNING => :WARNING,
-      ERROR => :ERROR
-    }
-    def self.log(level, msg)
-      printf("[%s] - %s - %7s: %s\n",
-        Time.now.strftime("%Y-%m-%d, %H:%M:%S"), 
-        File.basename($0), 
-        LEVEL_NAMES[level] || level, 
-        msg) if @@level >= level
+    def self.createLogger(progname = nil, ouput = STDOUT)
+      l = Logger.new(output)
+      l.progname = progname || File.basename($0)
+      l.datetime_format = "%Y-%m-%d, %H:%M:%S,%L "
+      return l      
     end
   end
 end
