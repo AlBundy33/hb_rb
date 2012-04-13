@@ -112,22 +112,6 @@ module Tools
     end
   end
   
-  def self.getTool(name, executable)
-    platform = OS::platform().to_s.downcase
-    path = File.join(File.expand_path("tools"), name, platform)
-    cmd = File.join(path, executable)
-    return cmd if OS::command?(cmd)
-
-    if OS::windows?()
-      %w(bat cmd exe com).each do |e|
-        wincmd = cmd + "." + e
-        return wincmd if OS::command?(wincmd)
-      end
-    end
-
-    return nil
-  end
-  
   class Tee
     # creates the tee-command for cmd
     #
@@ -235,7 +219,7 @@ module Tools
       return @consoleLogger = createLogger
     end
 
-    def self.createLogger(progname = nil, ouput = STDOUT)
+    def self.createLogger(progname = nil, output = STDOUT)
       l = Logger.new(output)
       l.progname = progname || File.basename($0)
       l.datetime_format = "%Y-%m-%d, %H:%M:%S,%L "

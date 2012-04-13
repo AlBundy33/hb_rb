@@ -10,8 +10,12 @@ class Handbrake
   include Tools
   
   L = Tools::Loggers.console()
-  
-  HANDBRAKE_CLI = Tools::getTool("handbrake", "HandBrakeCLI")
+
+  if Tools::OS::windows?
+    HANDBRAKE_CLI = File.expand_path("tools/handbrake/windows/HandBrakeCLI")
+  else
+    HANDBRAKE_CLI = File.expand_path("tools/handbrake/osx/HandBrakeCLI")
+  end
   
   IPOD_COMPATIBILITY = true 
 

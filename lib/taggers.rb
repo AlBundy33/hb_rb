@@ -1,17 +1,19 @@
 class Tagger
 
+  @platform = nil
   @command = nil
  
   def createCommand(file, tagInfo)
     raise "unsupported operation"
   end
 
-  def initialize(cmd)
+  def initialize(platform, cmd)
+    @platform = platform
     @command = cmd
   end
   
   def available?()
-    return Tools::OS::command?(@command)
+    return (Tools::OS::platform?(@platform) and Tools::OS::command?(@command))
   end
   
   def to_s
@@ -20,6 +22,9 @@ class Tagger
 end
 
 class AtomicParsley < Tagger
+
+  OSX_COMMAND = File.expand_path("tools/atomicparsley/osx/AtomicParsley")
+  WIN_COMMAND = File.expand_path("tools/atomicparsley/windows/AtomicParsley.exe") 
 
   ARG_MAP = {
     "title" => "--title",
@@ -44,6 +49,7 @@ class AtomicParsley < Tagger
 end
 
 class SublerCLITagger < Tagger
+  OSX_COMMAND = File.expand_path("tools/subler/osx/SublerCLI")
   SUBLER_TAGS = [
       "Name", "Artist", "Album Artist", "Album", "Grouping", "Composer", "Comments", "Genre", "Release Date", 
       "Track #", "Disk #", "TV Show", "TV Episode #", "TV Network", "TV Episode ID", "TV Season", "Description", 
@@ -83,14 +89,15 @@ end
 
 class TaggerFactory
   @@TAGGERS = [
-    SublerCLITagger.new(Tools::getTool("subler","SublerCLI")),
-    AtomicParsley.new(Tools::getTool("atomicparsley","AtomicParsley"))
+    SublerCLITagger.new(Tools::OS::OSX, SublerCLITagger::OSX_COMMAND),
+    AtomicParsley.new(Tools::OS::OSX, AtomicParsley::OSX_COMMAND),
+    AtomicParsley.new(Tools::OS::WINDOWS, AtomicParsley::WIN_COMMAND)
   ]
 
   def self.newTagger()
     @@TAGGERS.each do |t|
       return t if t.available?()
     end
-    raise "found no tagger for platform #{OS.platform()}"
+    raise "found no tagger for platform #{Tools::OS.platform()}"
   end
 end
