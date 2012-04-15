@@ -155,7 +155,9 @@ class TagDb
   end
   
   def save()
-    k = data.keys.sort
+    k = data.keys.sort { |k1,k2|
+      cmpMapEntry(data, k1, k2, [NAME, SEASON, EPISODE])
+    }
     writer = CSV.open(db,"w", ";")
     begin
       writer << @columns
@@ -170,6 +172,20 @@ class TagDb
     ensure
       writer.close
     end
+  end
+  
+  def cmpMapEntry(map, k1, k2, valueKeys)
+    valueKeys.each do |k|
+      v1 = "#{map[k1][k]}"
+      v2 = "#{map[k2][k]}"
+      if v1 =~ /^\d+$/ and v2 =~ /^\d+$/
+        v1 = v1.to_i
+        v2 = v2.to_i
+      end
+      r = v1 <=> v2
+      return r if r != 0
+    end
+    return k1 <=> k2
   end
   
   def updateTags(pattern)
@@ -283,10 +299,9 @@ class TagDb
     sj = Serienjunkies.instance.load(info[NAME], season.to_i, episode.to_i, Serienjunkies::URL + '/' + info[SJ_ID] + '/alle-serien-staffeln.html')
     return if sj.nil?
 
-    info[SJ_TITLE] = sj.title_de() if not empty?(sj.title_de()) and empty?(info[SJ_TITLE])
-    info[SJ_TITLE_ORG] = sj.title_en() if not empty?(sj.title_en()) and empty?(info[SJ_TITLE_ORG])
-    #infoSJ_[DESCR] = sj.descr() if not empty?(sj.descr()) and empty?(info[SJ_DESCR])
-    # url immer aktualisieren
+    info[SJ_TITLE] = sj.title_de() if not empty?(sj.title_de())
+    info[SJ_TITLE_ORG] = sj.title_en() if not empty?(sj.title_en())
+    #infoSJ_[DESCR] = sj.descr() if not empty?(sj.descr())
     info[SJ_URL] = sj.sj_url() if not empty?(sj.sj_url())
   end
   
