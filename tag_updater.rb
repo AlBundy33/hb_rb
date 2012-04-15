@@ -200,6 +200,14 @@ class TagDb
     copyMapEntry(tags,SJ_TITLE,TITLE)
     copyMapEntry(tags,SJ_TITLE_ORG,TITLE_ORG)
     copyMapEntry(tags,SJ_DESCR,DESCR)
+    
+    title = tags[TITLE]
+    title = "%s - %02dx%02d - %s" % [tags[NAME], tags[SEASON], tags[EPISODE], title ]
+    title = "%s (%s)" % [title, tags[TITLE_ORG]] if not empty?(tags[TITLE_ORG])
+    tags[TITLE] = title
+
+    tags[NAME] = nil 
+
     return tags
   end
   

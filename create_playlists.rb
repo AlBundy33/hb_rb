@@ -1,5 +1,7 @@
 class Tags
   require 'lib/mp4info'
+  #require 'rubygems'
+  #require 'mp4info'
   attr_accessor :artist, :title, :time, :track, :disc, :comment, :seconds
   
   def to_s
@@ -85,7 +87,7 @@ class ExtM3UPlaylist < Playlist
   end
   
   def header()
-    ""#EXTM3U"
+    "#EXTM3U"
   end
 
   def ext()
