@@ -100,8 +100,7 @@ class TagDb
   attr_accessor :data, :dir, :db, :debug, :columns
   L = Tools::Loggers.console()
   
-  # bestehenden Werte mit den von serienjunkies.de überschreiben.
-  OVERRIDE_WITH_SJ_VALUES = true
+  ALWAYS_UPDATE_SJ_VALUES = true
   
   DB_NAME = "tags.csv"
   PATH = "path"
@@ -266,7 +265,7 @@ class TagDb
     [SJ_TITLE, SJ_TITLE_ORG, SJ_URL].each do |c|
       complete = false if empty?(info[c])
     end
-    return if complete and not OVERRIDE_WITH_SJ_VALUES
+    return if complete and not ALWAYS_UPDATE_SJ_VALUES
 
     season = info[SEASON]
     season = info[SJ_SEASON] unless empty?(info[SJ_SEASON])
@@ -276,11 +275,11 @@ class TagDb
     sj = Serienjunkies.instance.load(info[NAME], season.to_i, episode.to_i, Serienjunkies::URL + '/' + info[SJ_ID] + '/alle-serien-staffeln.html')
     return if sj.nil?
 
-    info[SJ_TITLE] = sj.title_de() if not empty?(sj.title_de()) and (empty?(info[TITLE]) or OVERRIDE_WITH_SJ_VALUES)
-    info[SJ_TITLE_ORG] = sj.title_en() if not empty?(sj.title_en()) and (empty?(info[TITLE_ORG]) or OVERRIDE_WITH_SJ_VALUES)
-    #info[DESCR] = sj.descr() if not empty?(sj.descr()) and (empty?(info[DESCR]) or OVERRIDE_WITH_SJ_VALUES)
+    info[SJ_TITLE] = sj.title_de() if not empty?(sj.title_de()) and empty?(info[SJ_TITLE])
+    info[SJ_TITLE_ORG] = sj.title_en() if not empty?(sj.title_en()) and empty?(info[SJ_TITLE_ORG])
+    #infoSJ_[DESCR] = sj.descr() if not empty?(sj.descr()) and empty?(info[SJ_DESCR])
     # url immer aktualisieren
-    info[SJ_URL] = sj.sj_url() if not empty?(sj.sj_url()) and (empty?(info[SJ_URL]) or OVERRIDE_WITH_SJ_VALUES)
+    info[SJ_URL] = sj.sj_url() if not empty?(sj.sj_url())
   end
   
   def empty?(value)
