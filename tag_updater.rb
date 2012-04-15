@@ -103,7 +103,6 @@ class TagDb
   ALWAYS_UPDATE_SJ_VALUES = true
   
   DB_NAME = "tags.csv"
-  PATH = "path"
   NAME = "name"
   SEASON = "season"
   DISC = "disc"
@@ -119,7 +118,10 @@ class TagDb
   SJ_TITLE = "sj_title"
   SJ_TITLE_ORG = "sj_title_org"
   SJ_DESCR = "sj_descr"
-  KNOWN_COLUMNS = [ PATH, NAME, SEASON, DISC, TRACK, EPISODE, TITLE, TITLE_ORG, DESCR, SJ_ID, SJ_SEASON, SJ_EPISODE, SJ_URL, SJ_TITLE, SJ_TITLE_ORG, SJ_DESCR ]
+  FILE_ID = "file_id"
+  KNOWN_COLUMNS = [ FILE_ID, NAME, SEASON, DISC, TRACK, EPISODE, TITLE, TITLE_ORG, DESCR, SJ_ID, SJ_SEASON, SJ_EPISODE, SJ_URL, SJ_TITLE, SJ_TITLE_ORG, SJ_DESCR ]
+
+  ID_PATTERN_STR = '[a-zA-Z0-9_-]+S(\d+)D(\d+)T(\d+)'
 
   def initialize(dir, debug)
     @data = {}
@@ -149,12 +151,25 @@ class TagDb
         for i in 0..@columns.length
           info[@columns[i]] = row[i]
         end
-        data[info["path"]] = info
+        data[info[FILE_ID]] = info
       end
     end
   end
   
+  def checkDuplicates
+    duplicates = []
+    ids = []
+    data.each do |k,v|
+      ids << v[FILE_ID] 
+    end
+    ids.each do |id|
+      duplicates << id if ids.count(id) > 1 and not duplicates.include?(id)
+    end
+    raise "duplicate ids found #{duplicates.join(", ")}" if not duplicates.empty?
+  end
+  
   def save()
+    checkDuplicates()
     k = data.keys.sort { |k1,k2|
       cmpMapEntry(data, k1, k2, [NAME, SEASON, EPISODE])
     }
@@ -188,25 +203,35 @@ class TagDb
     return k1 <=> k2
   end
   
-  def updateTags(pattern)
+  def updateTags(pattern, renamefiles = false)
     pattern = "**/*.mp4" if pattern.nil?  
     Dir["#{dir}/#{pattern}"].each do |f|
       next if not File.exists? f
       L.info("updating mp4-tags for #{f}")
-      file = filename(f)
-      info = createTagMap(data[file])
+      id = fileid(f)
+      next if empty?(id)
+
+      info = createTagMap(data[id])
       if info.nil?
-        L.warn("found no tags for #{file}")
+        L.warn("found no tags for #{f}")
         next
       end
       cmd = TaggerFactory.newTagger().createCommand(f, info)
       if cmd.nil?
-        L.warn("could not create command to tag file #{file}")
+        L.warn("could not create command to tag file #{f}")
         next
       end
       cmd = Tools::Tee::command(cmd,File.expand_path("tag.log"),true)
       L.info("#{cmd}")
       %x[#{cmd}] if not debug
+      titled_name = nil
+      titled_name = "#{info[TITLE]}.#{info[FILE_ID]}.mp4" if not empty?(info[TITLE]) and not empty?(info[FILE_ID])
+      titled_name.gsub!(/[\/:"*?<>|]+/, "_")
+      titled_name = File.join(File.dirname(f), titled_name)
+      if renamefiles and not empty?(titled_name) and not f.eql? titled_name
+        L.info("renaming file\n\tfrom: #{File.basename(f)}\n\tto  : #{File.basename(titled_name)}")
+        File.rename(f, titled_name)
+      end
     end
   end
   
@@ -230,11 +255,11 @@ class TagDb
   def copyMapEntry(map, from, to)
     map[to] = map[from] if empty?(map[to]) and not empty?(map[from])
   end
-
-  def filename(file)
-    f = File.expand_path(file)
-    f = f[dir.length + 1, f.length - dir.length] if f.start_with? dir
-    return f 
+  
+  def fileid(file)
+    id = File.basename(file, ".*")
+    id.gsub!(/^.*[.](#{ID_PATTERN_STR})$/, "\\1") if id =~ /^.*[.](#{ID_PATTERN_STR})$/
+    return id
   end
 
   def updateDb(pattern = nil, sj = false)
@@ -242,20 +267,25 @@ class TagDb
     Dir["#{dir}/#{pattern}"].each { |f|
       next if not File.exists? f
       L.info("updating database entry for #{f}")
-      mp4 = filename(f)
-      tmp = mp4.split("/")
-      info = data[mp4]
+      
+      id = fileid(f)
+      next if empty?(id)
+      
+      path = File.expand_path(f)
+      path = path[dir.length + 1, path.length - dir.length] if path.start_with? dir
+      path = path.split("/")
+
+      info = data[id]
       info = {} if info.nil?
 
-      info[PATH] = mp4
-      info[NAME] = tmp[0]
-      #info["season"] = tmp[1].gsub(/[^0-9]/, "")
-      pattern = /.*_S([0-9]+)D([0-9]+)T([0-9]+)\.mp4/
-      info[SEASON] = tmp[2].gsub(pattern, "\\1")
-      info[DISC] = tmp[2].gsub(pattern, "\\2")
-      info[TRACK] = tmp[2].gsub(pattern, "\\3")
+      info[NAME] = path[0]
+
+      info[SEASON] = id.gsub(/#{ID_PATTERN_STR}/, "\\1")
+      info[DISC] = id.gsub(/#{ID_PATTERN_STR}/, "\\2")
+      info[TRACK] = id.gsub(/#{ID_PATTERN_STR}/, "\\3")
+      info[FILE_ID] = id if empty?(info[FILE_ID])
       updateInfoFromSerienjunkies(info) if sj
-      data[info[PATH]] = info
+      data[info[FILE_ID]] = info
     }
     
     # update episodes
@@ -316,6 +346,7 @@ options.updatetags = false
 options.pattern = nil
 options.debug = false
 options.sj = false
+options.rename = false
 options.directory = nil
 
 optparse = OptionParser.new do |opts|
@@ -325,8 +356,11 @@ optparse = OptionParser.new do |opts|
   opts.on("--sj", "update database with values from serienjunkies.de") do |arg|
     options.sj = arg
   end
-  opts.on("--updatetags", "update tags") do |arg|
+  opts.on("--updatetags", "update tags in files") do |arg|
     options.updatetags = arg
+  end
+  opts.on("--updatenames", "update filesnames according to the tags") do |arg|
+    options.rename = arg
   end
   opts.on("--dir DIRECTORY", "the parent-directory containing the database and mp4-files") do |arg|
     options.directory = arg
@@ -352,4 +386,4 @@ end
 
 db = TagDb.new(options.directory, options.debug)
 db.updateDb(options.pattern, options.sj) if options.updatedb
-db.updateTags(options.pattern) if options.updatetags
+db.updateTags(options.pattern, options.rename) if options.updatetags
