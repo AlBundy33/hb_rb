@@ -229,8 +229,12 @@ class TagDb
       titled_name.gsub!(/[\/:"*?<>|]+/, "_")
       titled_name = File.join(File.dirname(f), titled_name)
       if renamefiles and not empty?(titled_name) and not f.eql? titled_name
-        L.info("renaming file\n\tfrom: #{File.basename(f)}\n\tto  : #{File.basename(titled_name)}")
-        File.rename(f, titled_name)
+        if File.exists?(titled_name)
+          L.info("renaming file\n\tfrom: #{File.basename(f)}\n\tto  : #{File.basename(titled_name)}")
+          File.rename(f, titled_name)
+        else
+          L.warn("could not rename #{f} to #{File.basename(titled_name)} because target already exists!")
+        end
       end
     end
   end

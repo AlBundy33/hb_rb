@@ -16,8 +16,6 @@ class Handbrake
   else
     HANDBRAKE_CLI = File.expand_path("tools/handbrake/osx/HandBrakeCLI")
   end
-  
-  IPOD_COMPATIBILITY = true 
 
   attr_accessor :options
   
@@ -40,7 +38,8 @@ class Handbrake
     dvd = Dvd.new(path)
     title = nil
     output.each_line do |line|
-      L.debug("### #{line}") if options.debug and options.verbose
+      ##L.debug("### #{line}") if options.debug and options.verbose
+      puts "### #{line}" if options.debug and options.verbose
       if line.match(title_pattern)
         info = line.scan(title_pattern)[0]
         title = Title.new(info[0])
@@ -88,12 +87,14 @@ class Handbrake
     skipDuplicates = options.skipDuplicates || false
     verbose = options.verbose || false
     debug = options.debug || false
+    keepAudioTracks = options.keepAudioTracks || false
     xtraArgs = options.xtra_args
     minLength = TimeTool::timeToSeconds(options.minLength)
     maxLength = TimeTool::timeToSeconds(options.maxLength)
+    ipodCompatibility = options.ipodCompatibility || false
 
     dvd.titles().each do |title|
-      if titleMatcher.matches(title) and (!mainFeatureOnly or (mainFeatureOnly and title.mainFeature))
+      if titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature))
         L.info("#{title}")
         tracks = audioMatcher.filter(title.audioTracks)
         subtitles = subtitleMatcher.filter(title.subtitles)
@@ -131,13 +132,13 @@ class Handbrake
           command << " --preset \"#{preset}\""
         else
           # video
-          vbr = 1500
+          vbr = 2000
           x264_quality = nil
           x264_quality_opts = nil
           x264_quality = "20.0"
 
           # iPod
-          if IPOD_COMPATIBILITY
+          if ipodCompatibility
             x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
           end
           
@@ -169,37 +170,52 @@ class Handbrake
             command << " --quality #{x264_quality}"
           end
           # tune encoder
-          command << " -x " if IPOD_COMPATIBILITY or not x264_quality_opts.nil?
+          command << " -x " if ipodCompatibility or not x264_quality_opts.nil?
           command << "#{x264_quality_opts}:" if not x264_quality_opts.nil?
           
           # append for iPod-compatibility
-          command << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0" if IPOD_COMPATIBILITY
+          command << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0" if ipodCompatibility
 
           command << " --decomb"
           command << " --detelecine"
-          command << " --maxWidth 1024"
+          #command << " --maxWidth 1024"
           command << " --crop 0:0:0:0"
           # audio
-          command << " --aencoder #{Array.new(tracks.length, "faac").join(",")}"
-          command << " --arate #{Array.new(tracks.length, "Auto").join(",")}"
-          command << " --mixdown #{Array.new(tracks.length, "dpl2").join(",")}"
-          command << " --ab #{Array.new(tracks.length, "160").join(",")}"
-          command << " --drc #{Array.new(tracks.length, "0.0").join(",")}"
+          if keepAudioTracks
+            # copy original-track and create mixed down track
+            command << " --audio "
+            tracks.each do |t|
+              command << "#{t},#{t},"
+            end
+            command.chomp!(",")
+            command << " --aencoder #{Array.new(tracks.length, "copy,faac").join(",")}"
+            command << " --arate #{Array.new(tracks.length, "auto,auto").join(",")}"
+            command << " --mixdown #{Array.new(tracks.length, "auto,dpl2").join(",")}"
+            command << " --ab #{Array.new(tracks.length, "auto,160").join(",")}"
+            command << " --drc #{Array.new(tracks.length, "0.0,0.0").join(",")}"
+          else
+            # create only mixed down track
+            command << " --audio #{tracks.join(",")}"
+            command << " --aencoder #{Array.new(tracks.length, "faac").join(",")}"
+            command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
+            command << " --mixdown #{Array.new(tracks.length, "dpl2").join(",")}"
+            command << " --ab #{Array.new(tracks.length, "160").join(",")}"
+            command << " --drc #{Array.new(tracks.length, "0.0").join(",")}"
+          end
           # common
           command << " --format mp4"
           command << " --markers"
           command << " --optimize"
         end
         command << " --title #{title.pos}"
-        command << " --audio #{tracks.join(",")}"
-        command << " --subtitle #{subtitles.join(",")}" if ! subtitles.empty?()
+        command << " --subtitle #{subtitles.join(",")}" if not subtitles.empty?()
         command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
         command << " 2>&1"
         
         ripped.push(title.blocks())
-        if ! File.exists? outputFile or force
+        if force or (not File.exists?(outputFile) and Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").empty?)
           L.info(command)
-          if ! debug
+          if not debug
             parentDir = File.dirname(outputFile)
             FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
             system command
@@ -216,7 +232,12 @@ class Handbrake
             end
           end
         else
-          L.info("skipping title because \"#{outputFile}\" already exists")
+          if File.exists?(outputFile)
+            f = outputFile
+          else
+            f = Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").join(", ")
+          end
+          L.info("skipping title because \"#{f}\" already exists")
         end
       end
     end
@@ -309,16 +330,12 @@ class DefaultMatcher
   end
 
   def matches(obj)
-    
-    if obj.respond_to?("pos") and ! positions().nil?() and ! positions().include?(obj.pos)
-      return false
-    end
+    matches = true
 
-    if obj.respond_to?("lang") and ! languages().nil?() and ! languages().include?(obj.lang)
-      return false
-    end
+    matches = false if obj.respond_to?("pos") and not positions().nil?() and not positions().include?(obj.pos)
+    matches = false if obj.respond_to?("lang") and not languages().nil?() and not languages().include?(obj.lang)
 
-    return true
+    return matches
   end
   
   def filter(list, onlyFirst = true)
@@ -326,24 +343,24 @@ class DefaultMatcher
       return list
     end
     filtered = []
-    if ! positions().nil?()
+    if not positions().nil?()
       positions().each do |p|
         list.each do |e|
           if e.respond_to?("pos") and (e.pos() == p or e.pos.eql? p)
-            if ! filtered.include?(e.pos)
+            if not filtered.include?(e.pos)
               filtered.push(e.pos())
-              break if onlyFirstd
+              break if onlyFirst
             end
           end
         end
       end
     end
     
-    if ! languages().nil?()
+    if not languages().nil?()
       languages().each do |l|
         list.each do |e|
           if e.respond_to?("lang") and (e.lang() == l or e.lang.eql? l)
-            if ! filtered.include?(e.pos)
+            if not filtered.include?(e.pos)
               filtered.push(e.pos())
               break if onlyFirst
             end
@@ -355,104 +372,117 @@ class DefaultMatcher
     return filtered
   end
   
+  def to_s
+    "#{positions()} #{languages()}"
+  end
 end
 
 options = OpenStruct.new
 optparse = OptionParser.new do |opts|
   
+  opts.separator("")
+  opts.separator("options")
   opts.on("--input INPUT", "input-source") do |arg|
     options.input = arg
   end
-  
   opts.on("--output OUTPUT", "output-directory") do |arg|
     options.output = arg
   end
+  opts.on("--force", "force override of existing files") do |arg|
+    options.force = arg
+  end
 
+  opts.separator("")
+  opts.separator("output-options")
   opts.on("--preset PRESET", "the preset to use") do |arg|
     options.preset = arg
   end
-
-  opts.on("--main", "main-feature only") do |arg|
-    options.mainFeatureOnly = arg
+  opts.on("--compatibility", "enables iPod compatible output") do |arg|
+    options.ipodCompatibility = arg
   end
-  
-  opts.on("--force", "force override of existing files") do |arg|
-    options.force = arg
-  end  
-
-  opts.on("--titles TITLES", Array, "the titles# to rip") do |arg|
-    options.titles = arg
-  end
-  
-  opts.on("--min-length DURATION", "the minimum-track-length - format hh:nn:ss") do |arg|
-    options.minLength = arg
-  end
-
-  opts.on("--max-length DURATION", "the maximum-track-length - format hh:nn:ss") do |arg|
-    options.maxLength = arg
-  end
-  
-  opts.on("--skip-duplicates", "skip duplicate tracks (checks bock-size)") do |arg|
-    options.skipDuplicates = arg
-  end
-
   opts.on("--audio LANGUAGES", Array, "the audio languages") do |arg|
     options.languages = arg
+  end 
+  opts.on("--keep-audio-tracks", "copy audio-tracks additionally to the created mixeddown track") do |arg|
+    options.keepAudioTracks = arg
   end
-
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") do |arg|
     options.subtitles = arg
   end
+
+  opts.separator("")
+  opts.separator("filter-options")
+  opts.on("--main", "main-feature only") do |arg|
+    options.mainFeatureOnly = arg
+  end
+  opts.on("--titles TITLES", Array, "the title-numbers to rip (use --check to see available titles)") do |arg|
+    options.titles = arg
+  end
+  opts.on("--min-length DURATION", "the minimum-track-length - format hh:nn:ss") do |arg|
+    options.minLength = arg
+  end
+  opts.on("--max-length DURATION", "the maximum-track-length - format hh:nn:ss") do |arg|
+    options.maxLength = arg
+  end
+  opts.on("--skip-duplicates", "skip duplicate tracks (checks bock-size)") do |arg|
+    options.skipDuplicates = arg
+  end
   
+  opts.separator("")
+  opts.separator("expert-options")
   opts.on("--check", "run check only and display information") do |arg|
     options.checkOnly = arg
   end
-  
   opts.on("--xtra ARGS", "additional arguments for handbrake") do |arg|
     options.xtra_args = arg
   end
-  
-  opts.on("--debug", "enable debug-mode") do |arg|
+  opts.on("--debug", "enable debug-mode (doesn't start ripping)") do |arg|
     options.debug = arg
   end
-  
   opts.on("--verbose", "enable verbose output") do |arg|
     options.verbose = arg
   end
-      
-  opts.on("--help", "Display this screen") do
+ 
+  opts.on_tail("--help", "Display this screen") do
     puts opts
     exit
   end
 end
 
-optparse.parse!(ARGV)
+begin
+  optparse.parse!(ARGV)
+rescue OptionParser::InvalidOption => e
+  puts optparse
+  puts
+  puts e
+  exit 1
+end
 
-if ! options.titles.nil?()
-  tmp = []
-  titles.each do |t|
+titles = nil
+if not options.titles.nil?
+  titles = []
+  options.titles.each do |t|
     range_pattern = /([0-9]+)-([0-9]+)/ 
     if t.match(range_pattern)
       range = t.scan(range_pattern)[0]
       rangeStart = range[0].to_i
       rangeEnd = range[1].to_i
-      rangeStart.upto(rangeEnd) { |n| tmp.push(n) unless tmp.include?(n) } 
+      rangeStart.upto(rangeEnd) { |n| titles.push(n) unless titles.include?(n) } 
     else
-      tmp.push(t.to_i) unless tmp.include?(t.to_i)
+      titles.push(t.to_i) unless titles.include?(t.to_i)
     end
   end
-  titles = tmp
 end
 
 options.languages = ["deu"] if options.languages.nil?()
 options.subtitles = [] if options.subtitles.nil?()
 
-if options.input.nil?() or (!options.checkOnly and options.output.nil?())
+if options.input.nil?() or (not options.checkOnly and options.output.nil?())
   puts optparse
   exit
 end
 
-if ! File.exist? options.input
+if not File.exist? options.input
   puts "\"#{options.input}\" does not exist"
   exit
 end
@@ -460,7 +490,7 @@ end
 hb = Handbrake.new(options)
 dvd = hb.readDvd()
 
-titleMatcher = DefaultMatcher.new(options.titles, nil) 
+titleMatcher = DefaultMatcher.new(titles, nil) 
 audioMatcher = DefaultMatcher.new(nil, options.languages)
 subtitleMatcher = DefaultMatcher.new([], options.subtitles)
 
