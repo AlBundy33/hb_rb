@@ -19,12 +19,11 @@ class Handbrake
 
   attr_accessor :options
   
-  def initialize(options)
+  def initialize()
     raise "handbrake not found" if HANDBRAKE_CLI.nil?
-    @options = options
   end
 
-  def readDvd()
+  def readDvd(options)
     path = File.expand_path(options.input)
     output = %x["#{HANDBRAKE_CLI}" -i "#{path}" --scan -t 0 2>&1]
     main_feature_pattern = /\+ Main Feature/
@@ -78,7 +77,7 @@ class Handbrake
     return dvd
   end
 
-  def ripDvd(dvd, titleMatcher, audioMatcher, subtitleMatcher)
+  def ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
     ripped = []
     output = options.output
     preset = options.preset
@@ -494,8 +493,8 @@ if not File.exist? options.input
   exit
 end
 
-hb = Handbrake.new(options)
-dvd = hb.readDvd()
+hb = Handbrake.new
+dvd = hb.readDvd(options)
 
 titleMatcher = PosMatcher.new(titles)
 audioMatcher = LangMatcher.new(options.languages)
@@ -504,5 +503,5 @@ subtitleMatcher = LangMatcher.new(options.subtitles)
 if options.checkOnly
   puts dvd.info
 else
-  hb.ripDvd(dvd, titleMatcher, audioMatcher, subtitleMatcher)
+  hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
 end
