@@ -169,16 +169,24 @@ class Handbrake
           else
             command << " --quality #{x264_quality}"
           end
-          # tune encoder
-          command << " -x " if ipodCompatibility or not x264_quality_opts.nil?
-          command << "#{x264_quality_opts}:" if not x264_quality_opts.nil?
-          
+
           # append for iPod-compatibility
-          command << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0" if ipodCompatibility
+          if ipodCompatibility
+            command << " --ipod-atom"
+
+            if x264_quality_opts.nil?
+              x264_quality_opts  = ""
+            else
+              x264_quality_opts << ":"
+            end
+            x264_quality_opts << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
+          end
+          
+          # tune encoder
+          command << " -x #{x264_quality_opts}" if not x264_quality_opts.nil?
 
           command << " --decomb"
           command << " --detelecine"
-          #command << " --maxWidth 1024"
           command << " --crop 0:0:0:0"
           # audio
           if keepAudioTracks
@@ -192,7 +200,6 @@ class Handbrake
             command << " --arate #{Array.new(tracks.length, "auto,auto").join(",")}"
             command << " --mixdown #{Array.new(tracks.length, "auto,dpl2").join(",")}"
             command << " --ab #{Array.new(tracks.length, "auto,160").join(",")}"
-            #command << " --drc #{Array.new(tracks.length, "0.0,0.0").join(",")}"
           else
             # create only mixed down track
             command << " --audio #{tracks.join(",")}"
@@ -200,7 +207,6 @@ class Handbrake
             command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
             command << " --mixdown #{Array.new(tracks.length, "dpl2").join(",")}"
             command << " --ab #{Array.new(tracks.length, "160").join(",")}"
-            #command << " --drc #{Array.new(tracks.length, "0.0").join(",")}"
           end
           # common
           command << " --format mp4"
@@ -297,15 +303,7 @@ class Title
   end
 
   def to_s
-    alist = []
-    for t in audioTracks
-      alist.push(t.lang)
-    end
-    slist = []
-    for s in subtitles
-      slist.push(s.lang)
-    end
-    "title #{"%02d" % pos}: #{duration}, #{size}, #{fps} fps, main-feature: #{mainFeature()}, blocks: #{blocks}, chapters: #{chapters.length}, audio-tracks: #{alist.join(",")}, subtitles: #{slist.join(",")}"
+    "title #{"%02d" % pos}: #{duration}, #{size}, #{fps} fps, main-feature: #{mainFeature()}, blocks: #{blocks}, chapters: #{chapters.length}, audio-tracks: #{audioTracks.collect{|t| t.lang}.join(",")}, subtitles: #{subtitles.collect{|s| s.lang}.join(",")}"
   end
 end
 
@@ -314,6 +312,22 @@ class Dvd
   def initialize(path)
     @titles = []
     @path = path
+  end
+  
+  def info
+    s = "#{self}"
+    titles().each do |t|
+      s << "\n#{t}"
+      s << "\n  audio-tracks:"
+      t.audioTracks().each do |e|
+        s << "\n    #{e}"
+      end
+      s << "\n  subtitles:"
+      t.subtitles().each do |e|
+        s << "\n    #{e}"
+      end
+    end
+    s
   end
 
   def to_s
@@ -488,18 +502,7 @@ audioMatcher = LangMatcher.new(options.languages)
 subtitleMatcher = LangMatcher.new(options.subtitles)
 
 if options.checkOnly
-  puts dvd
-  dvd.titles().each do |t|
-    puts "#{t}"
-    puts "  audio-tracks:"
-    t.audioTracks().each do |a|
-      puts "    #{a}"
-    end
-    puts "  subtitles:"
-    t.subtitles().each do |s|
-      puts "    #{s}"
-    end
-  end
+  puts dvd.info
 else
   hb.ripDvd(dvd, titleMatcher, audioMatcher, subtitleMatcher)
 end

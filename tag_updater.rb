@@ -102,7 +102,7 @@ class TagDb
   
   ALWAYS_UPDATE_SJ_VALUES = true
   
-  DB_NAME = "tags.csv"
+  DB_NAME = "tagdb.csv"
   NAME = "name"
   SEASON = "season"
   DISC = "disc"
@@ -125,8 +125,8 @@ class TagDb
 
   def initialize(dir, debug)
     @data = {}
-    @dir = File.expand_path(dir)
-    @db = File.expand_path("#{dir}/#{DB_NAME}")
+    @dir = dir
+    @db = File.join(File.dirname(File.expand_path($0)), DB_NAME) 
     @debug = debug
     load()
     @columns = KNOWN_COLUMNS if columns.nil? or columns.empty?
@@ -139,9 +139,10 @@ class TagDb
   end
   
   def load()
-    if File.exists? db
+    puts @db
+    if File.exists? @db
       first = true
-      CSV.open(db, "r", ";") do |row|
+      CSV.open(@db, "r", ";") do |row|
         if first
           @columns = row
           first = false
@@ -229,7 +230,7 @@ class TagDb
       titled_name.gsub!(/[\/:"*?<>|]+/, "_")
       titled_name = File.join(File.dirname(f), titled_name)
       if renamefiles and not empty?(titled_name) and not f.eql? titled_name
-        if File.exists?(titled_name)
+        if not File.exists?(titled_name)
           L.info("renaming file\n\tfrom: #{File.basename(f)}\n\tto  : #{File.basename(titled_name)}")
           File.rename(f, titled_name)
         else
@@ -354,16 +355,16 @@ options.rename = false
 options.directory = nil
 
 optparse = OptionParser.new do |opts|
-  opts.on("--updatedb", "update tag-database") do |arg|
+  opts.on("--update-db", "update tag-database") do |arg|
     options.updatedb = arg
   end
   opts.on("--sj", "update database with values from serienjunkies.de") do |arg|
     options.sj = arg
   end
-  opts.on("--updatetags", "update tags in files") do |arg|
+  opts.on("--update-tags", "update tags in files") do |arg|
     options.updatetags = arg
   end
-  opts.on("--updatenames", "update filesnames according to the tags") do |arg|
+  opts.on("--update-names", "update filesnames according to the tags") do |arg|
     options.rename = arg
   end
   opts.on("--dir DIRECTORY", "the parent-directory containing the database and mp4-files") do |arg|
