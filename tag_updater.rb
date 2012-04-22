@@ -243,22 +243,19 @@ class TagDb
   def createTagMap(data)
     return nil if data.nil?
     tags = data.dup
-    copyMapEntry(tags,SJ_TITLE,TITLE)
-    copyMapEntry(tags,SJ_TITLE_ORG,TITLE_ORG)
-    copyMapEntry(tags,SJ_DESCR,DESCR)
-    
+    { SJ_TITLE => TITLE, SJ_TITLE_ORG => TITLE_ORG, SJ_DESCR => DESCR
+    }.each do |from,to|
+      tags[to] = tags[from] if empty?(tags[to]) and not empty?(tags[from])
+    end
+
     title = tags[TITLE]
-    title = "%s - %02dx%02d - %s" % [tags[NAME], tags[SEASON], tags[EPISODE], title ]
-    title = "%s (%s)" % [title, tags[TITLE_ORG]] if not empty?(tags[TITLE_ORG])
+    title = "%s - %02dx%02d - %s" % [ tags[NAME], tags[SEASON], tags[EPISODE], title ]
+    title = "%s (%s)" % [ title, tags[TITLE_ORG] ] if not empty?(tags[TITLE_ORG])
     tags[TITLE] = title
 
     tags[NAME] = nil 
 
     return tags
-  end
-  
-  def copyMapEntry(map, from, to)
-    map[to] = map[from] if empty?(map[to]) and not empty?(map[from])
   end
   
   def fileid(file)
