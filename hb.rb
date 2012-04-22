@@ -96,9 +96,9 @@ class Handbrake
     dvd.titles().each do |title|
       if titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature))
         L.info("#{title}")
-        tracks = audioMatcher.filter(title.audioTracks)
-        subtitles = subtitleMatcher.filter(title.subtitles)
-        
+        tracks = audioMatcher.filter(title.audioTracks).collect{|e| e.pos}
+        subtitles = subtitleMatcher.filter(title.subtitles).collect{|e| e.pos}
+          
         duration = TimeTool::timeToSeconds(title.duration)
         if minLength >= 0 and duration < minLength
           L.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
@@ -108,8 +108,8 @@ class Handbrake
           L.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
           next
         end
-        if tracks.empty?() or tracks.length < audioMatcher.languages.length
-          L.info("skipping title because it contains not all wanted audio-tracks")
+        if tracks.empty?() or tracks.length < audioMatcher.allowed().length
+          L.info("skipping title because it contains not all wanted audio-tracks (available: #{tracks})")
           next
         end
         if skipDuplicates and title.blocks() >= 0 and ripped.include?(title.blocks())
@@ -192,7 +192,7 @@ class Handbrake
             command << " --arate #{Array.new(tracks.length, "auto,auto").join(",")}"
             command << " --mixdown #{Array.new(tracks.length, "auto,dpl2").join(",")}"
             command << " --ab #{Array.new(tracks.length, "auto,160").join(",")}"
-            command << " --drc #{Array.new(tracks.length, "0.0,0.0").join(",")}"
+            #command << " --drc #{Array.new(tracks.length, "0.0,0.0").join(",")}"
           else
             # create only mixed down track
             command << " --audio #{tracks.join(",")}"
@@ -200,7 +200,7 @@ class Handbrake
             command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
             command << " --mixdown #{Array.new(tracks.length, "dpl2").join(",")}"
             command << " --ab #{Array.new(tracks.length, "160").join(",")}"
-            command << " --drc #{Array.new(tracks.length, "0.0").join(",")}"
+            #command << " --drc #{Array.new(tracks.length, "0.0").join(",")}"
           end
           # common
           command << " --format mp4"
@@ -321,59 +321,52 @@ class Dvd
   end
 end
 
-class DefaultMatcher
-  attr_accessor :positions, :languages
-  
-  def initialize(positions, languages)
-    @positions = positions
-    @languages = languages
+class ValueMatcher
+  attr_accessor :allowed
+  def initialize(allowed)
+    @allowed = allowed
   end
-
+  
+  def value(obj)
+    raise "method not implemented"
+  end
+  
   def matches(obj)
-    matches = true
-
-    matches = false if obj.respond_to?("pos") and not positions().nil?() and not positions().include?(obj.pos)
-    matches = false if obj.respond_to?("lang") and not languages().nil?() and not languages().include?(obj.lang)
-
-    return matches
+    allowed().nil? or allowed().include?(value(obj))
   end
-  
-  def filter(list, onlyFirst = true)
-    if positions().nil?() and languages().nil?()
-      return list
-    end
+
+  def filter(list, onlyFirst = false)
+    return list if allowed().nil?
+
     filtered = []
-    if not positions().nil?()
-      positions().each do |p|
-        list.each do |e|
-          if e.respond_to?("pos") and (e.pos() == p or e.pos.eql? p)
-            if not filtered.include?(e.pos)
-              filtered.push(e.pos())
-              break if onlyFirst
-            end
-          end
+    stack = []
+    allowed().each do |a|
+      list.each do |e|
+        v = value(e)
+        if (v == a or v.eql? a) and not stack.include? v
+          stack.push v
+          filtered.push e
+          break if onlyFirst
         end
       end
     end
-    
-    if not languages().nil?()
-      languages().each do |l|
-        list.each do |e|
-          if e.respond_to?("lang") and (e.lang() == l or e.lang.eql? l)
-            if not filtered.include?(e.pos)
-              filtered.push(e.pos())
-              break if onlyFirst
-            end
-          end
-        end
-      end
-    end
- 
     return filtered
   end
   
   def to_s
-    "#{positions()} #{languages()}"
+    "#{@allowed}"
+  end
+end
+
+class PosMatcher < ValueMatcher
+  def value(obj)
+    obj.pos
+  end
+end
+
+class LangMatcher < ValueMatcher
+  def value(obj)
+    obj.lang
   end
 end
 
@@ -424,7 +417,7 @@ optparse = OptionParser.new do |opts|
   opts.on("--max-length DURATION", "the maximum-track-length - format hh:nn:ss") do |arg|
     options.maxLength = arg
   end
-  opts.on("--skip-duplicates", "skip duplicate tracks (checks bock-size)") do |arg|
+  opts.on("--skip-duplicates", "skip duplicate tracks (checks block-size)") do |arg|
     options.skipDuplicates = arg
   end
   
@@ -461,8 +454,8 @@ end
 titles = nil
 if not options.titles.nil?
   titles = []
-  options.titles.each do |t|
-    range_pattern = /([0-9]+)-([0-9]+)/ 
+  range_pattern = /([0-9]+)-([0-9]+)/
+  options.titles.each do |t| 
     if t.match(range_pattern)
       range = t.scan(range_pattern)[0]
       rangeStart = range[0].to_i
@@ -490,9 +483,9 @@ end
 hb = Handbrake.new(options)
 dvd = hb.readDvd()
 
-titleMatcher = DefaultMatcher.new(titles, nil) 
-audioMatcher = DefaultMatcher.new(nil, options.languages)
-subtitleMatcher = DefaultMatcher.new([], options.subtitles)
+titleMatcher = PosMatcher.new(titles)
+audioMatcher = LangMatcher.new(options.languages)
+subtitleMatcher = LangMatcher.new(options.subtitles)
 
 if options.checkOnly
   puts dvd
