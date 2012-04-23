@@ -86,7 +86,8 @@ class Handbrake
     skipDuplicates = options.skipDuplicates || false
     verbose = options.verbose || false
     debug = options.debug || false
-    keepAudioTracks = options.keepAudioTracks || false
+    mixdownOnly = options.mixdownOnly || false
+    copyOnly = options.copyOnly || false
     xtraArgs = options.xtra_args
     minLength = TimeTool::timeToSeconds(options.minLength)
     maxLength = TimeTool::timeToSeconds(options.maxLength)
@@ -188,8 +189,23 @@ class Handbrake
           command << " --detelecine"
           command << " --crop 0:0:0:0"
           # audio
-          if keepAudioTracks
-            # copy original-track and create mixed down track
+          if mixdownOnly
+            # create only mixdown track
+            command << " --audio #{tracks.join(",")}"
+            command << " --aencoder #{Array.new(tracks.length, "faac").join(",")}"
+            command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
+            command << " --mixdown #{Array.new(tracks.length, "dpl2").join(",")}"
+            command << " --ab #{Array.new(tracks.length, "160").join(",")}"
+          elsif copyOnly
+            # copy original track
+            command << " --audio #{tracks.join(",")}"
+            command << " --aencoder #{Array.new(tracks.length, "copy").join(",")}"
+            command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
+            command << " --mixdown #{Array.new(tracks.length, "auto").join(",")}"
+            command << " --ab #{Array.new(tracks.length, "auto").join(",")}"
+            command << " --audio-fallback faac"
+          else
+            # copy original and create mixdown track
             command << " --audio "
             tracks.each do |t|
               command << "#{t},#{t},"
@@ -198,14 +214,7 @@ class Handbrake
             command << " --aencoder #{Array.new(tracks.length, "copy,faac").join(",")}"
             command << " --arate #{Array.new(tracks.length, "auto,auto").join(",")}"
             command << " --mixdown #{Array.new(tracks.length, "auto,dpl2").join(",")}"
-            command << " --ab #{Array.new(tracks.length, "auto,160").join(",")}"
-          else
-            # create only mixed down track
-            command << " --audio #{tracks.join(",")}"
-            command << " --aencoder #{Array.new(tracks.length, "faac").join(",")}"
-            command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
-            command << " --mixdown #{Array.new(tracks.length, "dpl2").join(",")}"
-            command << " --ab #{Array.new(tracks.length, "160").join(",")}"
+            command << " --ab #{Array.new(tracks.length, "auto,160").join(",")}"            
           end
           # common
           command << " --format mp4"
@@ -409,8 +418,11 @@ optparse = OptionParser.new do |opts|
   opts.on("--audio LANGUAGES", Array, "the audio languages") do |arg|
     options.languages = arg
   end 
-  opts.on("--keep-audio-tracks", "copy audio-tracks additionally to the created mixeddown track") do |arg|
-    options.keepAudioTracks = arg
+  opts.on("--mixdown-only", "create only mixed down track") do |arg|
+    options.mixdownOnly = arg
+  end
+  opts.on("--copy-only", "copy original-audio track") do |arg|
+    options.copyOnly = arg
   end
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") do |arg|
     options.subtitles = arg
