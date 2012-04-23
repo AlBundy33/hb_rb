@@ -191,7 +191,7 @@ class PlaylistMgr
     return if pl.length() == 0
   
     ## current directory
-    files = Dir["#{dir}/**/*.mp4"]
+    files = Dir["#{dir}/**/*.{mp4,m4v}"]
     idx = 0 
     files.each do |mp4|
       idx += 1
