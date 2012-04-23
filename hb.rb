@@ -418,7 +418,7 @@ optparse = OptionParser.new do |opts|
   opts.on("--audio LANGUAGES", Array, "the audio languages") do |arg|
     options.languages = arg
   end 
-  opts.on("--mixdown-only", "create only mixed down track") do |arg|
+  opts.on("--mixdown-only", "create only mixed down track (Dolby ProLogic 2)") do |arg|
     options.mixdownOnly = arg
   end
   opts.on("--copy-only", "copy original-audio track") do |arg|
