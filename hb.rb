@@ -175,7 +175,7 @@ class Handbrake
             command << " --ipod-atom"
 
             if x264_quality_opts.nil?
-              x264_quality_opts  = ""
+              x264_quality_opts = ""
             else
               x264_quality_opts << ":"
             end
