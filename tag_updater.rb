@@ -97,9 +97,10 @@ class Serienjunkies
 end
 
 class TagDb
-  attr_accessor :data, :dir, :db, :debug, :columns
+  attr_accessor :data, :options, :db, :columns
   L = Tools::Loggers.console()
   
+  DEFAULT_FILE_PATTERN = "**/*.{mp4,m4v}"
   ALWAYS_UPDATE_SJ_VALUES = true
   
   DB_NAME = "tagdb.csv"
@@ -123,11 +124,10 @@ class TagDb
 
   ID_PATTERN_STR = '[a-zA-Z0-9_-]+S(\d+)D(\d+)T(\d+)'
 
-  def initialize(dir, debug)
+  def initialize(options)
     @data = {}
-    @dir = dir
     @db = File.join(File.dirname(File.expand_path($0)), DB_NAME) 
-    @debug = debug
+    @options = options
     load()
     @columns = KNOWN_COLUMNS if columns.nil? or columns.empty?
     unknown_columns = @columns - KNOWN_COLUMNS
@@ -139,7 +139,6 @@ class TagDb
   end
   
   def load()
-    puts @db
     if File.exists? @db
       first = true
       CSV.open(@db, "r", ";") do |row|
@@ -204,9 +203,11 @@ class TagDb
     return k1 <=> k2
   end
   
-  def updateTags(pattern, renamefiles = false)
-    pattern = "**/*.mp4" if pattern.nil?  
-    Dir["#{dir}/#{pattern}"].each do |f|
+  def updateTags
+    debug = options.debug || false
+    renamefiles = options.rename || false
+    pattern = options.pattern || DEFAULT_FILE_PATTERN
+    Dir["#{pattern}"].each do |f|
       next if not File.exists? f
       L.info("updating mp4-tags for #{f}")
       id = fileid(f)
@@ -225,14 +226,15 @@ class TagDb
       cmd = Tools::Tee::command(cmd,File.expand_path("tag.log"),true)
       L.info("#{cmd}")
       %x[#{cmd}] if not debug
+      ext = File.extname(f)
       titled_name = nil
-      titled_name = "#{info[TITLE]}.#{info[FILE_ID]}.mp4" if not empty?(info[TITLE]) and not empty?(info[FILE_ID])
+      titled_name = "#{info[TITLE]}.#{info[FILE_ID]}#{ext}" if not empty?(info[TITLE]) and not empty?(info[FILE_ID])
       titled_name.gsub!(/[\/:"*?<>|]+/, "_")
       titled_name = File.join(File.dirname(f), titled_name)
       if renamefiles and not empty?(titled_name) and not f.eql? titled_name
         if not File.exists?(titled_name)
           L.info("renaming file\n\tfrom: #{File.basename(f)}\n\tto  : #{File.basename(titled_name)}")
-          File.rename(f, titled_name)
+          File.rename(f, titled_name) if not debug
         else
           L.warn("could not rename #{f} to #{File.basename(titled_name)} because target already exists!")
         end
@@ -264,9 +266,10 @@ class TagDb
     return id
   end
 
-  def updateDb(pattern = nil, sj = false)
-    pattern = "**/*.mp4" if pattern.nil?
-    Dir["#{dir}/#{pattern}"].each { |f|
+  def updateDb
+    pattern = options.pattern || DEFAULT_FILE_PATTERN
+    sj = options.sj || false
+    Dir["#{pattern}"].each { |f|
       next if not File.exists? f
       L.info("updating database entry for #{f}")
       
@@ -274,13 +277,16 @@ class TagDb
       next if empty?(id)
       
       path = File.expand_path(f)
-      path = path[dir.length + 1, path.length - dir.length] if path.start_with? dir
-      path = path.split("/")
+      path = path.split("/").reverse!
 
       info = data[id]
       info = {} if info.nil?
-
-      info[NAME] = path[0]
+      # 0 = filename, 1 = season for episodes or name for movies, 2 = name for series  
+      if path[1] =~ /Season/i
+        info[NAME] = path[2]
+      else
+        info[NAME] = path[1]
+      end
 
       info[SEASON] = id.gsub(/#{ID_PATTERN_STR}/, "\\1")
       info[DISC] = id.gsub(/#{ID_PATTERN_STR}/, "\\2")
@@ -311,7 +317,7 @@ class TagDb
       last_season = season
     end
 
-    save
+    save if not options.debug
   end
   
   def updateInfoFromSerienjunkies(info)
@@ -364,9 +370,6 @@ optparse = OptionParser.new do |opts|
   opts.on("--update-names", "update filesnames according to the tags") do |arg|
     options.rename = arg
   end
-  opts.on("--dir DIRECTORY", "the parent-directory containing the database and mp4-files") do |arg|
-    options.directory = arg
-  end
   opts.on("--files PATTERN", "the pattern for the files to update e.g. firefly/**/*.mp4") do |arg|
     options.pattern = arg
   end
@@ -381,11 +384,6 @@ end
 
 optparse.parse!(ARGV)
 
-if options.directory.nil?
-  puts opts
-  exit
-end
-
-db = TagDb.new(options.directory, options.debug)
-db.updateDb(options.pattern, options.sj) if options.updatedb
-db.updateTags(options.pattern, options.rename) if options.updatetags
+db = TagDb.new(options)
+db.updateDb if options.updatedb
+db.updateTags if options.updatetags
