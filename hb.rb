@@ -94,165 +94,177 @@ class Handbrake
     ipodCompatibility = options.ipodCompatibility || false
 
     dvd.titles().each do |title|
-      if titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature))
-        L.info("#{title}")
-        tracks = audioMatcher.filter(title.audioTracks).collect{|e| e.pos}
-        subtitles = subtitleMatcher.filter(title.subtitles).collect{|e| e.pos}
-          
-        duration = TimeTool::timeToSeconds(title.duration)
-        if minLength >= 0 and duration < minLength
-          L.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
-          next
-        end
-        if maxLength >= 0 and duration > maxLength
-          L.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
-          next
-        end
-        if tracks.empty?() or tracks.length < audioMatcher.allowed().length
-          L.info("skipping title because it contains not all wanted audio-tracks (available: #{tracks})")
-          next
-        end
-        if skipDuplicates and title.blocks() >= 0 and ripped.include?(title.blocks())
-          L.info("skipping because disc contains it twice")
-          next
-        end
+      #puts "title #{title}"
+      #puts "matcher #{titleMatcher.matches(title)}"
+      #puts "mainFeatureOnly #{mainFeatureOnly}"
+      #puts "main #{(not mainFeatureOnly or (mainFeatureOnly and title.mainFeature))}"
+      next if not (titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature)))
 
-        extra_arguments = xtraArgs
-        outputFile = File.expand_path(output)
-        outputFile = outputFile.gsub("#pos#", "%02d" % title.pos)
-        outputFile = outputFile.gsub("#size#", title.size)
-        outputFile = outputFile.gsub("#fps#", title.fps)
-        outputFile = outputFile.gsub("#input#", File.basename(dvd.path()))
+      L.info("#{title}")
+      tracks = audioMatcher.filter(title.audioTracks).collect{|e| e.pos}
+      subtitles = subtitleMatcher.filter(title.subtitles).collect{|e| e.pos}
         
-        command="\"#{HANDBRAKE_CLI}\""
-        command << " --input \"#{dvd.path()}\""
-        command << " --output \"#{outputFile}\""
-        command << " --verbose" if verbose
-        if not preset.nil? and not preset.empty? 
-          command << " --preset \"#{preset}\""
+      duration = TimeTool::timeToSeconds(title.duration)
+      if minLength >= 0 and duration < minLength
+        L.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+        next
+      end
+      if maxLength >= 0 and duration > maxLength
+        L.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+        next
+      end
+      if tracks.empty?() or tracks.length < audioMatcher.allowed().length
+        L.info("skipping title because it contains not all wanted audio-tracks (available: #{tracks})")
+        next
+      end
+      if skipDuplicates and title.blocks() >= 0 and ripped.include?(title.blocks())
+        L.info("skipping because disc contains it twice")
+        next
+      end
+
+      extra_arguments = xtraArgs
+      outputFile = File.expand_path(output)
+      outputFile = outputFile.gsub("#pos#", "%02d" % title.pos)
+      outputFile = outputFile.gsub("#size#", title.size)
+      outputFile = outputFile.gsub("#fps#", title.fps)
+      outputFile = outputFile.gsub("#input#", File.basename(dvd.path()))
+      ext = File.extname(outputFile).downcase
+      ismp4 = ext.eql?(".mp4") or ext.eql?(".mv4")
+      ismkv = ext.eql?(".mkv")
+      
+      command="\"#{HANDBRAKE_CLI}\""
+      command << " --input \"#{dvd.path()}\""
+      command << " --output \"#{outputFile}\""
+      command << " --verbose" if verbose
+      if not preset.nil? and not preset.empty? 
+        command << " --preset \"#{preset}\""
+      else
+        # video
+        vbr = 2000
+        x264_quality = nil
+        x264_quality_opts = nil
+        x264_quality = "20.0"
+
+        # iPod
+        if ipodCompatibility
+          x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
+        end
+        
+        # https://forum.handbrake.fr/viewtopic.php?f=6&t=19426
+        # ultrafast
+        #x264_quality_opts = "ref=1:bframes=0:cabac=0:8x8dct=0:weightp=0:me=dia:subq=0:rc-lookahead=0:mbtree=0:analyse=none:trellis=0:aq-mode=0:scenecut=0:no-deblock=1"
+        # superfast
+        #x264_quality_opts = "ref=1:weightp=1:me=dia:subq=1:rc-lookahead=0:mbtree=0:analyse=i4x4,i8x8:trellis=0"
+        # veryfast
+        #x264_quality_opts = "ref=1:weightp=1:subq=2:rc-lookahead=10:trellis=0"
+        # faster
+        #x264_quality_opts = "ref=2:mixed-refs=0:weightp=1:subq=4:rc-lookahead=20"
+        # fast
+        #x264_quality_opts = "ref=2:weightp=1:subq=6:rc-lookahead=30"
+        # slow
+        #x264_quality_opts = "ref=5:b-adapt=2:direct=auto:me=umh:subq=8:rc-lookahead=50"
+        # slower
+        #x264_quality_opts = "ref=8:b-adapt=2:direct=auto:me=umh:subq=9:rc-lookahead=60:analyse=all:trellis=2"
+        # veryslow
+        #x264_quality_opts = "ref=16:bframes=8:b-adapt=2:direct=auto:me=umh:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2"
+        # placebo
+        #x264_quality_opts = "ref=16:bframes=16:b-adapt=2:direct=auto:me=tesa:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2:no-fast-pskip=1"
+        command << " --encoder x264"
+        if x264_quality.nil?
+          command << " --vb #{vbr}"
+          command << " --two-pass"
+          command << " --turbo"
         else
-          # video
-          vbr = 2000
-          x264_quality = nil
-          x264_quality_opts = nil
-          x264_quality = "20.0"
+          command << " --quality #{x264_quality}"
+        end
 
-          # iPod
-          if ipodCompatibility
-            x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
-          end
-          
-          # https://forum.handbrake.fr/viewtopic.php?f=6&t=19426
-          # ultrafast
-          #x264_quality_opts = "ref=1:bframes=0:cabac=0:8x8dct=0:weightp=0:me=dia:subq=0:rc-lookahead=0:mbtree=0:analyse=none:trellis=0:aq-mode=0:scenecut=0:no-deblock=1"
-          # superfast
-          #x264_quality_opts = "ref=1:weightp=1:me=dia:subq=1:rc-lookahead=0:mbtree=0:analyse=i4x4,i8x8:trellis=0"
-          # veryfast
-          #x264_quality_opts = "ref=1:weightp=1:subq=2:rc-lookahead=10:trellis=0"
-          # faster
-          #x264_quality_opts = "ref=2:mixed-refs=0:weightp=1:subq=4:rc-lookahead=20"
-          # fast
-          #x264_quality_opts = "ref=2:weightp=1:subq=6:rc-lookahead=30"
-          # slow
-          #x264_quality_opts = "ref=5:b-adapt=2:direct=auto:me=umh:subq=8:rc-lookahead=50"
-          # slower
-          #x264_quality_opts = "ref=8:b-adapt=2:direct=auto:me=umh:subq=9:rc-lookahead=60:analyse=all:trellis=2"
-          # veryslow
-          #x264_quality_opts = "ref=16:bframes=8:b-adapt=2:direct=auto:me=umh:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2"
-          # placebo
-          #x264_quality_opts = "ref=16:bframes=16:b-adapt=2:direct=auto:me=tesa:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2:no-fast-pskip=1"
-          command << " --encoder x264"
-          if x264_quality.nil?
-            command << " --vb #{vbr}"
-            command << " --two-pass"
-            command << " --turbo"
+        # append for iPod-compatibility
+        if ipodCompatibility and ismp4
+          command << " --ipod-atom"
+
+          if x264_quality_opts.nil?
+            x264_quality_opts = ""
           else
-            command << " --quality #{x264_quality}"
+            x264_quality_opts << ":"
           end
+          x264_quality_opts << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
+        end
+        
+        # tune encoder
+        command << " -x #{x264_quality_opts}" if not x264_quality_opts.nil?
 
-          # append for iPod-compatibility
-          if ipodCompatibility
-            command << " --ipod-atom"
-
-            if x264_quality_opts.nil?
-              x264_quality_opts = ""
-            else
-              x264_quality_opts << ":"
-            end
-            x264_quality_opts << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
+        command << " --decomb"
+        command << " --detelecine"
+        command << " --crop 0:0:0:0"
+        # audio
+        if mixdownOnly
+          # create only mixdown track
+          command << " --audio #{tracks.join(",")}"
+          command << " --aencoder #{Array.new(tracks.length, "faac").join(",")}"
+          command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
+          command << " --mixdown #{Array.new(tracks.length, "dpl2").join(",")}"
+          command << " --ab #{Array.new(tracks.length, "160").join(",")}"
+        elsif copyOnly
+          # copy original track
+          command << " --audio #{tracks.join(",")}"
+          command << " --aencoder #{Array.new(tracks.length, "copy").join(",")}"
+          command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
+          command << " --mixdown #{Array.new(tracks.length, "auto").join(",")}"
+          command << " --ab #{Array.new(tracks.length, "auto").join(",")}"
+          command << " --audio-fallback faac"
+        else
+          # copy original and create mixdown track
+          command << " --audio "
+          tracks.each do |t|
+            command << "#{t},#{t},"
           end
-          
-          # tune encoder
-          command << " -x #{x264_quality_opts}" if not x264_quality_opts.nil?
-
-          command << " --decomb"
-          command << " --detelecine"
-          command << " --crop 0:0:0:0"
-          # audio
-          if mixdownOnly
-            # create only mixdown track
-            command << " --audio #{tracks.join(",")}"
-            command << " --aencoder #{Array.new(tracks.length, "faac").join(",")}"
-            command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
-            command << " --mixdown #{Array.new(tracks.length, "dpl2").join(",")}"
-            command << " --ab #{Array.new(tracks.length, "160").join(",")}"
-          elsif copyOnly
-            # copy original track
-            command << " --audio #{tracks.join(",")}"
-            command << " --aencoder #{Array.new(tracks.length, "copy").join(",")}"
-            command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
-            command << " --mixdown #{Array.new(tracks.length, "auto").join(",")}"
-            command << " --ab #{Array.new(tracks.length, "auto").join(",")}"
-            command << " --audio-fallback faac"
-          else
-            # copy original and create mixdown track
-            command << " --audio "
-            tracks.each do |t|
-              command << "#{t},#{t},"
-            end
-            command.chomp!(",")
-            command << " --aencoder #{Array.new(tracks.length, "copy,faac").join(",")}"
-            command << " --arate #{Array.new(tracks.length, "auto,auto").join(",")}"
-            command << " --mixdown #{Array.new(tracks.length, "auto,dpl2").join(",")}"
-            command << " --ab #{Array.new(tracks.length, "auto,160").join(",")}"            
-          end
-          # common
+          command.chomp!(",")
+          command << " --aencoder #{Array.new(tracks.length, "copy,faac").join(",")}"
+          command << " --arate #{Array.new(tracks.length, "auto,auto").join(",")}"
+          command << " --mixdown #{Array.new(tracks.length, "auto,dpl2").join(",")}"
+          command << " --ab #{Array.new(tracks.length, "auto,160").join(",")}"            
+        end
+        # common
+        if ismp4
           command << " --format mp4"
-          command << " --markers"
           command << " --optimize"
+          command << " --markers"
+        elsif ismkv
+          command << " --format mkv"
+          command << " --markers"
         end
-        command << " --title #{title.pos}"
-        command << " --subtitle #{subtitles.join(",")}" if not subtitles.empty?()
-        command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
-        command << " 2>&1"
-        
-        ripped.push(title.blocks())
-        if force or (not File.exists?(outputFile) and Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").empty?)
-          L.info(command)
-          if not debug
-            parentDir = File.dirname(outputFile)
-            FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
-            system command
-            if File.exists?(outputFile)
-              if File.size(outputFile) < (1 * 1024 * 1024)
-                L.warn("file-size only #{File.size(outputFile) / 1024} KB - removing file")
-                File.delete(outputFile)
-                ripped.delete(title.blocks())
-              else
-                L.info("file #{outputFile} created")
-              end
-            else
-              L.warn("file #{outputFile} not created")
-            end
-          end
-        else
+      end
+      command << " --title #{title.pos}"
+      command << " --subtitle #{subtitles.join(",")}" if not subtitles.empty?()
+      command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
+      command << " 2>&1"
+      
+      ripped.push(title.blocks())
+      if force or (not File.exists?(outputFile) and Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").empty?)
+        L.info(command)
+        if not debug
+          parentDir = File.dirname(outputFile)
+          FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
+          system command
           if File.exists?(outputFile)
-            f = outputFile
+            if File.size(outputFile) < (1 * 1024 * 1024)
+              L.warn("file-size only #{File.size(outputFile) / 1024} KB - removing file")
+              File.delete(outputFile)
+              ripped.delete(title.blocks())
+            else
+              L.info("file #{outputFile} created")
+            end
           else
-            f = Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").join(", ")
+            L.warn("file #{outputFile} not created")
           end
-          L.info("skipping title because \"#{f}\" already exists")
         end
+      else
+        if File.exists?(outputFile)
+          f = outputFile
+        else
+          f = Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").join(", ")
+        end
+        L.info("skipping title because \"#{f}\" already exists")
       end
     end
   end
@@ -354,6 +366,7 @@ class ValueMatcher
   end
   
   def matches(obj)
+    #puts "#{allowed} #{value(obj)} -> #{allowed().nil? or allowed().include?(value(obj))}"
     allowed().nil? or allowed().include?(value(obj))
   end
 
