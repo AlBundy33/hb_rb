@@ -1,0 +1,689 @@
+ 608 files changed, 36010 insertions(+), 60156 deletions(-)
+  
+commit f7efe43
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Translations: update list of translatables
+
+commit b2a34d8
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Source: refactor "get_format_name()" to return translatable_string_c
+
+commit eab4409
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mkvmerge: remove MPEG-2 parser warnings
+
+commit 9c883f9
+Merge: de2fdb0 5a5a9e8
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Merge branch 'master' of github.com:mbunkus/mkvtoolnix
+
+commit de2fdb0
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mkvextract: implement ALAC extraction to CAF (Core Audio Format) files
+
+commit 5e68716
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    build system: remove preliminary support for coremake
+
+commit 5a5a9e8
+Author: Roberto Boriotti <Roberto.Boriotti@canon-europe.com>
+
+    Update the Italian translation
+
+commit 603a6b5
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    man page translation: update list of translatable strings
+
+commit c443705
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Translations: update list of translatables; German translation update
+
+commit 4b0715a
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mmg: implement controls for splitting by frame/field numbers
+
+commit 5f11d58
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mkvmerge: implement splitting by frame/field numbers
+
+commit 804d130
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mmg: refactor splitting controls to be combobox-based
+
+commit 40e211b
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    FLV: rename "Macromedia Flash Video" to simply "Flash Video"
+
+commit 3ce9698
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mmg: Fix append consistency checks
+
+commit fe1d388
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Translations: update list of translatables & German translations
+
+commit 0264950
+Merge: b004e55 8376df5
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Merge branch 'flv'
+
+commit b004e55
+Author: Roberto Boriotti <Roberto.Boriotti@canon-europe.com>
+
+    Update the Italian translation
+
+commit cfc64ef
+Author: Trottel <trottel09@gmail.com>
+
+    Update Czech translation
+
+commit 8376df5
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    FLV: implement Macromedia Flash Video reader
+
+commit b57b7f8
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    configure: test for Boost's "variant" library
+
+commit b68a750
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mm_io exceptions: refactor ".message()" to ".error()"
+
+commit da3e274
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mm_io: Implement "read(size_t)" returning newly-allocated memory
+
+commit 7b87820
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Math: implement "int_to_double()"
+
+commit c94bdb7
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Extraction: fix typo in help text
+
+commit 23c7fce
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Source: fix build with mingw
+
+commit 0e376c0
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Translations: update list of translatables; merge variations in error messages
+
+commit c810634
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mkvpropedit: improve error message if file is not accessible
+
+commit 424d501
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    All: refactoring: use std::error_codes instead of strerror()/errno
+
+commit ec41cc4
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mm_io exceptions: refactoring: include std::error_code member
+
+commit 3fe3ea7
+Author: Brandon Snider <brandonsnider@ubuntu.com>
+
+    .desktop files: Fix "Exec" entry to contain file special field codes
+
+commit db130e5
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Tests: add case for 2e6eadd (deprecated ISO codes)
+
+commit 2e6eadd
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    ISO 639: map deprecated elements to their respective successors
+
+commit a506262
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Matroska reader: Use deffered parsing for segment info
+
+commit c6f46bd
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    MP3 header search: continue directly behind ID3 header
+
+commit 462639b
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Re-implement edit list parsing and calculation
+
+commit 913be6d
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Refactoring
+
+commit 6852cd0
+Author: Xabier Aramendi <azpidatziak@gmail.com>
+
+    Update the Basque translation
+
+commit f352dee
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Sync libEBML to Subversion revision 871
+
+commit 091e154
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Remove mention of TimecodeScaleDenominator from ChangeLog
+
+commit eb3c3dd
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Chapter/tag parsers: Don't provide default arguments for 'throw on error'
+
+commit c3c97c5
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mkvpropedit tags mode: Output proper error message if XML file is not found
+
+commit 50bc750
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Cosmetics
+
+commit 8c34f3c
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Update libebml and libmatroska submodule heads after Matroska project update on SF.net
+
+commit d6325df
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Force FindChildValue return value to be 64bit wide
+
+commit 93e3dbe
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Fix reading seek position values > 2 GB
+
+commit 4a1b2c0
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Add release message, update version number, set version code name
+
+commit 3547380
+Author: Gianluca Papi <gianluca.papi@gmail.com>
+
+    Update the Italian translation
+
+commit 45e49d6
+Author: Roberto Boriotti <Roberto.Boriotti@canon-europe.com>
+
+    Update the Italian translation
+
+commit 96c4118
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Refactoring: do not start header guard names with underscores
+
+commit 8746e76
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Only append tracks when all required information for the timecode offset is available
+
+commit ec4fedf
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Add more debugging options for appending
+
+commit b784192
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Refactoring
+
+commit c0b6705
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Keep timecodes for PCM tracks
+
+commit 8759e0f
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Intentional update due to EBMLVoid-in-XML handling fix
+
+commit 86d7f51
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Restore old chapter parser error messages
+
+commit 5f0189d
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Add unit tests for the ebml_converter_c based classes
+
+commit 98f6381
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Cosmetics: indentation
+
+commit d8240f8
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Handle 'throw_on_error' flags correctly
+
+commit 6efecad
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Convert mtx::xml::exception based exceptions to mtx::chapter_parser_x ones
+
+commit 3d7e002
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Skip <EBMLVoid> elements in XML files
+
+commit ec4c1c1
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Do not write EBML void elements to XML files
+
+commit 619ad1f
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Add helper function for getting stringified content from mm_mem_io_c
+
+commit da41541
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Reverting "Output KaxTimecodeScaleDenominator if present"
+
+commit 212d9e7
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Reverting "Don't render KaxTimecodeScaleDenominator for the time being"
+
+commit 3d13230
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Sync libmatroska with upstream
+
+commit 1a24c1c
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Fix/implement reading linked seek heads
+
+commit 040c555
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Spanish translation update
+
+commit 89fb4d7
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Update list of translatable strings; update German translation
+
+commit ddf6341
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Remove note about 'additional parts' being usually used for MPEG TS streams from BluRay discs
+
+commit 8bf64d2
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Don't expand environment vars when reading .mmg files
+
+commit f2aee38
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    mmg's header editor: don't let libEBML check mandatory elements
+
+commit 20246b4
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Throw exception on invalid argument instead of assert()ing
+
+commit f105817
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Fix compilation with wxWidgets 2.9.x
+
+commit 82060f4
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Dirac: Add more pre-defined video types
+
+commit 06fc33f
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Replace std::pair<T, bool> with boost::optional<T>
+
+commit 41da46b
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Fix compiler flags (missing space)
+
+commit 2c36e82
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Use new libebml functions GetValue()/SetValue()
+
+commit 076a229
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Remove GetChildAs<>() in favor of GetValue()/SetValue() calls
+
+commit 3be6bf7
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Abort compilation on the first error (-Wfatal-errors)
+
+commit 34fa38f
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Add test case for Basque locale
+
+commit 82d7839
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Remove Windows 9x/ME check from installer
+
+commit 9e1e1d7
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Fix invalid elements in man page XML files
+
+commit 17f5d88
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Change DTD reference to online resource on oasis-open.org; rebuild man pages
+
+commit 5141383
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Improve Docbook DTD detection on Arch Linux
+
+commit be44638
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Set doc type version 4 if CueDuration/CueRelativePosition is used
+
+commit 8ca799c
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Add --engage options for not writing CueDuration, CueRelativePosition
+
+commit f316653
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    ChangeLog update
+
+commit 4ccbe6b
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Don't write TrackTimecodeScale in mkvpropedit, mmg
+
+commit 74f8309
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Let compiler use return value optimization
+
+commit 3b82174
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Fix compilation with gcc 4.6.3
+
+commit 6b7baaf
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Intentional update
+
+commit b681b68
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Write CueRelativePosition for all cue entries
+
+commit 9a3796b
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Output CueRelativePosition if found
+
+commit 53e6667
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Write CueDuration elements for subtitle tracks
+
+commit 2f4f01e
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Write cues for subtitles by default
+
+commit d891c99
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Output CueDuration if found
+
+commit ecfeac6
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Make several member functions const
+
+commit fb3b8b5
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Simplify/centralize setting the cue creation strategy
+
+commit 6fae399
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Require libmatroska 1.4.0
+
+commit 4004f3a
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Intentional test result update due to 9f3899f
+
+commit a0b994d
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Output KaxTimecodeScaleDenominator if present
+
+commit 8e1d223
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Don't check for mandatory elements in kax_analyzer_c
+
+commit 9f3899f
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Don't render KaxTrackTimecodeScale anymore
+
+commit 2e9201d
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Don't render KaxTimecodeScaleDenominator for the time being
+
+commit 279b963
+Author: Luther Stickell <l.stickell@yahoo.it>
+
+    Fixed the Italian translation
+
+commit ca78efe
+Author: Luther Stickell <l.stickell@yahoo.it>
+
+    Fixed the Italian translation
+
+commit 7adcd96
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Update libebml & libmatroska submodules
+
+commit 007df75
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Move cue creation to separate function
+
+commit e5cd330
+Merge: a395f68 3901b16
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Merge pull request #20 from sschuberth/master
+
+commit 3901b16
+Author: Sebastian Schuberth <sschuberth@gmail.com>
+
+    Fix a typo in the German language file
+
+commit a395f68
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Update libebml/libmatroska
+
+commit ef47775
+Author: Xabier Aramendi <azpidatziak@gmail.com>
+
+    Update the Basque translation
+
+commit db78559
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Test for existence of files in lib/lib{ebml,matroska} if internal libs are used
+
+commit 9c4ab3c
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Fix enabling chapter controls
+
+commit 570ea1f
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Use new libebml functions GetValue()/SetValue()/GetElementList(), chapters.cpp refactoring
+
+commit e65b0eb
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Add mtx::sort::by() method
+
+commit 45c4795
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Adjust package name of libogg0 in openSUSE spec file
+
+commit 38cfd6e
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Use new libebml functions GetValue()/SetValue()/GetElementList()
+
+commit e614c78
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    FindChildValue: Return requested type, not EBML object's GetValue() type
+
+commit afaa2a7
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Fix wrong operator
+
+commit 46e76a4
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Use new libebml functions GetValue()/SetValue()/GetElementList() and Matroska reader refactoring
+
+commit 557e48f
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Remove find_and_clone_binary<>(); obsoleted by FindChildValue<>()
+
+commit ca1340c
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    to_wide()/to_utf8() for wchar_t, char, UTFstring
+
+commit c67a8a8
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Use new libebml functions GetValue()/SetValue()/GetElementList() and mkvinfo refactoring
+
+commit fac6023
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Refactoring
+
+commit 64c85e5
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Use new libebml functions GetValue()/SetValue()/GetElementList()
+
+commit b18b3b0
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Fix cons_impl() template for all cases of (w)char*/(w)string
+
+commit cb38d13
+Author: Israel Lucas Torrijos <lukillas.ole@gmail.com>
+
+    Update the Spanish translation
+
+commit f88a606
+Author: Roberto Boriotti <Roberto.Boriotti@canon-europe.com>
+
+    Update the Italian translation
+
+commit 9813f54
+Author: Andriy Bilous'ko <arestarh@ukr.net>
+
+    Update the Ukrainian translation
+
+commit 1a45d27
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Use new libebml functions GetValue()/SetValue()/GetElementList()
+
+commit eb2dd24
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Update libebml repo
+
+commit e4d6546
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Update libmatroska submodule
+
+commit b3fe8bc
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Require libebml 1.3.0 or newer
+
+commit ab6f067
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Update libebml submodule
+
+commit 805629c
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Re-add libebml and libmatroska as git submodules
+
+commit cc44229
+Author: Moritz Bunkus <moritz@bunkus.org>
+
+    Remove the bundled libebml and libmatroska in favor of git submodules

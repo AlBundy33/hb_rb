@@ -1,0 +1,294 @@
+MKVToolNix 5.9.0
+================
+
+Table of contents
+-----------------
+
+1. Introduction
+2. Installation
+2.1. Requirements
+2.2. Optional components
+2.3. Building libmatroska and libebml
+2.4. Building MKVtoolNix
+2.5. Notes for compilation on (Open)Solaris
+2.6. Unit tests
+3. Examples
+4. Reporting bugs
+
+
+
+1. Introduction
+---------------
+
+With these tools one can get information about (mkvinfo) Matroska
+files, extract tracks/data from (mkvextract) Matroska files and create
+(mkvmerge) Matroska files from other media files. Matroska is a new
+multimedia file format aiming to become THE new container format for
+the future. You can find more information about it and its underlying
+technology, the Extensible Binary Meta Language (EBML), at
+
+http://www.matroska.org/
+
+The full documentation for each command is now maintained in its
+man page only. Type 'mkvmerge -h' to get you started.
+
+This code comes under the GPL (see www.gnu.org or the file COPYING).
+Modify as needed.
+
+The icons are based on the work of Alexandr Grigorcea and modified by
+Eduard Geier. They're licensed under the terms of the Creative Commons
+Attribution 3.0 Unported license (see
+http://creativecommons.org/licenses/by/3.0/).
+
+The newest version can always be found at
+http://www.bunkus.org/videotools/mkvtoolnix/
+
+Moritz Bunkus <moritz@bunkus.org>
+
+
+
+2. Installation
+---------------
+
+If you want to compile the tools yourself then you must first decide
+if you want to use a 'proper' release version or the current
+development version. As both Matroska and MKVToolNix are under heavy
+development there might be features available in the Subversion
+repository that are not available in the releases. On the other hand
+the Subversion repository version might not even compile.
+
+2.1. Requirements
+
+In order to compile MKVToolNix you need a couple of libraries. Most of
+them should be available pre-compiled for your distribution. The
+programs and libraries you absolutely need are:
+
+- A C++ compiler that supports several features of the C++11 standard:
+  initializer lists, range-based 'for' loops, right angle brackets,
+  the 'auto' keyword and lambda functions. For GCC this means at least
+  v4.6.0.
+
+- libebml and libmatroska for low-level access to Matroska files.
+  Instructions on how to compile them are a bit further down in this
+  file.
+
+- libOgg ( http://downloads.xiph.org/releases/ogg/ ) and libVorbis
+  ( http://downloads.xiph.org/releases/vorbis/ ) for access to Ogg/OGM
+  files and Vorbis support
+
+- zlib ( http://www.zlib.net/ ) -- a compression library
+
+- Boost ( http://www.boost.org/ ) -- Several of Boost's libraries are
+  used: "format", "RegEx", "filesystem", "system", "foreach",
+  "Range", "rational". At least v1.46.0 is required.
+
+You also need the "rake" or "drake" build program or at least the
+programming language Ruby and the "rubygems" package. MKVToolNix comes
+bundled with its own copy of "drake" in case you cannot install it
+yourself. If you want to install it yourself I suggest you use the
+"drake" version because it will be able to use all available CPU cores
+for parallel builds.
+
+Installing "drake" is simple. As root run the following command:
+
+gem install drake
+
+2.2. Optional components
+
+Other libraries are optional and only limit the features that are
+built. These include:
+
+- wxWidgets ( http://www.wxwidgets.org/ ) -- a cross-platform GUI
+  toolkit. You need this if you want to use mmg (the mkvmerge GUI) or
+  mkvinfo's GUI.
+
+- libFLAC ( http://downloads.xiph.org/releases/flac/ ) for FLAC
+  support (Free Lossless Audio Codec)
+
+- lzo ( http://www.oberhumer.com/opensource/lzo/ ) and bzip2 (
+  http://www.bzip.org/ ) are compression libraries. These are the
+  least important libraries as almost no application supports Matroska
+  content that is compressed with either of these libs. The
+  aforementioned zlib is what every program supports.
+
+- libMagic from the "file" package ( http://www.darwinsys.com/file/ )
+  for automatic content type detection
+
+- libcurl ( http://curl.haxx.se/ ) for online update checks
+
+2.3. Building libmatroska and libebml
+
+This is optional as MKVToolNix comes with its own set of the
+libraries. It will use them if no version is found on the system.
+
+Start with the two libraries. Either get libebml 1.2.2 from
+http://dl.matroska.org/downloads/libebml/ and libmatroska 1.3.0 from
+http://dl.matroska.org/downloads/libmatroska/ or a fresh copy from the
+Subversion repository:
+
+svn co https://svn.matroska.org/svn/matroska/trunk/libebml
+svn co https://svn.matroska.org/svn/matroska/trunk/libmatroska
+
+Change to "libebml/make/linux" and run "make staticlib". If you have
+root-access then run "make install_headers install_staticlib" as
+"root" in order to install the files. Change to
+"libmatroska/make/linux". Once more run "make staticlib". If you have
+root-access then run "make install_headers install_staticlib" as
+"root" in order to install the files.
+
+Note that if you don't want the libraries to be installed in
+/usr/local/lib and the headers in /usr/local/include then you can
+alter the prefix (which defaults to /usr/local) by adding an argument
+"prefix=/usr" to the install "make" command. Example:
+
+make prefix=/usr install_headers install_staticlib
+
+2.4. Building MKVtoolNix
+
+Either download the current release from
+http://www.bunkus.org/videotools/mkvtoolnix/ and unpack it or get a
+development snapshot from my Git repository.
+
+ - Getting and building a development snapshot (ignore this subsection
+   if you want to build from a release tarball)
+
+   All you need for Git repository access is to download a Git client
+   from the Git homepage at http://git-scm.com/ . There are clients
+   for both Unix/Linux and Windows.
+
+   First clone my Git repository with this command:
+
+   git clone git://github.com/mbunkus/mkvtoolnix.git
+
+   Now change to the MKVtoolNix directory with "cd mkvtoolnix" and run
+   "./autogen.sh" which will generate the "configure" script. You need
+   the GNU "autoconf" utility for this step.
+
+If you have run "make install" for both libraries then "configure"
+should automatically find the libraries' position. Otherwise you need
+to tell "configure" where the "libebml" and "libmatroska" include and
+library files are:
+
+./configure \
+  --with-extra-includes=/where/i/put/libebml\;/where/i/put/libmatroska \
+  --with-extra-libs=/where/i/put/libebml/make/linux\;/where/i/put/libmatroska/make/linux
+
+Now run "rake" and, as "root", "rake install". If you don't have
+"rake" installed yourself then use the version bundled with
+MKVToolNix: "./rake.d/bin/drake" and "./rake.d/bin/drake install".
+
+If you want to use all available CPU cores for building then you have
+to use "drake" instead of "rake". "drake" knows the parameter "-j"
+much like "make" does. You can also set the environment varibale
+DRAKETHREADS to a number and the build process will automatically use
+that number of threads for a parallel build:
+
+./drake -j4
+
+or
+
+export DRAKETHREADS=4
+./drake
+
+2.5. Notes for compilation on (Open)Solaris
+
+You can compile mkvtoolnix with Sun's sunstudio compiler, but you need
+additional options for "configure":
+
+./configure --prefix=/usr \
+   CXX="/opt/sunstudio12.1/bin/CC -library=stlport4" \
+   CXXFLAGS="-D_POSIX_PTHREAD_SEMANTICS" \
+  --with-extra-includes=/where/i/put/libebml\;/where/i/put/libmatroska \
+  --with-extra-libs=/where/i/put/libebml/make/linux\;/where/i/put/libmatroska/make/linux
+
+2.6. Unit tests
+
+Building and running unit tests is completely optional. If you want to
+do this then you have to follow these steps:
+
+a) Download the "googletest" framework from
+   http://code.google.com/p/googletest/ (at the time of writing the
+   file to download was "gtest-1.6.0.zip")
+
+b.1) Either extract the framework inside the "lib" sub-folder and
+     rename the resulting folder "gtest-1.6.0" to "gtest"
+
+  OR...
+
+b.2) extract the archive somewhere and create a symbolic link to it
+     inside the "lib" folder called or create a symbolic link called
+     "gtest".
+
+c) Configure MKVToolNix normally.
+
+d) Build the unit test executable and run it with
+
+./drake tests:unit
+
+
+
+3. Examples
+-----------
+
+Here's a *very* brief example of how you could use mkvmerge
+with mencoder in order to rip a DVD:
+
+a) Extract the audio to PCM audio:
+
+mplayer -ao pcm:file=audio.wav -vo null -vc dummy dvd://1
+
+b) Normalize the sound (optional)
+
+normalize audio.wav
+
+c) Encode the audio to Vorbis:
+
+oggenc -q3 -oaudio-q3.ogg audio.wav
+
+d) Somehow calculate the bitrate for your video. Use something like...
+
+video_size = (target_size - audio-size) / 1.005
+video_bitrate = video_size / length / 1024 * 8
+
+target_size, audio_size in bytes
+length in seconds
+1.005 is the overhead caused by putting the streams into an Matroska file
+  (about 0.5%, that's correct ;)).
+video_bitrate will be in kbit/s
+
+e) Use the two-pass encoding for the video:
+
+mencoder -oac copy -ovc lavc \
+  -lavcopts vcodec=mpeg4:vbitrate=1000:vhq:vqmin=2:vpass=1 \
+  -vf scale=....,crop=..... \
+  -o /dev/null dvd://1
+
+mencoder -oac copy -ovc lavc \
+  -lavcopts vcodec=mpeg4:vbitrate=1000:vhq:vqmin=2:vpass=2 \
+  -vf scale=....,crop=..... \
+  -o movie.avi dvd://1
+
+f) Merge:
+
+mkvmerge -o movie.mkv -A movie.avi audio-q3.ogg
+
+-A is necessary in order to avoid copying the raw PCM (or MP3) audio as well.
+
+
+
+4. Reporting bugs
+-----------------
+
+If you're sure you've found a bug - e.g. if one of my programs crashes
+with an obscur error message, or if the resulting file is missing part
+of the original data, then by all means submit a bug report.
+
+I use Trac (https://trac.bunkus.org/) as my bug database. You can
+submit your bug reports there. Please be as verbose as possible -
+e.g. include the command line, if you use Windows or Linux etc.pp.
+
+If at all possible please include sample files as well so that I can
+reproduce the issue. If they are larger than 1M then please upload
+them somewhere (e.g. to my FTP server: host name "ftp.bunkus.org",
+user name "upload", password "only" -- each without the quotes) and
+post a link or note in the bug report.

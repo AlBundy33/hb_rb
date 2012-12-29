@@ -1,0 +1,73 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <title>mmg -- mkvmerge1 のチャプタ、ヘッダ編集機能付きGUI</title>
+      <link rel="stylesheet" type="text/css" href="mkvtoolnix-doc.css">
+   </head>
+   <body>
+      <div class="heading">mmg -- <a href="mkvmerge.html"><span class="productname">mkvmerge</span>(1)</a> のチャプタ、ヘッダ編集機能付きGUI
+      </div>
+      <hr>
+      <div id="toc" class="toc">
+         <h1>Table of contents</h1>
+         <ul>
+            <li><a href="#mmg.synopsis">1. 書式</a></li>
+            <li><a href="#mmg.description">2. 説明</a></li>
+            <li><a href="#mmg.seealso">3. 関連項目</a></li>
+            <li><a href="#mmg.www">4. ウェブ</a></li>
+         </ul>
+      </div>
+      <div class="content">
+         <h1><a name="mmg.synopsis">1. 書式</a></h1>
+         
+         
+         <div class="cmdsynopsis"><span class="commandname">mmg</span> [[--edit-headers {filename.mkv}] | [preferences-file.mmg] | [source-file.ext]]
+         </div>
+         
+         <h1><a name="mmg.description">2. 説明</a></h1>
+         
+         
+         <p>
+            <span class="productname">mmg</span>(1)は、<span class="productname">wxWindows</span><sup>(tm)</sup>ベースの<a href="mkvmerge.html"><span class="productname">mkvmerge</span>(1)</a>の<span class="abbrev">GUI</span>です。<a href="mkvmerge.html"><span class="productname">mkvmerge</span>(1)</a>の全てのオプションを簡単に使用できます。全ての設定(例：ソースファイル、トラックオプションなど)は保存・読み込みが可能です。<span class="productname">Matroska</span><sup>(tm)</sup>ファイルからチャプタ情報を読みこむことができ、また<span class="abbrev">OGM</span>形式、<span class="abbrev">XML</span>形式のチャプタファイルを読み込み可能で、<span class="abbrev">XML</span>形式に書き出し可能なチャプタエディタが搭載されています。さらに、既存の<span class="productname">Matroska</span><sup>(tm)</sup>ファイルのヘッダを再MUXすることなく書き換え可能なヘッダエディタも搭載されています。
+            
+         </p>
+         
+         
+         <p>
+            <span class="productname">mmg</span>(1)はあまり多くのオプションをとりません。最初に考えられるのは、一つのファイル名を指定することです。もし、ファイル名の拡張が'<span class="literal">.mmg</span>'であれば、そのファイルは設定ファイルとして扱われ、<span class="productname">mmg</span>(1)はスタート時に設定を読み込みます。もしそうでなければ、ファイル名は入力ファイルとして追加されるファイルの名前として扱われます。
+            
+         </p>
+         
+         
+         <p>
+            二番目の動作モードに入るには、<span class="option">--edit-headers</span>オプションをファイル名と共に指定します。すると、<span class="productname">mmg</span>(1)はヘッダエディタを立ち上げ、ファイルを読み込みます。
+            
+         </p>
+         
+         
+         <p>
+            完全なドキュメントは、HTML形式で存在します。(<span class="filename">doc/mkvmerge-gui.html</span>)
+            
+         </p>
+         
+         <h1><a name="mmg.seealso">3. 関連項目</a></h1>
+         
+         
+         <p>
+            <a href="mkvmerge.html"><span class="productname">mkvmerge</span>(1)</a> <a href="mkvextract.html"><span class="productname">mkvextract</span>(1)</a>, <a href="mkvinfo.html"><span class="productname">mkvinfo</span>(1)</a>, <a href="mkvpropedit.html"><span class="productname">mkvpropedit</span>(1)</a>
+            
+         </p>
+         
+         <h1><a name="mmg.www">4. ウェブ</a></h1>
+         
+         
+         <p>
+            最新のバージョンは、常時<a href="http://www.bunkus.org/videotools/mkvtoolnix/">MKVToolNixのホームページ</a>から取得できます。
+            
+         </p>
+         
+      </div>
+   </body>
+</html>

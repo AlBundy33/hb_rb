@@ -1,0 +1,3847 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <title>mkvmerge -- Voegt multimedia stromen in een Matroska bestand in.</title>
+      <link rel="stylesheet" type="text/css" href="mkvtoolnix-doc.css">
+   </head>
+   <body>
+      <div class="heading">mkvmerge -- Voegt multimedia stromen in een <span class="productname">Matroska</span><sup>(tm)</sup> bestand in.
+      </div>
+      <hr>
+      <div id="toc" class="toc">
+         <h1>Table of contents</h1>
+         <ul>
+            <li><a href="#mkvmerge.synopsis">1. Beknopte inhoudsbeschrijving</a></li>
+            <li><a href="#mkvmerge.description">2. Beschrijving</a></li>
+            <li><a href="#mkvmerge.usage">3. Gebruik</a></li>
+            <li><a href="#mkvmerge.option_order">4. Optie volgorde</a></li>
+            <li><a href="#mkvmerge.examples">5. Voorbeelden</a></li>
+            <li><a href="#mkvmerge.track_ids">6. Spoor ID's</a></li>
+            <li><a href="#mkvmerge.text_files_and_charsets">7. Tekst bestanden en karakter set conversies</a></li>
+            <li><a href="#mkvmerge.option_files">8. Option files</a></li>
+            <li><a href="#mkvmerge.escaping">9. Overslaan van speciale karakter(s) in tekst</a></li>
+            <li><a href="#mkvmerge.subtitles">10. Ondertitelingen</a></li>
+            <li><a href="#mkvmerge.file_linking">11. Bestand linken</a></li>
+            <li><a href="#mkvmerge.default_values">12. Standaard waarden</a></li>
+            <li><a href="#mkvmerge.attachments">13. Bijlagen</a></li>
+            <li><a href="#mkvmerge.chapters">14. Hoofdstukken</a></li>
+            <li><a href="#mkvmerge.tags">15. Markeringen</a></li>
+            <li><a href="#mkvmerge.segmentinfo">16. The segment info XML files</a></li>
+            <li><a href="#mkvmerge.file_layout">17. Matroska bestand layout</a></li>
+            <li><a href="#mkvmerge.external_timecode_files">18. Externe tijdcode bestanden</a></li>
+            <li><a href="#mkvmerge.exit_codes">19. Verlaat codes</a></li>
+            <li><a href="#mkvmerge.environment_variables">20. Environment variables</a></li>
+            <li><a href="#mkvmerge.seealso">21. Zie ook</a></li>
+            <li><a href="#mkvmerge.www">22. WWW</a></li>
+         </ul>
+      </div>
+      <div class="content">
+         <h1><a name="mkvmerge.synopsis">1. Beknopte inhoudsbeschrijving</a></h1>
+         
+         
+         <div class="cmdsynopsis"><span class="commandname">mkvmerge</span> global options {-o
+            out} options1 {file1} options2 {file2} @optionsfile
+         </div>
+         
+         <h1><a name="mkvmerge.description">2. Beschrijving</a></h1>
+         
+         
+         <p>
+            Dit programma neemt de invoer van verschillende media bestanden en voegt die
+            stromen samen (allemaal of slechts een stukje) naar een <span class="productname">Matroska</span><sup>(tm)</sup> bestand;
+            zie de <a href="http://www.matroska.org/">Matroska</a> website.
+            
+         </p>
+         
+         
+         <div class="important">
+            <p class="important-title">Important:</p>
+            
+            <p>
+               The order of command line options is important. Please read the section
+               <a href="#mkvmerge.option_order">"Option order"</a> if
+               you're new to the program.
+               
+            </p>
+            
+         </div>
+         
+         
+         <h2><a name="d4e126">2.1. Global options</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><span class="option">-v</span>, <span class="option">--verbose</span></td>
+                  <td>
+                     
+                     <p>Verhoog 'uitgebreidheid'.</p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-q</span>, <span class="option">--quiet</span></td>
+                  <td>
+                     
+                     <p>Onderdruk status uitvoer.</p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-o</span>, <span class="option">--output</span>
+                     <span class="parameter">file-name</span></td>
+                  <td>
+                     
+                     <p>Schrijf naar het bestand <span class="parameter">file-name</span>. Indien splitsen
+                        aan staat, dan wordt dat iets anders verwerkt. Zie uitleg voor de <a href="#mkvmerge.description.split">--split</a> optie
+                        voor details.
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-w</span>, <span class="option">--webm</span></td>
+                  <td>
+                     
+                     <p>Creëer een WebM herkenbaar bestand. mkvmerge zet dit tevens aan wanneer het
+                        uitvoerbestandsnaam de extensie "webm" heeft. Deze modus dwingt diverse
+                        beperkingen af. De enig toegestane codecs zijn VP8 video en Vorbis audio
+                        sporen. Géén van de volgende hoofdstuk markeringen zijn toegstaan. Het
+                        DocType kop item is veranderd naar "webm".
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.title"><span class="option">--title</span> <span class="parameter">title</span></a></td>
+                  <td>
+                     
+                     <p>Stelt de algemene naam in voor het uitvoer bestand, b.v. de film naam.</p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--default-language</span> <span class="parameter">language-code</span></td>
+                  <td>
+                     
+                     <p>Stelt de standaard land code in voor alle sporen tenzij die wordt
+                        overschreven met <a href="#mkvmerge.description.language">--language</a>
+                        optie. De standaard code is '<span class="literal">onb</span>' voor 'onbekend'.
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         
+         <h2><a name="d4e249">2.2. Segment info handling (global options)</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><span class="option">--segmentinfo</span> <span class="parameter">filename.xml</span></td>
+                  <td>
+                     
+                     <p>
+                        Leest segment informatie in van een <span class="abbrev">XML</span> bestand. Dit
+                        bestand kan de segment familie bevatten <span class="abbrev">UID</span>, segment
+                        <span class="abbrev">UID</span>, vorige en volgend segment <span class="abbrev">UID</span>
+                        elementen. een voorbeeld bestand en een <span class="abbrev">DTD</span> zijn ingesloten
+                        in de MKVToolNix distributie.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        See the section about <a href="#mkvmerge.segmentinfo">segment info XML
+                           files</a> below for details.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--segment-uid</span> <span class="parameter">SID1,SID2,...</span></td>
+                  <td>
+                     
+                     <p>
+                        Stelt het te gebruiken segment UID's in. Dit is een komma gesepareerde lijst
+                        van 128bit segment UID's in het gebruikelijke UID formaat: hex nummers met
+                        of zonder het "0x" voorzetsel, met of zonder spaties, exact 32
+                        cijfers.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Elk gecreëerd bestand bevat één segment, en elk segment heeft één UID. Als
+                        er meer segment UID's zijn opgegeven dan er zijn gecreëerd, dan zullen de
+                        extra UID's worden genegeerd. Zijn er minder UID's opgegeven dan er
+                        segmenten zijn gecreëerd, dan worden er willekeurig UID's voor hen
+                        aangemaakt.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         
+         <h2><a name="d4e315">2.3. Chapter and tag handling (global options)</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><span class="option">--chapter-language</span> <span class="parameter">language-code</span></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de ISO639-2 land code waarde in welke geschreven wordt voor elk
+                        hoofdstuk ingang. Standaard naar '<span class="literal">eng</span>'. Zie de sectie
+                        over <a href="#mkvmerge.chapters">hoofdstukken</a> hieronder voor
+                        details.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie kan gebruikt worden, voor simpele hoofdstukken en voor
+                        bronbestanden welke hoofdstukken bevatten maar geen informatie over
+                        hoofdstuk talen, b.v. MP4 and OGM bestanden.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.chapter_charset"><span class="option">--chapter-charset</span> <span class="parameter">character-set</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de karakter set in, die gebruikt wordt voor de UTF-8 conversie voor
+                        simpele hoofdstuk bestanden. Zie de sectie over <a href="#mkvmerge.text_files_and_charsets"> tekst bestanden en karakter
+                           sets</a> voor een uitleg hoe <span class="productname">mkvmerge</span>(1) converteert tussen de
+                        'verschillende' karakter sets.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze schakelaar is ook van toepassing op hoofdstukken die zijn gekopieerd
+                        van een bepaalde inhoudstypen, b.v. Ogg/OGM en MP4 bestanden. Zie de sectie
+                        over hoofdstukken hieronder voor details.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--cue-chapter-name-format</span> <span class="parameter">format</span></td>
+                  <td>
+                     
+                     <p>
+                        <span class="productname">mkvmerge</span>(1) ondersteunt lezen van <span class="abbrev">CUE</span> volg document(en)
+                        (cue) voor audio bestanden als invoer voor
+                        hoofdstukken. <span class="abbrev">CUE</span> volg document(en) (cue) bevatten
+                        gewoonlijk informatie over de <span class="varname">ARTIEST</span> en
+                        <span class="varname">TITEL</span> voor elke index ingang. <span class="productname">mkvmerge</span>(1) gebruikt deze
+                        twee reeksen om de hoofdstuknaam te construeren. Met deze optie kan het
+                        formaat dat voor deze naam wordt gebruikt worden geplaatst.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Is deze optie niet opgegeven, dan zal <span class="productname">mkvmerge</span>(1) het standaard format
+                        gebruiken '<span class="code">%p - %t</span>' (de artiest (performer), gevolgd door een
+                        spatie, een streep, wederom een spatie en de titel).
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Is het format opgegeven dan zal alles behalve de volgende meta karakters
+                        gekopieerd worden zoals ze zijn, en de meta karakters worden vervangen zoals
+                        dit:
+                        
+                     </p>
+                     
+                     
+                     <ul>
+                        
+                        <li>
+                           
+                           <p><span class="parameter">%p</span> is vervangen door de huidige ingangen
+                              <span class="varname">PERFORMER</span> (artiest) reeks,
+                           </p>
+                           
+                        </li>
+                        
+                        <li>
+                           
+                           <p><span class="parameter">%t</span> is vervangen door de huidige ingangen
+                              <span class="varname">TITLE</span> (titel) reeks,
+                           </p>
+                           
+                        </li>
+                        
+                        <li>
+                           
+                           <p><span class="parameter">%n</span> wordt vervangen op huidig spoor nummer en
+                           </p>
+                           
+                        </li>
+                        
+                        <li>
+                           
+                           <p><span class="parameter">%N</span> wordt vervangen op huidig spoor nummer en
+                              op/aangevuld met een beginnend/leidende nul als het is &lt; 10 (kleiner
+                              dan).
+                           </p>
+                           
+                        </li>
+                        
+                     </ul>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--chapters</span> <span class="parameter">file-name</span></td>
+                  <td>
+                     
+                     <p>
+                        Leest hoofdstuk informatie in van een bestand
+                        <span class="parameter">file-name</span>. Zie sectie over <a href="#mkvmerge.chapters">hoofdstukken</a> kijk hieronder voor details.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.global_tags"><span class="option">--global-tags</span> <span class="parameter">file-name</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Leest hoofdstuk informatie in van een bestand
+                        <span class="parameter">file-name</span>. Zie sectie over <a href="#mkvmerge.chapters">hoofdstukken</a> kijk hieronder voor details.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         
+         <h2><a name="d4e518">2.4. General output control (advanced global options)</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><span class="option">--track-order</span>
+                     <span class="parameter">FID1:TID1,FID2:TID2,...</span></td>
+                  <td>
+                     
+                     <p>
+                        Deze optie verandert de volgorde waarin de sporen voor een invoer bestand
+                        worden gereëerd. Het argument is een komma gescheiden lijst van gepaarde
+                        ID's. Elk paar bevat eerst het bestand ID (<span class="parameter">FID1</span>) wat
+                        simpelweg een nummer van het bestand is op de commandoregel beginnend bij
+                        0. Het tweede is een spoor ID (<span class="parameter">TID1</span>) van dat
+                        bestand. Als sommige spoor id's worden weggelaten, dan zullen die sporen
+                        worden gecreëerd na diegene die met deze optie zijn gecreëerd.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--cluster-length</span> <span class="parameter">spec</span></td>
+                  <td>
+                     
+                     <p>
+                        Limiteert het aantal data blokken of de duur van de data in elke cluster. De
+                        <span class="parameter">spec</span> parameter kan één van beide zijn een nummer
+                        <span class="parameter">n</span> zonder een eenheid of een nummer
+                        <span class="parameter">d</span> vastgezet met '<span class="literal">ms</span>'
+                        (miliseconden).
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Als er geen eenheid is gebruikt dan zal <span class="productname">mkvmerge</span>(1) hoogstends zetten
+                        <span class="parameter">n</span> data blokken in elke cluster. Het maximum aantal
+                        blokken is 65535.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Als het nummer <span class="parameter">d</span> is vastgezet met
+                        '<span class="literal">ms</span>' dan zal <span class="productname">mkvmerge</span>(1) hoogstends zetten
+                        <span class="parameter">d</span> milliseconden aan data in elke cluster. Het minimum
+                        voor <span class="parameter">d</span> is '<span class="literal">100ms</span>', en het maximum
+                        is '<span class="literal">32000ms</span>'.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        <span class="productname">mkvmerge</span>(1) plaatst standaard op zijn hoogst 65535 data blokken en 5000ms aan
+                        data in een cluster.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Programma's die een bepaald beeld proberen te zoeken, kunnen alleen direct
+                        naar een cluster zoeken en moeten daarna de gehele cluster lezen. Daarom kan
+                        het de oorzaak zijn, dat het maken van grote clusters kan leiden tot
+                        onnauwkeurigheid of traag zoeken.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.no_cues"><span class="option">--no-cues</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Vertelt <span class="productname">mkvmerge</span>(1) geen volg document(en) (cue) te creëren en te schrijven
+                        wat vergelijkbaar is met een index in een AVI. <span class="productname">Matroska</span><sup>(tm)</sup> bestanden kunnen
+                        worden afgespeeld zonder volg document(en) (cue), maar dat kan leiden tot
+                        onnauwkeurigheid of traag zoeken. Gebruik dit alleen als je echt wanhopig
+                        bent qua ruimte of voor test doeleinden. Zie ook de optie <a href="#mkvmerge.description.cues">volg document(en)
+                           (cue)</a> welke opgegeven kan worden voor elk invoer bestand.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--clusters-in-meta-seek</span></td>
+                  <td>
+                     
+                     <p>
+                        Vertelt <span class="productname">mkvmerge</span>(1) een meta element te creëren aan het eind van het bestand
+                        dat alle clusters bevat. Zie ook de sectie over de <a href="#mkvmerge.file_layout">Matroska bestand layout</a>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--disable-lacing</span></td>
+                  <td>
+                     
+                     <p>
+                        Zet het aaneenkoppelen uit voor alle sporen. Dit zal de bestandsgrootte
+                        verhogen, speciaal wanneer er veel audio sporen zijn. Deze optie is niet
+                        bedoeld voor dagelijks gebruik.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--enable-durations</span></td>
+                  <td>
+                     
+                     <p>
+                        Duur schrijven voor alle blokken. Dit zal de bestandsgrootte verhogen en
+                        geeft geen extra waarde aan afspelers van dit moment.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.timecode_scale"><span class="option">--timecode-scale</span> <span class="parameter">factor</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Forceert de tijdcode schaal factor naar
+                        <span class="parameter">factor</span>. Geldige bereik waardes zijn
+                        <span class="constant">1000</span>..<span class="constant">10000000</span> of de speciale
+                        waarde <span class="constant">-1</span>.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Normaal zal <span class="productname">mkvmerge</span>(1) een waarde gebruiken van <span class="constant">1000000</span>
+                        wat inhoudt, dat de tijd codes en duren een precisie hebben van 1ms. Voor
+                        bestanden die geen video maar minstends één audio spoor bevatten, zal
+                        <span class="productname">mkvmerge</span>(1) automatisch de tijd code schaal factor kiezen, zodat alle tijd
+                        codes en duren een precisie hebben van één audio voorbeeld. Dit veroorzaakt
+                        een grotere overhead maar staat een betere zoek en extractie precisie toe.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Als de speciale waarde <span class="constant">-1</span> is gebruikt, dan zal
+                        <span class="productname">mkvmerge</span>(1) een voorbeeld precisie gebruiken zelfs als er een video spoor
+                        aanwezig is.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         
+         <h2><a name="d4e764">2.5. File splitting, linking, appending and concatenation (more global options)</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.split"><span class="option">--split</span> <span class="parameter">specification</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Splits het uitvoer bestand na een opgegeven grootte of tijd. Opmerking,
+                        sporen kunnen alléén direct voor een sleutel beeld gesplitst worden. Vanwege
+                        het bufferen zal <span class="productname">mkvmerge</span>(1) als een splitspunt wordt bereikt, direct voor
+                        het volgende sleutel beeld gaan splitsen. Daarom kunnen de splitspunten
+                        enigzins afwijken van wat de gebruiker op gaf.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        At the moment <span class="productname">mkvmerge</span>(1) supports four different modes.
+                        
+                     </p>
+                     
+                     
+                     <ol>
+                        
+                        <li>
+                           
+                           <p>
+                              Splitsen op grootte.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Syntax: <span class="option">--split</span>
+                              [<span class="literal">size:</span>]<span class="parameter">d</span>[k|m|g]
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Voorbeelden: <span class="code">--split size:700m</span> of <span class="code">--split
+                                 150000000</span>
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              The parameter <span class="parameter">d</span> may end with '<span class="literal">k</span>',
+                              '<span class="literal">m</span>' or '<span class="literal">g</span>' to indicate that the size
+                              is in KB, MB or GB respectively.  Otherwise a size in bytes is assumed.
+                              After the current output file has reached this size limit a new one will be
+                              started.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              De '<span class="literal">size:</span>' mag vanwege de verenigbaarheid
+                              (compatibiliteit) weggelaten worden.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                        
+                        <li>
+                           
+                           <p>
+                              Splitsen na een duur van.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Syntax: <span class="option">--split</span>
+                              [<span class="literal">duration:</span>]<span class="parameter">HH:MM:SS.nnnnnnnnn</span>|<span class="parameter">d</span>s
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Voorbeeld: <span class="code">--split duration:00:60:00.000</span> of <span class="code">--split
+                                 3600s</span>
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              De parameter moet één van beiden de vormen hebben
+                              <span class="parameter">HH:MM:SS.nnnnnnnnn</span> voor het specificeren van de duur
+                              tot in de precisie van een nanoseconde of een nummer
+                              <span class="parameter">d</span> gevolgd door een letter '<span class="literal">s</span>' voor
+                              de duur in seconden. <span class="parameter">HH</span> is het aantal uren,
+                              <span class="parameter">MM</span> het aantal minuten, <span class="parameter">SS</span> het
+                              aantal seconden en <span class="parameter">nnnnnnnnn</span> het aantal
+                              nanoseconden. Zowel de uren alsmede de nanoseconden mogen weggelaten
+                              worden. Er mogen tot aan negen nummers opgegeven worden na de decimale
+                              punt. Nadat de duur van van de huidige inhoud deze limiet bereikt heeft,
+                              wordt er een nieuw uitvoer bestand gestart.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              De '<span class="literal">duration:</span>' mag vanwege de verenigbaarheid
+                              (compatibiliteit) weggelaten worden.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                        
+                        <li>
+                           
+                           <p>
+                              Splitsen na een specifieke tijdcode.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Syntax: <span class="option">--split</span>
+                              <span class="literal">timecodes:</span><span class="parameter">A</span>[,<span class="parameter">B</span>[,<span class="parameter">C</span>...]]
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Voorbeeld: <span class="code">--split timecodes:00:45:00.000,01:20:00.250,6300s</span>
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              De parameters <span class="parameter">A</span>, <span class="parameter">B</span>,
+                              <span class="parameter">C</span> etc. moeten allen dezelfde indeling hebben als de
+                              duur (zie hierboven). De lijst van tijd codes is komma gesepareerd. Nadat de
+                              uitvoer stroom zijn huidige splits tijdcode limiet heeft bereikt wordt er
+                              een nieuw bestand gereëerd. Daarna wordt het volgende splits punt gebruikt
+                              van de gebruikte lijst.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Het '<span class="literal">timecodes:</span>' voorvoegsel mag niet wegelaten worden.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                        
+                        <li>
+                           
+                           <p>
+                              Keeping specific parts by specifying timecode ranges while discarding
+                              others.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Syntax: <span class="option">--split</span>
+                              <span class="literal">parts:</span><span class="parameter">start1</span>-<span class="parameter">end1</span>[,[+]<span class="parameter">start2</span>-<span class="parameter">end2</span>[,[+]<span class="parameter">start3</span>-<span class="parameter">end3</span>...]]
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Examples: 
+                              <ol>
+                                 
+                                 <li>
+                                    <p><span class="code">--split parts:00:01:20-00:02:45,00:05:50-00:10:30</span></p>
+                                 </li>
+                                 
+                                 <li>
+                                    <p><span class="code">--split parts:00:01:20-00:02:45,+00:05:50-00:10:30</span></p>
+                                 </li>
+                                 
+                                 <li>
+                                    <p><span class="code">--split parts:-00:02:45,00:05:50-</span></p>
+                                 </li>
+                                 
+                              </ol>
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              The <span class="literal">parts</span> mode tells <span class="productname">mkvmerge</span>(1) to keep certain ranges of
+                              timecodes while discarding others. The ranges to keep have to be listed
+                              after the <span class="literal">parts:</span> keyword and be separated by commas. A
+                              range itself consists of a start and an end timecode in the same format the
+                              other variations of <span class="parameter">--split</span> accept (e.g. both
+                              <span class="literal">00:01:20</span> and <span class="literal">80s</span> refer to the same
+                              timecode).
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              If a start timecode is left out then it defaults to the previous range's end
+                              timecode. If there was no previous range then it defaults to the start of
+                              the file (see example 3).
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              If an end timecode is left out then it defaults to the end of the source
+                              files which basically tells mkvmerge to keep the rest (see example 3).
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              Normally each range will be written to a new file. This can be changed so
+                              that consecutive ranges are written to the same file. For that the user has
+                              to prefix the start timecode with a <span class="literal">+</span>. This tells
+                              mvkmerge not to create a new file and instead append the range to the same
+                              file the previous range was written to. Timecodes will be adjusted so that
+                              there will be no gap in the output file even if there was a gap in the two
+                              ranges in the input file.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              In example 1 mkvmerge will create two files. The first will contain the
+                              content starting from <span class="literal">00:01:20</span> until
+                              <span class="literal">00:02:45</span>. The second file will contain the content
+                              starting from <span class="literal">00:05:50</span> until <span class="literal">00:10:30</span>.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              In example 2 mkvmerge will create only one file. This file will contain both
+                              the content starting from <span class="literal">00:01:20</span> until
+                              <span class="literal">00:02:45</span> and the content starting from
+                              <span class="literal">00:05:50</span> until <span class="literal">00:10:30</span>.
+                              
+                           </p>
+                           
+                           
+                           <p>
+                              In example 3 mkvmerge will create two files. The first will contain the
+                              content from the start of the source files until
+                              <span class="literal">00:02:45</span>. The second file will contain the content
+                              starting from <span class="literal">00:05:50</span> until the end of the source files.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                     </ol>
+                     
+                     
+                     <p>
+                        For this splitting mode the output filename is treated differently than for
+                        the normal operation. It may contain a <span class="function">printf</span> like
+                        expression '<span class="code">%d</span>' including an optional field width,
+                        e.g. '<span class="code">%02d</span>'. If it does then the current file number will be
+                        formatted appropriately and inserted at that point in the filename.  If
+                        there is no such pattern then a pattern of '<span class="code">-%03d</span>' is assumed
+                        right before the file's extension: '<span class="code">-o output.mkv</span>' would result
+                        in '<span class="code">output-001.mkv</span>' and so on. If there's no extension then
+                        '<span class="code">-%03d</span>' will be appended to the name.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.link"><span class="option">--link</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Bestanden linken aan een ander tijdens het splitsen van het uitvoer
+                        bestand. Zie de sectie op <a href="#mkvmerge.file_linking">bestand
+                           linken/verbinden</a> onderstaand voor details.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--link-to-previous</span> <span class="parameter">segment-UID</span></td>
+                  <td>
+                     
+                     <p>
+                        Verbindt het laatste uitvoerbestand met het segment UID ingegeven door
+                        <span class="parameter">segment-UID</span> parameter. Zie de sectie op <a href="#mkvmerge.file_linking">bestand linken/verbinden</a> onderstaand
+                        voor details.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--link-to-next</span> <span class="parameter">segment-UID</span></td>
+                  <td>
+                     
+                     <p>
+                        Verbindt het laatste uitvoerbestand met het segment UID ingegeven door
+                        <span class="parameter">segment-UID</span> parameter. Zie de sectie op <a href="#mkvmerge.file_linking">bestand linken/verbinden</a> onderstaand
+                        voor details.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--append-mode</span> <span class="parameter">mode</span></td>
+                  <td>
+                     
+                     <p>
+                        Calculeert hoe tijd codes worden berekend wanneer die worden toevoegd aan
+                        een bestand. De parameter <span class="parameter">mode</span> kan twee waardes
+                        bevatten: '<span class="literal">file</span>' welke ook standaard is en
+                        '<span class="literal">track</span>'.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Wanneer mkvmerge een spoor toevoegt (genoemd '<span class="literal">track2_1</span>'
+                        vanaf nu) van een tweede bestand (genoemd '<span class="literal">file2</span>') naar
+                        een spoor (genoemd '<span class="literal">track1_1</span>') van het eerste bestand
+                        (genoemd '<span class="literal">file1</span>') dan moet het alle tijd codes
+                        compenseren voor '<span class="literal">track2_1</span>' met een bepaalde
+                        hoeveelheid. Voor '<span class="literal">file</span>' mode is deze hoeveelheid de
+                        hoogste tegengekomen tijd code in '<span class="literal">file1</span>'. zelfs wanneer
+                        die tijd code van een ander spoor is dan '<span class="literal">track1_1</span>'. In
+                        spoor mode de is compensatie de hoogste tijd code van
+                        '<span class="literal">track1_1</span>'.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Helaas kan mkvmerge niet detecteren welke mode betrouwbaar is. Daarom zet
+                        het de standaard waarde naar '<span class="literal">file</span>'
+                        mode. '<span class="literal">file</span>' mode werkt gewoonlijk beter voor bestanden
+                        indien die onafhankelijk van elkaar werden gemaakt; b.v. het toevoegen van
+                        <span class="abbrev">AVI</span> of <span class="abbrev">MP4</span>
+                        bestanden. '<span class="literal">track</span>' mode zou beter werken voor bronnen die
+                        hoofdzakelijk een deel van één groot bestand zijn, b.v. voor
+                        <span class="abbrev">VOB</span> en <span class="abbrev">EVO</span> bestanden.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Hoofdstuk sporen worden altijd behandeld alsof '<span class="literal">file</span>'
+                        mode actief is en zelfs wanneer '<span class="literal">track</span>' mode actueel is.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--append-to</span>
+                     <span class="parameter">SFID1:STID1:DFID1:DTID1[,...]</span></td>
+                  <td>
+                     
+                     <p>
+                        Deze optie controleert welk spoor aan welk ander spoor moet worden
+                        toegevoegd (bestand wordt dubbel zo groot). Elke specificatie bevat vier
+                        ID's: een bestand ID, een spoor ID, een tweede bestand ID en een tweede
+                        spoor ID. Het eerste paar, "source file ID" en "source track ID",
+                        identificeert het spoor dat moet worden toegevoegd. Het tweede paar,
+                        "destination file ID" en "destination track ID", identificeert het spoor
+                        waaraan de eerste is toegevoegd.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Als deze optie weggelaten wordt dan wordt een standaard indeling
+                        gebruikt. Deze standaard indeling voegt elk spoor van het huidige bestand
+                        toe aan een spoor van het vorige bestand met hetzelfde spoor ID. Dit staat
+                        het makkelijk toevoegen toe indien een film gesplitst is in twee delen en
+                        beide bestanden dezelfde aantal sporen en spoor ID's hebben, met het
+                        commando <span class="command">mkvmerge -o output.mkv part1.mkv +part2.mkv</span>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">+</span></td>
+                  <td>
+                     
+                     <p>
+                        Een enkele '+' veroorzaakt dat het volgende bestand wordt bijgevoegd
+                        (bestand wordt dubbel zo groot) i.p.v toegevoegd. De '+' kan worden
+                        ingegeven voor elk volgende bestandsnaam. Daarom zijn de volgende twee
+                        commando's gelijkwaardig:
+                        
+                     </p>
+                     
+                     <pre class="screen">$ mkvmerge -o full.mkv file1.mkv + file2.mkv
+$ mkvmerge -o full.mkv file1.mkv +file2.mkv</pre>
+                     </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.prevent_concatenation"><span class="option">=</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Normally <span class="productname">mkvmerge</span>(1) looks for files in the same directory as an input file
+                        that have the same base name and only differ in their running number
+                        (e.g. 'VTS_01_1.VOB', 'VTS_01_2.VOB', 'VTS_01_3.VOB' etc) and treats all of
+                        those files as if they were concatenated into a single big file. This
+                        option, a single '=', causes mkvmerge not to look for those additional
+                        files.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        De '=' kan ook worden ingegeven voor elk volgende bestandsnaam. Daarom zijn
+                        de volgende twee commando's gelijkwaardig:
+                        
+                     </p>
+                     
+                     <pre class="screen">$ mkvmerge -o full.mkv = file1.mkv
+$ mkvmerge -o full.mkv =file1.mkv</pre>
+                     </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.concatenation"><span class="option">(</span> <span class="parameter">file1</span> <span class="parameter">file2</span>
+                        <span class="option">)</span></a></td>
+                  <td>
+                     
+                     <p>
+                        If multiple file names are contained in a pair of parenthesis then those
+                        files will be treated as if they were concatenated into a single big file
+                        consisting of the content of each of the files one after the other.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        This can be used for e.g. VOB files coming from a DVD or MPEG transport
+                        streams. It cannot be used if each file contains its own set of headers
+                        which is usually the case with stand-alone files like AVI or MP4.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Putting a file name into parenthesis also prevents <span class="productname">mkvmerge</span>(1) from looking
+                        for additional files with the same base name as described in <a href="#mkvmerge.description.prevent_concatenation">option
+                           =</a>. Therefore these two command lines are equivalent:
+                        
+                     </p>
+                     
+                     <pre class="screen">$ mkvmerge -o out.mkv = file.mkv
+$ mkvmerge -o out.mkv '(' file.mkv ')'</pre>
+                     
+                     <p>
+                        Several things should be noted:
+                        
+                     </p>
+                     
+                     
+                     <ol>
+                        
+                        <li>
+                           
+                           <p>
+                              There must be spaces both after the opening and before the closing
+                              parenthesis.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                        
+                        <li>
+                           
+                           <p>
+                              Every parameter between parenthesis is interpreted as a file name. Therefore
+                              all options applying to this logical file must be listed before the opening
+                              parenthesis.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                        
+                        <li>
+                           
+                           <p>
+                              Some shells treat parenthesis as special characters. Hence you must escape
+                              or quote them as shown in the example above.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                     </ol>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         
+         
+         <h2><a name="d4e1413">2.6. Attachment support (more global options)</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.attachment_description"><span class="option">--attachment-description</span> <span class="parameter">description</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Normale tekst beschrijving van de volgende bijlage. Is van toepassing op het
+                        volgende <a href="#mkvmerge.description.attach_file">--attach-file</a>
+                        of <span class="option">--attach-file-once</span> optie.
+                        
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--attachment-mime-type</span> <span class="parameter">MIME type</span></td>
+                  <td>
+                     
+                     <p>
+                        <span class="abbrev">MIME</span> type van de volgende bijlage. Is van toepassing op de
+                        volgende <a href="#mkvmerge.description.attach_file">--attach-file</a>
+                        of <a href="#mkvmerge.description.attach_file">--attach-file-once</a>
+                        optie. Een lijst van officiële herkende <span class="abbrev">MIME</span> typen kan
+                        gevonden worden b.v. op de <a href="http://www.iana.org/assignments/media-types/">IANA</a>
+                        thuisbasis. Het <span class="abbrev">MIME</span> type is verplicht voor een bijlage.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--attachment-name</span> <span class="parameter">name</span></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de naam in voor deze bijlage welke wordt opgeslagen in het uitvoer
+                        bestand. Als deze optie niet is opgegeven dan zal de naam worden afgeleid
+                        van de naam van de bijlage zoals gegeven met de <a href="#mkvmerge.description.attach_file">--attach-file</a>
+                        of de <a href="#mkvmerge.description.attach_file">--attach-file-once</a>
+                        optie.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.attach_file">
+                        <span class="option">--attach-file</span> <span class="parameter">file-name</span>,
+                        <span class="option">--attach-file-once</span> <span class="parameter">file-name</span>
+                        </a></td>
+                  <td>
+                     
+                     <p>
+                        Creëert een bestandsbijlage binnenin het <span class="productname">Matroska</span><sup>(tm)</sup> bestand. Het
+                        <span class="abbrev">MIME</span> type moet ingesteld zijn voordat deze optie gebruikt
+                        kan worden. Het verschil tussen deze twee vormen is, dat tijdens het
+                        splitsen van de bestanden vastgemaakt met <span class="option">--attach-file</span> aan
+                        alle uitvoerbestanden zijn vastgemaakt terwijl degene vastgemaakt met de
+                        <span class="option">--attach-file-once</span> alleen zijn vastgemaakt aan het eerste
+                        bestand. Is splitsen niet gebruikt dan doen beide hetzelfde.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        <a href="mkvextract.html"><span class="productname">mkvextract</span>(1)</a> kan worden gebruikt om bestanden uit een <span class="productname">Matroska</span><sup>(tm)</sup> bestand te
+                        halen.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         
+         <h2><a name="d4e1554">2.7. Options that can be used for each input file</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><span class="option">-a</span>, <span class="option">--audio-tracks</span>
+                     <span class="parameter">[!]n,m,...</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer de audio sporen <span class="parameter">n</span>, <span class="parameter">m</span>
+                        etc. De nummers zijn track ID's welke verkregen kunnen worden met de <a href="#mkvmerge.description.identify">--identify</a>
+                        schakelaar. Zij zijn simpelweg niet de spoor nummers (zie sectie <a href="#mkvmerge.track_ids">spoor ID's</a>). Standaard: Kopieer alle
+                        audio sporen.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        If the IDs are prefixed with <span class="literal">!</span> then the meaning is
+                        reversed: copy everything but the IDs listed after the <span class="literal">!</span>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-d</span>, <span class="option">--video-tracks</span>
+                     <span class="parameter">[!]n,m,...</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer de video sporen <span class="parameter">n</span>, <span class="parameter">m</span>
+                        etc. De nummers zijn track ID's welke kunnen worden verkregen met de <a href="#mkvmerge.description.identify">--identify</a>
+                        schakelaar. Zij zijn simpelweg niet de spoor nummers (sie sectie <a href="#mkvmerge.track_ids">spoor ID's</a>). Standaard: Kopieer alle
+                        video sporen..
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        If the IDs are prefixed with <span class="literal">!</span> then the meaning is
+                        reversed: copy everything but the IDs listed after the <span class="literal">!</span>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-s</span>, <span class="option">--subtitle-tracks</span>
+                     <span class="parameter">[!]n,m,...</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer de ondertitel sporen <span class="parameter">n</span>,
+                        <span class="parameter">m</span> etc. De nummers zijn track ID's welke kunnen worden
+                        verkregen met de <a href="#mkvmerge.description.identify">--identify</a>
+                        schakelaar. Zij zijn simpelweg niet de spoor nummers (zie sectie <a href="#mkvmerge.track_ids">spoor ID's</a>). Standaard: Kopieer alle
+                        ondertitel sporen.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        If the IDs are prefixed with <span class="literal">!</span> then the meaning is
+                        reversed: copy everything but the IDs listed after the <span class="literal">!</span>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-b</span>, <span class="option">--button-tracks</span>
+                     <span class="parameter">[!]n,m,...</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer de knop sporen<span class="parameter">n</span>, <span class="parameter">m</span>
+                        etc. De nummers zijn track ID's welke kunnen worden verkregen met de <a href="#mkvmerge.description.identify">--identify</a>
+                        schakelaar. Zij zijn simpelweg niet de spoor nummerss (zie sectie <a href="#mkvmerge.track_ids">spoor ID's</a>). Standaard: Kopieer alle
+                        knop sporen.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        If the IDs are prefixed with <span class="literal">!</span> then the meaning is
+                        reversed: copy everything but the IDs listed after the <span class="literal">!</span>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--track-tags</span>
+                     <span class="parameter">[!]n,m,...</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer de markeringen voor sporen <span class="parameter">n</span>,
+                        <span class="parameter">m</span> etc. De nummers zijn track ID's welke kunnen worden
+                        verkregen met de <a href="#mkvmerge.description.identify">--identify</a>
+                        schakelaar (zie sectie <a href="#mkvmerge.track_ids">spoor
+                           ID's</a>). Zij zijn simpelweg niet de spoor nummers. Standaard: Kopieer
+                        alle markering sporen.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        If the IDs are prefixed with <span class="literal">!</span> then the meaning is
+                        reversed: copy everything but the IDs listed after the <span class="literal">!</span>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.attachments"><span class="option">-m</span>, <span class="option">--attachments</span>
+                        <span class="parameter">[!]n[:all|first],m[:all|first],...</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer de bijlagen met de ID's <span class="parameter">n</span>,
+                        <span class="parameter">m</span> etc, naar allen of alleen het eerste uitvoer
+                        bestand. Elk ID kan opgevolgd worden door '<span class="literal">:all</span>' (welke
+                        standaard is, als geen van twee is opgegeven) of
+                        '<span class="literal">:first</span>'. Als het splitsen actief is, dan zullen die
+                        bijlagen waarvan de ID's zijn gespecificeerd met '<span class="literal">:all</span>'
+                        worden gekopieerd naar alle resulterende uitvoer bestanden, terwijl de
+                        anderen alleen gekopieerd worden naar het eerste uitvoerbestand. Als
+                        splitsen niet actief is, dan hebben beide varianten hetzelfde effect .
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Standaard is, kopieer alle bijlagen naar alle uitvoer bestanden.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        If the IDs are prefixed with <span class="literal">!</span> then the meaning is
+                        reversed: copy everything but the IDs listed after the <span class="literal">!</span>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-A</span>, <span class="option">--no-audio</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer geen enkel audio spoor van dit bestand.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-D</span>, <span class="option">--no-video</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer geen enkel video spoor van dit bestand.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-S</span>, <span class="option">--no-subtitles</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer geen enkel ondertitel spoor van dit bestand.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-B</span>, <span class="option">--no-buttons</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer geen enkel knop spoor van dit bestand.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-T</span>, <span class="option">--no-track-tags</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer geen enkel spoor-specifieke markeringen van dit bestand.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.no_chapters"><span class="option">--no-chapters</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer geen hoofdstukken van dit bestand.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.no_attachments"><span class="option">-M</span>, <span class="option">--no-attachments</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer geen bijlagen van dit bestand.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--no-global-tags</span></td>
+                  <td>
+                     
+                     <p>
+                        Kopieer geen globale markeringen van dit bestand.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--chapter-charset</span> <span class="parameter">character-set</span></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de karakter set in, die gebruikt wordt voor de conversie naar UTF-8
+                        voor de hoofdstuk informatie die zich bevindt in het bronbestand. Zie de
+                        sectie over<a href="#mkvmerge.text_files_and_charsets"> tekst bestanden
+                           en karakter set's</a> voor een uitleg hoe <span class="productname">mkvmerge</span>(1) converteert tussen
+                        de karakter set's.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--chapter-language</span> <span class="parameter">language-code</span></td>
+                  <td>
+                     
+                     <p>
+                        Zet de ISO639-2 taal code, welke wordt geschreven voor elk hoofdstuk
+                        ingang. Deze optie kan gebruikt worden, voor bronbestanden welke hoofdstuk
+                        informatie bevatten maar géén informatie over de talen, b.v. for MP4 en OGM
+                        bestanden.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-y</span>, <span class="option">--sync</span>
+                     <span class="parameter">TID:d[,o[/p]]</span></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de tijd code's bij van het spoor met het id <span class="parameter">TID</span>
+                        met <span class="parameter">d</span> ms. De spoor ID's zijn hetzelfde als degene
+                        gegeven met <a href="#mkvmerge.description.identify">--identify</a>
+                        (zie sectie <a href="#mkvmerge.track_ids">spoor ID's</a>).
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        <span class="parameter">o</span>/<span class="parameter">p</span>: Stel de tijd code's bij
+                        met <span class="parameter">o</span>/<span class="parameter">p</span> om lineaire driften te
+                        corrigeren. <span class="parameter">p</span> standaard naar 1 indien
+                        weggelaten. Beide <span class="parameter">o</span> en <span class="parameter">p</span>
+                        kunnen een veranderbaar nummer zijn.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Standaard: geen handmatige sync correctie (wat hetzelfde is als
+                        <span class="parameter">d</span> = <span class="constant">0</span> en
+                        <span class="parameter">o</span>/<span class="parameter">p</span> =
+                        <span class="constant">1.0</span>).
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie kan meerdere keren worden gebruikt voor een invoer bestand, is
+                        van toepassing op verschillende sporen door het spoor ID elke keer te
+                        selecteren.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.cues"><span class="option">--cues</span> <span class="parameter">TID:none|iframes|all</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Controle voor welke sporen cue (index) ingangen worden gereëerd voor een
+                        opgegeven spoor (zie sectie <a href="#mkvmerge.track_ids">Spoor
+                           ID's</a>). '<span class="literal">none</span>' remt het creëren van volg
+                        document(en) (cue) af. Voor '<span class="literal">iframes</span>' alléén blokken
+                        zonder voor of achteruit referenties ( = I beelden in video sporen) worden
+                        ingevoerd in het 'volg document(en) (cue)'. '<span class="literal">all</span>' zorgt
+                        ervoor dat <span class="productname">mkvmerge</span>(1) aanmaakt, volg document(en) (cue) voor alle blokken
+                        welke het bestand erg groot maakt.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Standaard is '<span class="literal">iframes</span>' voor video sporen en
+                        '<span class="literal">none</span>' voor alle anderen. Zie ook opties <a href="#mkvmerge.description.no_cues">--no-cues</a>
+                        welke verwezenlijken het creëren van volg document(en) (cue) ongeacht de
+                        <span class="option">--cues</span> gebruikte opties.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie kan meerdere keren worden gebruikt voor een invoer bestand, is
+                        van toepassing op verschillende sporen door het spoor ID elke keer te
+                        selecteren.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--default-track</span>
+                     <span class="parameter">TID[:bool]</span></td>
+                  <td>
+                     
+                     <p>
+                        Zet de 'standaard' markering voor een gegeven spoor (zie sectie <a href="#mkvmerge.track_ids">spoor ID's</a>) als het optionele argument
+                        <span class="parameter">bool</span> niet aanwezig is. Als de gebruiker niet zelf
+                        uitdrukkelijk een spoor selecteert, dan zou de afspeler een spoor prefereren
+                        dat zijn 'standaard' markering heeft. Alleen één spoor van elk soort (audio,
+                        video, ondertitels, knoppen) kunnen deze 'standaard' markering gezet
+                        hebben. Indien een gebruiker geen spoor wenst te hebben met een standaard
+                        spoor markering gezet, dan moet hij zetten <span class="parameter">bool</span> naar
+                        <span class="constant">0</span> voor alle sporen.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie kan meerdere keren worden gebruikt voor een invoer bestand, is
+                        van toepassing op verschillende sporen door het spoor ID elke keer te
+                        selecteren.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--forced-track</span>
+                     <span class="parameter">TID[:bool]</span></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de 'geforceerde' markering in voor een gegeven spoor (zie sectie <a href="#mkvmerge.track_ids">spoor ID's</a>) als het optionele argument
+                        <span class="parameter">bool</span> niet aanwezig is. En afspeler moet alle sporen
+                        afspelen waarvan deze markering is gezet <span class="constant">1</span>.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie kan meerdere keren worden gebruikt voor een invoer bestand, is
+                        van toepassing op verschillende sporen door het spoor ID elke keer te
+                        selecteren.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--blockadd</span> <span class="parameter">TID:level</span></td>
+                  <td>
+                     
+                     <p>
+                        Houd alleen de <span class="classname">BlockAdditions</span> tot aan niveau
+                        <span class="parameter">level</span> voor het opgegeven spoor. Standaard is alle
+                        niveau's. Deze optie heeft alleen effect op sommige codecs zoals WAVPACK4.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.track_name"><span class="option">--track-name</span> <span class="parameter">TID:name</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Stelt het spoor naam in van een gegeven spoor (zie sectie <a href="#mkvmerge.track_ids">spoor ID's</a>) naar
+                        <span class="parameter">naam</span>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.language"><span class="option">--language</span> <span class="parameter">TID:language</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de taal in voor het opgegeven spoor (zie sectie <a href="#mkvmerge.track_ids">spoor ID's</a>). Beide ISO639-2 taal codes
+                        en ISO639-1 land codes zijn toegestaan. De land code wordt automatisch
+                        vertaald naar taal code. Alle talen inclusief hun ISO639-2 codes kunnen
+                        uitgelijst worden met <a href="#mkvmerge.description.list_languages">--list-languages</a>
+                        optie.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie kan meerdere keren worden gebruikt voor een invoer bestand, is
+                        van toepassing op verschillende sporen door het spoor ID elke keer te
+                        selecteren.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.tags"><span class="option">-t</span>, <span class="option">--tags</span>
+                        <span class="parameter">TID:file-name</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Leest de markeringen in van het spoor met het nummer
+                        <span class="parameter">TID</span> van het bestand
+                        <span class="parameter">file-name</span>. Zie de sectie over <a href="#mkvmerge.tags">markeringen</a> hieronder voor details.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--aac-is-sbr</span>
+                     <span class="parameter">TID[:0|1]</span></td>
+                  <td>
+                     
+                     <p>
+                        Vertelt <span class="productname">mkvmerge</span>(1) dat het spoor met het ID <span class="parameter">TID</span> een
+                        <span class="abbrev">SBR AAC</span> is (ook bekend als <span class="abbrev">HE-AAC</span> of een
+                        <span class="abbrev">AAC+</span>). Deze optie is nodig als a) een bron bestand een
+                        <span class="abbrev">AAC</span> bestand is (<em>niet</em> voor een
+                        <span class="productname">Matroska</span><sup>(tm)</sup> bestand) en b) het <span class="abbrev">AAC</span> bestand bevat <span class="abbrev">SBR
+                           AAC</span> data. De reden voor deze schakelaar is, dat het normaal
+                        technisch niet mogelijk is, automatisch te vertellen dat
+                        <span class="abbrev">AAC</span> data van <span class="abbrev">SBR AAC</span> data zonder deze
+                        volledig te decoderen van een<span class="abbrev">AAC</span> beeld. Aangezien er
+                        verscheidene octrooi/patent kwesties zijn met <span class="abbrev">AAC</span> decoders
+                        zal <span class="productname">mkvmerge</span>(1) nooit dit decodeer stadium bevatten. Dus voor <span class="abbrev">SBR
+                           AAC</span> bestanden is deze schakelaar een vereiste. Het resulterende
+                        bestand zou niet correct afgespeeld kunnen worden of zelfs helemaal niet,
+                        wanneer deze schakelaar werd weggelaten.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Als het bron bestand een <span class="productname">Matroska</span><sup>(tm)</sup> bestand is, dan zou de
+                        <span class="classname">CodecID</span> genoeg moeten zijn om deze <span class="abbrev">SBR
+                           AAC</span> te detecteren. Hoewel, als de <span class="classname">CodecID</span>
+                        verkeerd is, dan kan deze schakelaar gebruikt worden om dat te corrigeren.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Als mkvmerge verkeerd detecteert dat een <span class="abbrev">AAC</span> bestand een
+                        <span class="abbrev">SBR</span> is, dan kan je toevoegen '<span class="literal">:0</span>' aan
+                        het spoor ID.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--timecodes</span> <span class="parameter">TID:file-name</span></td>
+                  <td>
+                     
+                     <p>
+                        Leest de te gebruiken tijd code's in voor een specifiek spoor ID van
+                        <span class="parameter">file-name</span>. Deze krachtige tijd code's heffen de tijd
+                        code's die <span class="productname">mkvmerge</span>(1) normaal berekend op. Lees de sectie over <a href="#mkvmerge.external_timecode_files">externe tijd code
+                           bestanden</a>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--default-duration</span> <span class="parameter">TID:x</span></td>
+                  <td>
+                     
+                     <p>
+                        Forces the default duration of a given track to the specified value.  Also
+                        modifies the track's timecodes to match the default duration.  The argument
+                        <span class="parameter">x</span> must be postfixed with '<span class="literal">s</span>',
+                        '<span class="literal">ms</span>', '<span class="literal">us</span>', '<span class="literal">ns</span>',
+                        '<span class="literal">fps</span>', '<span class="literal">p</span>' or '<span class="literal">i</span>'
+                        to specify the default duration in seconds, milliseconds, microseconds,
+                        nanoseconds, 'frames per second', 'progressive frames per second' or
+                        'interlaced frames per second' respectively. The number
+                        <span class="parameter">x</span> itself can be a floating point number or a
+                        fraction.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        If the default duration is not forced then mkvmerge will try to derive the
+                        track's default duration from the container and/or the encoded bitstream for
+                        certain track types, e.g. AVC/h.264 or MPEG-2.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie kan ook gebruikt worden om de <span class="abbrev">FPS</span> (beelden per
+                        seconde) te veranderen van video sporen zonder een extern tijdcode bestand
+                        te hoeven gebruiken.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--nalu-size-length</span> <span class="parameter">TID:n</span></td>
+                  <td>
+                     
+                     <p>
+                        Forceert de <span class="abbrev">NALU</span> lengte grootte naar
+                        <span class="parameter">n</span> bytes. Deze parameter wordt alleen gebruikt als de
+                        <span class="foreignphrase">AVC/h.264</span> elementaire stroom inpakker is
+                        gebruikt. Indien weggelaten is de standaard waarde 4 bytes, maar er zijn
+                        bestanden die beelden of delen bevatten die kleiner zijn dan 65536
+                        bytes. Voor dergelijke bestanden kan je deze parameter gebruiken en de
+                        grootte verminderen naar 2.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.compression"><span class="option">--compression</span> <span class="parameter">TID:n</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Selecteert de te gebruiken compressie methode in voor het spoor. Opmerking:
+                        de afspeler dient deze methode ook te ondersteunen. Geldige waarden zijn
+                        '<span class="literal">none</span>', '<span class="literal">zlib</span>',
+                        '<span class="literal">lzo</span>'/'<span class="literal">lxo1x</span>',
+                        '<span class="literal">bz2</span>'/'<span class="literal">bzlib</span>' en
+                        '<span class="literal">mpeg4_p2</span>'/'<span class="literal">mpeg4p2</span>'. De waarden
+                        '<span class="literal">lzo</span>'/'<span class="literal">lxo1x</span>' en
+                        '<span class="literal">bz2</span>'/'<span class="literal">bzlib</span>' zijn alléén beschikbaar
+                        als <span class="productname">mkvmerge</span>(1) is gecompileerd met de ondersteuning voor de
+                        <span class="productname">liblzo</span><sup>(tm)</sup> respectievelijk
+                        <span class="productname">bzlib</span><sup>(tm)</sup> compressie bibliotheken.
+                        
+                     </p>
+                     
+                     <p>
+                        De compressie methode
+                        '<span class="literal">mpeg4_p2</span>'/'<span class="literal">mpeg4p2</span>' is een speciale
+                        compressie methode genoemd '<span class="foreignphrase">header removal</span>'
+                        die is alléén beschikbaar voor<span class="abbrev">MPEG4</span> deel 2 video sporen.
+                        
+                     </p>
+                     
+                     <p>
+                        Standaard voor sommige ondertitels zijn '<span class="literal">zlib</span>'
+                        compressie. Deze compressie wordt door bijna alle afspelers ondersteund
+                        zoniet allen. Ondersteuning voor andere compressie methoden anders dan
+                        '<span class="literal">none</span>' is niet verzekerd.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         
+         <h2><a name="d4e2589">2.8. Options that only apply to video tracks</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><span class="option">-f</span>, <span class="option">--fourcc</span>
+                     <span class="parameter">TID:FourCC</span></td>
+                  <td>
+                     
+                     <p>
+                        Forceert de <span class="classname">FourCC</span> naar de opgegeven waarde. Werkt
+                        alléén voor video sporen in de '<span class="foreignphrase">MS verenigbare
+                           mode</span>'.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.display_dimensions"><span class="option">--display-dimensions</span>
+                        <span class="parameter">TID:widthxheight</span></a></td>
+                  <td>
+                     
+                     <p>
+                        <span class="productname">Matroska</span><sup>(tm)</sup> bestanden bevatten twee waarden die de scherm eigenschappen
+                        instelt waarnaar een afspeler met afspelen naar toe zou moeten schalen:
+                        scherm breedte en scherm hoogte. Deze waaren worden ingesteld met deze
+                        optie, b.v. '<span class="literal">1:640x480</span>'.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Een andere manier om de te gebruiken waarden te specificeren is <a href="#mkvmerge.description.aspect_ratio">--aspect-ratio</a>
+                        of de <a href="#mkvmerge.description.aspect_ratio_factor">--aspect-ratio-factor</a>
+                        optie (zie hieronder). Deze opties zijn wederzijds - exclusief.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.aspect_ratio"><span class="option">--aspect-ratio</span>
+                        <span class="parameter">TID:ratio|width/height</span></a></td>
+                  <td>
+                     
+                     <p>
+                        <span class="productname">Matroska</span><sup>(tm)</sup> bestanden bevatten twee waarden die de scherm eigenschappen
+                        instelt waarnaar een afspeler met afspelen naar toe zou moeten schalen:
+                        scherm breedte en scherm hoogte. Met deze optie zal <span class="productname">mkvmerge</span>(1) automatisch
+                        calculeren de scherm breedte en de scherm hoogte gebaseerd, op de orginele
+                        beelden/plaatjes breedte en hoogte en de opgegeven verwachte verhouding met
+                        deze optie. De verhouding kan één van beiden zijn een veranderbaar nummer
+                        <span class="parameter">verhouding</span> of als een fractie
+                        '<span class="parameter">breedte</span>/<span class="parameter">hoogte</span>',
+                        b.v. '<span class="literal">16/9</span>'.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Een andere manier om de te gebruiken waarden te specificeren is <a href="#mkvmerge.description.aspect_ratio_factor">--aspect-ratio-factor</a>
+                        of <a href="#mkvmerge.description.display_dimensions">--display-dimensions</a>
+                        opties (zie hieronder en hierboven). Deze opties zijn wederzijds -
+                        exclusief.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.aspect_ratio_factor"><span class="option">--aspect-ratio-factor</span> <span class="parameter">TID:factor|n/d</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Een andere manier om de verwachtte verhouding te specificeren is een
+                        <span class="parameter">factor</span>. De orginele verwachtte verhouding factor
+                        wordt eerst vermeningvuldigd met deze <span class="parameter">factor</span> en
+                        daarna gebruikt als doel verhouding.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Een andere manier om de te gebruiken waarden te specificeren is <a href="#mkvmerge.description.aspect_ratio">--aspect-ratio</a>
+                        of <a href="#mkvmerge.description.display_dimensions">--display-dimensions</a>
+                        opties (zie boven). Deze opties zijn wederzijds - exclusief.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--cropping</span> <span class="parameter">TID:left,top,right,bottom</span></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de video spoor uitsnij paramters in naar een gegeven waarden.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--stereo-mode</span> <span class="parameter">TID:n|keyword</span></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de video mode in voor het video spoor met het spoor ID
+                        <span class="parameter">TID</span>.  Deze mode kan zijn een nummer
+                        <span class="parameter">n</span> tussen <span class="constant">0</span> en
+                        <span class="constant">14</span> of één van de volgende:
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        '<span class="literal">mono</span>', '<span class="literal">side_by_side_left_first</span>',
+                        '<span class="literal">top_bottom_right_first</span>',
+                        '<span class="literal">top_bottom_left_first</span>',
+                        '<span class="literal">checkerboard_right_first</span>',
+                        '<span class="literal">checkerboard_left_first</span>',
+                        '<span class="literal">row_interleaved_right_first</span>',
+                        '<span class="literal">row_interleaved_left_first</span>',
+                        '<span class="literal">column_interleaved_right_first</span>',
+                        '<span class="literal">column_interleaved_left_first</span>',
+                        '<span class="literal">anaglyph_cyan_red</span>',
+                        '<span class="literal">side_by_side_right_first</span>',
+                        '<span class="literal">anaglyph_green_magenta</span>',
+                        '<span class="literal">both_eyes_laced_left_first</span>',
+                        '<span class="literal">both_eyes_laced_right_first</span>'.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         
+         <h2><a name="d4e2834">2.9. Options that only apply to text subtitle tracks</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.sub_charset"><span class="option">--sub-charset</span> <span class="parameter">TID:character-set</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de karakter set conversie in naar UTF-8 voor UTF-8 ondertitels van een
+                        opgegeven spoor ID. Indien niet opgegeven, dan worden de huidig verkregen
+                        besturingssysteem lokatie gebruikt. Opmerking: een karakter set voor
+                        ondertitels is niet nodig wanneer er gelezen wordt vanuit een <span class="productname">Matroska</span><sup>(tm)</sup>
+                        bestand of van Kate stromen, omdat deze altijd zijn opgeslagen in het UTF-8
+                        format. Zie de sectie over <a href="#mkvmerge.text_files_and_charsets">
+                           tekst bestanden en karakter sets</a> voor een uitleg hoe <span class="productname">mkvmerge</span>(1)
+                        converteert tussen de verschillende karakter sets.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie kan meerdere keren worden gebruikt voor een invoer bestand, is
+                        van toepassing op verschillende sporen door het spoor ID elke keer te
+                        selecteren.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         
+         <h2><a name="d4e2874">2.10. Other options</a></h2>
+         
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.identify"><span class="option">-i</span>, <span class="option">--identify</span>
+                        <span class="parameter">file-name</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Zal <span class="productname">mkvmerge</span>(1) (met een sonde) een enkel bestand aftasten en het type
+                        rapporteren, de sporen in het bestand en hun spoor ID's. Als deze optie
+                        wordt gebruikt dan is de enige andere toegestane optie de bestandsnaam.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.identify_verbose"><span class="option">-I</span>, <span class="option">--identify-verbose</span>
+                        <span class="parameter">file-name</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Zal <span class="productname">mkvmerge</span>(1) (met een sonde) een enkel bestand aftasten en het type
+                        rapporteren, de sporen in het bestand en hun spoor ID's. Als deze optie
+                        wordt gebruikt dan is de enige andere toegestane optie de bestandsnaam.
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie maakt dat <span class="productname">mkvmerge</span>(1) extra informatie uitvoert over de inhoud en
+                        elk spoor. De extra informatie staat tussen haken ( [] ). Het bevat een
+                        spatie gescheiden sleutel/waarde paar, waar de sleutel en waarde's zijn
+                        gescheiden door een dubbel punt (:).
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Elke waarde wordt overgeslagen conform de regels beschreven in <a href="#mkvmerge.escaping">de sectie over overslaan van speciale karakters
+                           in een tekst</a>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-l</span>, <span class="option">--list-types</span></td>
+                  <td>
+                     
+                     <p>
+                        Somt invoer bestandstypen op.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.list_languages"><span class="option">--list-languages</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Somt alle talen en hun ISO639-2 code's op welke gebruikt kunnen worden met
+                        de <a href="#mkvmerge.description.language">--language</a>
+                        optie.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--priority</span> <span class="parameter">priority</span></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de proces prioriteit in waarmee <span class="productname">mkvmerge</span>(1) zijn werk doet. Geldige
+                        waarden zijn '<span class="literal">lowest</span>', '<span class="literal">lower</span>',
+                        '<span class="literal">normal</span>', '<span class="literal">higher</span>' en
+                        '<span class="literal">highest</span>'. Is niets ingegeven dan wordt
+                        '<span class="literal">normal</span>' gebruikt. Op unix achtige systemen zal
+                        <span class="productname">mkvmerge</span>(1) gebruiken de
+                        <a href="http://linux.die.net/man/2/nice"><span class="productname">nice</span>(2)</a>
+                        functie. Daarom kan alléén de 'super' gebruiker die gebruiken
+                        '<span class="literal">higher</span>' en '<span class="literal">highest</span>'. Op Windows zijn
+                        alle waarden voor iedereen beschikbaar.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.command_line_charset"><span class="option">--command-line-charset</span>
+                        <span class="parameter">(karakter-set)</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Plaatst het karakter dat wordt geplaatst om de reeksen om te zetten die op
+                        de commandoregel worden ingeven. Het is standaard aan het karakter van het
+                        systeem en afhankelijk van de besturingssysteem lokatie. Deze instellingen
+                        zijn van toepassing op argumenten van de volgende opties: <a href="#mkvmerge.description.title">--title</a>, <a href="#mkvmerge.description.track_name">--track-name</a>
+                        en <a href="#mkvmerge.description.attachment_description">--attachment-description</a>.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.output_charset"><span class="option">--output-charset</span> <span class="parameter">(karakter-set)</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Stelt de karakter set in waarnaar de reeksen dienen te worden geconverteerd
+                        naar de uitvoer. Standaard wordt gebruikt de karakter set die afhankelijk is
+                        van wat er in uw besturingssysteem staat aangegeven (lokatie).
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.redirect_output"><span class="option">-r</span>, <span class="option">--redirect-output</span>
+                        <span class="parameter">(bestandsnaam)</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Schrijft alle berichten naar een bestand <span class="parameter">file-name</span>
+                        i.p.v naar het 'apparaat/houder'. Terwijl dit gemakkelijk met uitvoer
+                        omleiden kan worden gedaan er zijn gevallen waarin deze optie nodig is:
+                        wanneer de verwerker e.e.a her-interpreteert voordat het geschreven wordt
+                        naar het uitvoer bestand. De karakter set met <a href="#mkvmerge.description.output_charset">--output-charset</a>
+                        is toegewezen.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.ui_language"><span class="option">--ui-language</span> <span class="parameter">code</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Forceert de vertaling voor de te gebruiken taal <span class="parameter">code</span>
+                        (b.v. '<span class="literal">de_DE</span>' voor de Duitse taal). Het heeft de voorkeur
+                        de 'omgevings variabelen' te gebruiken <span class="varname">LANG</span>,
+                        <span class="varname">LC_MESSAGES</span> en <span class="varname">LC_ALL</span> Hoewel opvragen
+                        van een '<span class="literal">list</span>' voor een land <span class="parameter">code</span>
+                        zal er voor zorgen dat <a href="mkvextract.html"><span class="productname">mkvextract</span>(1)</a> een lijst zal uitvoeren van alle
+                        beschikbaren vertalingen.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.debug"><span class="option">--debug</span> <span class="parameter">topic</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Turn on debugging for a specific feature. This option is only useful for
+                        developers.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><a name="mkvmerge.description.engage"><span class="option">--engage</span> <span class="parameter">feature</span></a></td>
+                  <td>
+                     
+                     <p>
+                        Turn on experimental features. A list of available features can be requested
+                        with <span class="command">mkvmerge --engage list</span>. These features are not meant
+                        to be used in normal situations.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">@</span><span class="parameter">options-file</span></td>
+                  <td>
+                     
+                     <p>
+                        Reads additional command line arguments from the file
+                        <span class="parameter">options-file</span>. See the section about <a href="#mkvmerge.option_files">option files</a> for further information.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--capabilities</span></td>
+                  <td>
+                     
+                     <p>
+                        Somt informtie op over optionele mogelijkheden die zijn gecompileerd en
+                        sluit af. De eerste uitvoer regel zal de versie informatie zijn. Alle
+                        volgende informatie regels bevatten exact één woord, waarvan de aanwezigheid
+                        aangeeft welke eigenschapen er binnenin zijn gecompileerd. Deze
+                        mogelijkheden zijn:
+                        
+                     </p>
+                     
+                     
+                     <ul>
+                        
+                        <li>
+                           
+                           <p>
+                              '<span class="literal">BZ2</span>' -- de <span class="productname">bzlib</span><sup>(tm)</sup> compressie
+                              bibliotheek. Heeft effect op de beschikbare compressie methoden voor de
+                              <a href="#mkvmerge.description.compression">--compression</a>
+                              optie.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                        
+                        <li>
+                           
+                           <p>
+                              '<span class="literal">LZO</span>' -- de <span class="productname">lzo</span><sup>(tm)</sup> compressie
+                              bibliotheek. Heeft effect op de beschikbare compressie methoden voor de
+                              <a href="#mkvmerge.description.compression">--compression</a>
+                              optie.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                        
+                        <li>
+                           
+                           <p>
+                              '<span class="literal">FLAC</span>' -- lezen raw <span class="abbrev">FLAC</span> bestanden en
+                              behandelen van <span class="abbrev">FLAC</span> sporen in andere inhoudsmaten,
+                              b.v. <span class="productname">Ogg</span><sup>(tm)</sup> of <span class="productname">Matroska</span><sup>(tm)</sup>.
+                              
+                           </p>
+                           
+                        </li>
+                        
+                     </ul>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-h</span>, <span class="option">--help</span></td>
+                  <td>
+                     
+                     <p>
+                        Toon gebruik informatie en sluit af.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">-V</span>, <span class="option">--version</span></td>
+                  <td>
+                     
+                     <p>
+                        Toon versie informatie en sluit af.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="option">--check-for-updates</span></td>
+                  <td>
+                     
+                     <p>
+                        Checks online for new releases by downloading the URL <a href="http://mkvtoolnix-releases.bunkus.org/latest-release.xml">http://mkvtoolnix-releases.bunkus.org/latest-release.xml</a>.
+                        Four lines will be output in <span class="literal">key=value</span> style: the URL
+                        from where the information was retrieved (key
+                        <span class="literal">version_check_url</span>), the currently running version (key
+                        <span class="literal">running_version</span>), the latest release's version (key
+                        <span class="literal">available_version</span>) and the download URL (key
+                        <span class="literal">download_url</span>).
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Nadien sluit het programma af met een afsluitwaarde van 0 als er geen
+                        nieuwere versie beschikbaar is, met een 1 als er een nieuwere beschikbaar is
+                        en 2 indien er een fout ontstond (b.v. als de opwaardeer info niet verkregen
+                        kon worden).
+                        
+                     </p>
+                     
+                     
+                     <p>
+                        Deze optie is alleeen beschikbaar indien het gebouwd is met ondersteuning
+                        voor libcurl.
+                        
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         
+         <h1><a name="mkvmerge.usage">3. Gebruik</a></h1>
+         
+         
+         <p>
+            Voor elk bestand kan de gebruiker selecteren welke sporen <span class="productname">mkvmerge</span>(1) zou
+            moeten nemen. Zij zitten allemaal in het bestand gespecificeerd met
+            <span class="option">-o</span>. Een lijst met bekende (en ondersteunde) bron formaten
+            kunnen verkregen worden met de <span class="option">-l</span> optie.
+            
+         </p>
+         
+         
+         <div class="important">
+            <p class="important-title">Important:</p>
+            
+            <p>
+               The order of command line options is important. Please read the section
+               <a href="#mkvmerge.option_order">"Option order"</a> if
+               you're new to the program.
+               
+            </p>
+            
+         </div>
+         
+         <h1><a name="mkvmerge.option_order">4. Optie volgorde</a></h1>
+         
+         
+         
+         <p>
+            Voor sommige optie's is de volgorde waarin zij zijn opgegeven
+            belangrijk. Optie's mislukken in twee categorieën:
+            
+         </p>
+         
+         
+         <ol>
+            
+            <li>
+               
+               <p>
+                  Opties die het programma beinvloeden en niet verbonden zijn aan enig
+                  invoerbestand. Dez omvatten maar zijn niet beperkt tot
+                  <span class="option">--command-line-charset</span>, <span class="option">--output</span> of
+                  <span class="option">--title</span>. Deze mogen waar dan ook op de commandoregel staan.
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  Opties die één enkel invoerbstand beïnvloedden of spoor in een
+                  invoerbestand. Deze optie's zijn allen van toepassing op het invoerbestand
+                  op de commandoregel. Alle optie's naar hetzelfde invoerbestand (of naar
+                  sporen in hetzelfde invoerbestand) mogen in elke volgorde geschreven worden
+                  zolang deze voor het invoerbestandsnaam staan. Voorbeelden die een
+                  invoerbestand beïnvloedden zijn <span class="option">--no-chapters</span> of
+                  <span class="option">--chapter-charset</span>. Voorbeelden voor een enkel spoor
+                  <span class="option">--default-duration</span> of <span class="option">--language</span>.
+                  
+               </p>
+               
+            </li>
+            
+         </ol>
+         
+         
+         <p>
+            De optie's worden uitgevoerd van links naar rechts. Indien er een optie
+            meerdere keren is, binnen hetzelfde gebied, dan wordt de laatste
+            gebruikt. Daarom zal de titel gezet worden naar "Iets anders" in
+            het volgende voorbeeld:
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o output.mkv --title 'Dit én Dat' input.avi --title 'Iets anders'</pre>
+         
+         <p>
+            Het volgende voorbeeld toont dat het gebruiken van de optie
+            <span class="option">--language</span> tweemaal OK is, omdat zij andere gebieden
+            gebruiken. Alhoewel zij tot hetzelfde spoor ID behoren maar van
+            verschillende invoer bestanden en daarom verschillende gebieden hebben:
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o output.mkv --language 0:fre français.ogg --language 0:deu deutsch.ogg</pre>
+         <h1><a name="mkvmerge.examples">5. Voorbeelden</a></h1>
+         
+         
+         <p>
+            Laten we aannemen dat je een bestand genoemd hebt mijn film.avi en het audio
+            spoor in een ander bestand, b.v. '<span class="literal">mijn film.wav</span>'. Dan wil
+            je eerst de audio coderen naar <span class="productname">OggVorbis</span><sup>(tm)</sup>:
+            
+         </p>
+         
+         <pre class="screen">$ oggenc -q4 -omijn film.ogg mijn film.wav</pre>
+         
+         <p>
+            Na een paar minuten kan je het video en audio samenvoegen:
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o mijn film-met-geluid.mkv mijn film.avi mijn film.ogg</pre>
+         
+         <p>
+            Als jouw <span class="abbrev">AVI</span> reeds een audio spoor bevat dan wordt ook die
+            gekopieerd (als <span class="productname">mkvmerge</span>(1) dat audio formaat ondersteunt). Om dat te
+            voorkomen doe simpel
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o mijn film-met-geluid.mkv -A mijn film.avi mijn film.ogg</pre>
+         
+         <p>
+            Na een paar minuten van wikken en wegen rip je een ander audio spoor,
+            b.v. de regiseur zijn commentaar of een andere taal naar '<span class="literal">mijn
+               film-voegtoe-geluid.wav</span>'. Codeer het opnieuw en voeg het samen met
+            het andere bestand:
+            
+         </p>
+         
+         <pre class="screen">$ oggenc -q4 -oMyMovie-add-audio.ogg MyMovie-add-audio.wav
+$ mkvmerge -o MM-complete.mkv MyMovie-with-sound.mkv MyMovie-add-audio.ogg</pre>
+         
+         <p>
+            Hetzelfde resultaat kan worden verkregen met
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o MM-complete.mkv -A mijn film.avi mijn film.ogg mijn film-voegtoe-geluid.ogg</pre>
+         
+         <p>
+            Nu <span class="productname">mplayer</span><sup>(tm)</sup> opstarten en geniet. Als je meerdere
+            audio sporen hebt (of zelfs video sporen) dan kan je aangeven aan
+            <span class="productname">mplayer</span><sup>(tm)</sup> welk spoor af te spelen met de
+            '<span class="option">-vid</span>' en '<span class="option">-aid</span>' opties. Deze zijn 0
+            gebaseerd en maken geen onderscheid tussen video en audio.
+            
+         </p>
+         
+         
+         <p>
+            Indien het nodig is een audio spoor te synchroniseren kan je dat héél
+            makkelijk doen. Achterhaal eerst welk spoor ID het Vorbis spoor bevat
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge --identify outofsync.ogg</pre>
+         
+         <p>
+            Nu kan je dat ID gebruiken voor de volgende commandoregel:
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o goodsync.mkv -A source.avi -y 12345:200 outofsync.ogg</pre>
+         
+         <p>
+            Dit zou toevoegen 200ms aan stilte aan het begin van het spoor met het ID
+            <span class="constant">12345</span> genomen van '<span class="literal">outofsync.ogg</span>'.
+            
+         </p>
+         
+         
+         <p>
+            Sommige films starten correct gesynchroniseerd maar langzaam aan verloopt
+            dat. Voor dit soort films kan je een vertraag factor opgeven die worden
+            toegevoegd aan alle tijd codes -- Er wordt géén data toegvoegd of
+            verwijderd. Dus, als je die factor te klein of te groot maakt dan krijg je
+            een slecht resultaat. Een voorbeeld is, dat een episode die ik heb
+            getranscodeerd met <span class="constant">0.2</span> seconden uit sync aan het eind
+            van de film, welke <span class="constant">77340</span> beelden lang was. Bij
+            <span class="constant">29.97fps</span> seconden ongeveer corresponderen met
+            <span class="constant">0.2</span> seconden. <span class="constant">6</span> beelden. Dus ik
+            deed
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o goodsync.mkv -y 23456:0,77346/77340 outofsync.mkv</pre>
+         
+         <p>
+            Het resultaat was goed.
+            
+         </p>
+         
+         
+         <p>
+            De sync opties kunnen ook op de zelfde manier gebruikt worden voor
+            ondertitels.
+            
+         </p>
+         
+         
+         <p>
+            Voor tekst ondertitels kan je één van beide Windows programma's gebruiken
+            (zoals <span class="productname">SubRipper</span><sup>(tm)</sup>) of het
+            <span class="productname">subrip</span><sup>(tm)</sup> pakket te vinden in
+            <a href="http://linux.die.net/man/1/transcode"><span class="productname">transcode</span>(1)</a>'s
+            bronnen in de '<span class="literal">contrib/subrip</span>' map. Het algemene proces
+            is:
+            
+         </p>
+         
+         
+         <ol>
+            
+            <li>
+               
+               <p>pak een raw ondertiteling uit van de bron:</p>
+               <pre class="screen">$ tccat -i /path/to/copied/dvd/ -T 1 -L | tcextract -x ps1 -t vob -a 0x20 | subtitle2pgm -o mymovie</pre>
+               </li>
+            
+            
+            <li>
+               
+               <p>converteer het resultaat PGM beeld/plaatje naar tekst met het 'GOCR'
+                  programma:
+               </p>
+               <pre class="screen">$ pgm2txt mymovie</pre>
+               </li>
+            
+            
+            <li>
+               
+               <p>spellingscontrole voor de resulterende tekst bestanden:</p>
+               <pre class="screen">$ ispell -d american *txt</pre>
+               </li>
+            
+            
+            <li>
+               
+               <p>converteer de tekst bestanden naar een SRT bestand:</p>
+               <pre class="screen">$ srttool -s -w -i mymovie.srtx -o mymovie.srt</pre>
+               </li>
+            
+         </ol>
+         
+         
+         <p>
+            Het resultaat bestand kan gebruikt worden als een ander invoerbestand voor
+            <span class="productname">mkvmerge</span>(1):
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o mymovie.mkv mymovie.avi mymovie.srt</pre>
+         
+         <p>
+            Als je een taal wilt opgeven voor een gegeven spoor kan dit héél makkelijk
+            gedaan worden. Zoek eerst de ISO639-2 code voor jouw taal. <span class="productname">mkvmerge</span>(1) kan
+            alle code's uitlijsten voor je:
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge --list-languages</pre>
+         
+         <p>
+            Zoek in de lijst naar de taal die je nodig hebt. Laten we aannemen dat je
+            twee audio sporen aan het <span class="productname">Matroska</span><sup>(tm)</sup> bestand wilt invoegen en je hun
+            taalcodes wilt instellen terwijl hun spoor ID's zijn 2 en 3. Dit kan gedaan
+            worden met
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o with-lang-codes.mkv --language 2:ger --language 3:dut without-lang-codes.mkv</pre>
+         
+         <p>
+            Zoals je kunt zien, kan je de <a href="#mkvmerge.description.language">--language</a>
+            schakelaar meerdere keren gebruiken.
+            
+         </p>
+         
+         
+         <p>
+            Misschien zou je het ook fijn vinden dat de afpeler standaard de Nederlandse
+            taal gebruikt. Als je ook nog extra ondertitelingen hebt zoals b.v. Engels,
+            Frans, en je wilt dat de afpeler de Franse als standaard gebruikt. Kan je
+            dit doen met
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o with-lang-codes.mkv --language 2:ger --language 3:dut --default-track 3 without-lang-codes.mkv --language 0:eng english.srt --default-track 0 --language 0:fre french.srt</pre>
+         
+         <p>
+            Als je de taal of de standaard spoor markering niet ziet, welke je had
+            opgegeven in <a href="mkvinfo.html"><span class="productname">mkvinfo</span>(1)</a>'s uitvoer lees dan a.u.b. de sectie over <a href="#mkvmerge.default_values">standaard waarden</a>.
+            
+         </p>
+         
+         
+         <p>
+            Zet de compressie uit voor een invoer bestand
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o no-compression.mkv --compression -1:none MyMovie.avi --compression -1:none mymovie.srt</pre>
+         
+         <h1><a name="mkvmerge.track_ids">6. Spoor ID's</a></h1>
+         
+         
+         
+         <p>
+            Sommige opties voor <span class="productname">mkvmerge</span>(1) hebben een spoor ID nodig om te specificeren
+            op welk spoor zij zouden moeten worden toegepast. Die spoor ID's worden
+            getoond door de lezers bij het samenvoegen van het huidige invoer bestand,
+            of als <span class="productname">mkvmerge</span>(1) is opgeroepen met de <a href="#mkvmerge.description.identify">--identify</a>
+            optie. Een voorbeeld van een dergelijke uitvoer:
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -i v.mkv
+File 'v.mkv': container: Matroska
+Track ID 1: video (V_MS/VFW/FOURCC, DIV3)
+Track ID 2: audio (A_MPEG/L3)</pre>
+         
+         <p>
+            Verwar de spoor ID's niet met welke zijn toegewezen aan spo(o)r(en) in het
+            uitvoer MKV bestand met het spoor ID van het invoerbestand. Alleen het
+            invoerbestand spoor ID's worden gebruikt voor optie's die deze waarde nodig
+            hebben.
+            
+         </p>
+         
+         
+         <p>
+            Opmerking: Dat elk invoerbestand zijn eigen spoor ID's heeft. Daarom het
+            spoor ID voor bestand '<span class="filename">file1.ext</span> gerapporteerd wordt
+            door '<span class="literal">mkvmerge --identify</span>' verander niets, ongeacht
+            hoeveel invoerbestanden in welke positie dan ook
+            '<span class="filename">file1.ext</span>' wordt gebruikt.
+            
+         </p>
+         
+         
+         <p>
+            Spoor ID's worden toegewezen zoals dit:
+            
+         </p>
+         
+         
+         <ul>
+            
+            <li>
+               
+               <p>
+                  <span class="abbrev">AVI</span> bestanden: Het video spoor heeft het ID 0. De audio
+                  sporen krijgen de ID's in oplopende volgorde beginnend bij 1.
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  <span class="abbrev">AAC</span>, <span class="abbrev">AC3</span>, <span class="abbrev">MP3</span>,
+                  <span class="abbrev">SRT</span> en <span class="abbrev">WAV</span> bestanden: Het 'spoor' in dat
+                  bestand krijgt het ID 0.
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  Most other files: The track IDs are assigned in order the tracks are found
+                  in the file starting at 0.
+                  
+               </p>
+               
+            </li>
+            
+         </ul>
+         
+         
+         <p>
+            Het speciale spoor ID '<span class="constant">-1</span>' is de 'joker' en past de
+            bepaalde schakelaar toe op alle sporen die van een invoerbestand worden
+            gelezen.
+            
+         </p>
+         
+         
+         <p>
+            De opties die de spoor ID's gebruiken zijn degenen die de beschrijvingen
+            bevatten '<span class="literal">TID</span>'. De volgende optie gebruikt het spoor ID
+            ook: <span class="option">--audio-tracks</span>, <span class="option">--video-tracks</span>,
+            <span class="option">--subtitle-tracks</span>, <span class="option">--button-tracks</span> en
+            <span class="option">--track-tags</span>.
+            
+         </p>
+         
+         <h1><a name="mkvmerge.text_files_and_charsets">7. Tekst bestanden en karakter set conversies</a></h1>
+         
+         
+         <div class="note">
+            <p class="note-title">Note:</p>
+            
+            <p>
+               Deze sectie is van toepassing op alle programma's in MKVToolNix zelfs
+               wanneer alléén <span class="productname">mkvmerge</span>(1) genoemd wordt.
+               
+            </p>
+            
+         </div>
+         
+         
+         <p>
+            Alle teksten in <span class="productname">Matroska</span><sup>(tm)</sup> bestanden zijn gecodeerd in UTF-8. Dit betekend,
+            dat <span class="productname">mkvmerge</span>(1) alle de te lezen tekst bestanden moet converteren en evenals
+            elke ingegeven tekst op de commandoregel om elke karakter te zetten naar
+            UTF-8. Teruggekoppeld betekend dit ook, dat <span class="productname">mkvmerge</span>(1)'s uitvoer terug
+            geconverterd moet worden naar die karakter set van UTF-8, b.v. als een niet
+            Engelse vertaling is gebruikt met <a href="#mkvmerge.description.ui_language">--ui-languages</a>
+            of voor de orginele tekst uit een <span class="productname">Matroska</span><sup>(tm)</sup> bestand.
+            
+         </p>
+         
+         
+         <p>
+            <span class="productname">mkvmerge</span>(1) doet deze conversie automatisch gebasseerd op de aanwezigheid van
+            een <span class="foreignphrase">Byte Order Marker (byte volgorde
+               markering)</span> (kort: <span class="abbrev">BOM</span>) of op basis van het
+            huidige besturingssysteem lokatie. Hoe de karakter van de lokatie wordt
+            'achterhaald' hangt af van het besturingssysteem waarop <span class="productname">mkvmerge</span>(1) is
+            opgestart.
+            
+         </p>
+         
+         
+         <p>
+            Tekst bestanden die starten met BOM (byte volgorde markering) zijn al
+            gecodeerd in de vertegenwoordiging van UTF. <span class="productname">mkvmerge</span>(1) ondersteunt één van
+            de volgende vijf modes: UTF-8, UTF-16 Little en Big Endian, UTF-32 Little en
+            Big Endian. Tekst bestanden met een BOM (byte volgorde markering) worden
+            automatisch geconverteerd naar UTF-8. Elke van de parameters die gezet
+            zouden zijn voor een dergelijk bestand (b.v. <a href="#mkvmerge.description.sub_charset">--sub-charset</a>)
+            worden stilletjes genegeerd.
+            
+         </p>
+         
+         
+         <p>
+            Op Unix-achtige systemen gebruikt <span class="productname">mkvmerge</span>(1) de
+            <a href="http://linux.die.net/man/3/setlocale"><span class="productname">setlocale</span>(3)</a>
+            besturingssysteem oproep, welke beurtelings de omgevingsvariabelen gebruikt
+            <span class="varname">LANG</span>, <span class="varname">LC_ALL</span> en
+            <span class="varname">LC_CYPE</span>. Het resulterende karakter set is vaak één van de
+            UTF-8 of de ISO-8859-* familie en wordt gebruikt voor alle tekst bestand
+            operaties en voor het coderen van reeksen op de commandoregel voor een
+            uitvoer naar het apparaat/houder.
+            
+         </p>
+         
+         
+         <p>
+            On Windows there are actually two different character sets that <span class="productname">mkvmerge</span>(1)
+            uses due to the way the Windows shell program <span class="command">cmd.exe</span> is
+            implemented. The first character set is determined by a call to the
+            <span class="function">GetACP()</span> system call. This character set is used as the
+            default for text file conversions and for all elements displayed by the
+            <span class="abbrev">GUI</span> programs in the MKVToolNix package.
+            
+         </p>
+         
+         
+         <p>
+            Another charset may be used if <span class="command">cmd.exe</span> is used. However,
+            reading the command line is done with the
+            <span class="function">GetCommandLineW()</span> function which already returns a
+            Unicode string. Therefore the option <span class="option">--command-line-charset</span>
+            is ignored on Windows.  Output to the console is done with the
+            <span class="function">WriteConsoleW()</span> function. Therefore the option
+            <span class="option">--output-charset</span> is only used on Windows if the output is
+            redirected with <span class="option">--redirect-output</span>.
+            
+         </p>
+         
+         
+         <p>
+            Als de volgende optie aanwezig is dan is het toegestaan de karakter set te
+            specificeren:
+            
+         </p>
+         
+         
+         <ul>
+            
+            <li>
+               
+               <p>
+                  <a href="#mkvmerge.description.sub_charset">--sub-charset</a>
+                  voor tekst ondertitels en tekst ondertitel sporen opgeslagen in de houder
+                  formaat waarvan de karakter set niet onomtstotelijk kan worden vastgesteld
+                  (b.v. Ogg bestanden),
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  <a href="#mkvmerge.description.chapter_charset">--chapter-charset</a>
+                  voor tekst hoofdstuk bestanden en voor hoofdstukken en bestand titels
+                  opgeslagen in de houder formaat waarvan de karakter set niet onomtstotelijk
+                  kan worden vastgesteld (b.v. Ogg bestanden voor hoofdstuk informatie, spoor
+                  en bestand titels etc.; MP4 bestanden voor hoofdstuk informatie),
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  <a href="#mkvmerge.description.command_line_charset">--command-line-charset</a>
+                  voor alle ingave's op de commandoregel,
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  <a href="#mkvmerge.description.output_charset">--output-charset</a>
+                  voor alle reeksen geschreven naar het apparaat/houder of naar een bestand
+                  wanneer de uitvoer is omgeleid met de <a href="#mkvmerge.description.redirect_output">--redirect-output</a>
+                  optie.
+                  
+               </p>
+               
+            </li>
+            
+         </ul>
+         
+         <h1><a name="mkvmerge.option_files">8. Option files</a></h1>
+         
+         
+         
+         <p>
+            An option file is a file <span class="productname">mkvmerge</span>(1) can read additional command line
+            arguments from. This can be used in order to circumvent certain limitations
+            of the shell or the operating system when executing external programs like a
+            limited command line length.
+            
+         </p>
+         
+         
+         <p>
+            There are several rules regarding option files. Lines whose first
+            non-whitespace character is a hash mark ('<span class="literal">#</span>') are treated
+            as comments and ignored. White spaces at the start and end of a line will be
+            stripped. Each line must contain exactly one option.
+            
+         </p>
+         
+         
+         <p>
+            A line not containing anything is also ignored. An empty argument is
+            represented by the line '<span class="literal">#EMPTY#</span>'.
+            
+         </p>
+         
+         
+         <p>
+            Verschillende karakters kunnen worden overgeslagen, b.v. als het nodig is
+            een niet commentaar regel te starten met '#'. Deze regels worden beschreven
+            in <a href="#mkvmerge.escaping">de sectie over overslaan van
+               tekst</a>.
+            
+         </p>
+         
+         
+         <p>
+            Note that backslashes must always be escaped. Hash marks ('#') must be
+            escaped if they should not start a comment.
+            
+         </p>
+         
+         
+         <p>
+            De commandoregel '<span class="command">mkvmerge -o "mijn bestand.mkv" -A "een film.avi"
+               geluid.ogg</span>' kan geconverteerd worden naar het volgende optie
+            bestand:
+            
+         </p>
+         
+         <pre class="programlisting"># Write to the file "c:\Matroska\my file.mkv" on Windows.
+-o
+c:\\Matroska\\my file.mkv
+# Set the title to '#65'.
+--title
+\h65
+# Only take the video from "a movie.avi".
+-A
+a movie.avi
+sound.ogg</pre>
+         
+         <h1><a name="mkvmerge.escaping">9. Overslaan van speciale karakter(s) in tekst</a></h1>
+         
+         
+         <p>
+            Er zijn een paar plaatsen waar speciale karakters zouden of moeten worden
+            overgeslagen. De regels voor het overslaan zijn simpel: elk karakter dat
+            overgeslagen dient te worden wordt vervangen door een backslash "\" gevolgd
+            door een ander karakter.
+            
+         </p>
+         
+         
+         <p>
+            The rules are: ' ' (a space) becomes '\s', '"' (double quotes) becomes
+            '\2', ':' becomes '\c', '#' becomes '\h' and '\' (a single backslash) itself
+            becomes '\\'.
+            
+         </p>
+         
+         <h1><a name="mkvmerge.subtitles">10. Ondertitelingen</a></h1>
+         
+         
+         <p>
+            There are several text and bitmap subtitle formats that can be embedded into
+            <span class="productname">Matroska</span><sup>(tm)</sup>. Text subtitles must be recoded to UTF-8 so that they can be
+            displayed correctly by a player (see the section about <a href="#mkvmerge.text_files_and_charsets"> text files and character
+               sets</a> for an explanation how <span class="productname">mkvmerge</span>(1) converts between character
+            sets). Kate subtitles are already encoded in UTF-8 and do not have to be
+            re-encoded.
+            
+         </p>
+         
+         
+         <p>
+            De volgende ondertitel formaten worden momenteel ondersteund:
+            
+         </p>
+         
+         
+         <ul>
+            
+            <li>
+               
+               <p>
+                  Ondertitel stripper (SRT) bestand(en)
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  Substation Alpha (SSA) / Advanced Substation Alpha scripts (ASS)
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  Universal Subtitle Format (USF) files
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  OggKate stromen
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  VobSub bitmap ondertitel bestanden
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  PGS bitmap subtitle files as found on BluRay discs
+                  
+               </p>
+               
+            </li>
+            
+         </ul>
+         
+         <h1><a name="mkvmerge.file_linking">11. Bestand linken</a></h1>
+         
+         
+         <p>
+            <span class="productname">Matroska</span><sup>(tm)</sup> ondersteunt bestand linken welke eenvoudig zegt, dat een
+            specifiek bestand de voorganger of de opvolger van het huidige bestand
+            is. Om precies te zijn, het zijn niet echt de bestanden die gelinkt zijn
+            maar de <span class="productname">Matroska</span><sup>(tm)</sup> segmenten. En de meeste bestanden bevatten alleen één
+            <span class="productname">Matroska</span><sup>(tm)</sup> segment de volgende uitleg gebruikt de term 'bestand linken'
+            hoewel 'segment linken' meer op zijn plaats zou zijn.
+            
+         </p>
+         
+         
+         <p>
+            Elk segment word geïndentificeerd door een uniek 128 bit lang segment
+            UID. Dit UID wordt automatisch gegenereerd door <span class="productname">mkvmerge</span>(1). Het linken wordt
+            primair gedaan via het zetten van het segment UID's (kort:
+            <span class="abbrev">SID</span>) van het volgende/vorige bestand naar het segment kop
+            informatie. <a href="mkvinfo.html"><span class="productname">mkvinfo</span>(1)</a> print deze <span class="abbrev">SID's</span> als het hen vindt.
+            
+         </p>
+         
+         
+         <p>
+            Als een bestand wordt gesplitst in meerdere kleinere bestanden en linken
+            wordt gebruikt, dan zullen de tijd codes niet opnieuw starten op 0 maar
+            doorgaan op daar waar het vorige bestand eindigde. Op deze manier zal
+            absolute de tijd code behouden blijven, zelfs wanneer het vorige bestand
+            niet aanwezig/beschikbaar is (b.v. bij 'streaming''). Als er géén linken is
+            gebruikt, dan zouden de tijd codes moeten starten op 0 voor elk
+            bestand. Standaard gebruikt <span class="productname">mkvmerge</span>(1) bestand linken niet. Als je wilt kan
+            je dit aanzetten met de <span class="option">--link</span> optie. Deze optie is alléén
+            nuttig wanneer ook het splitsen actief is.
+            
+         </p>
+         
+         
+         <p>
+            Regardless of whether splitting is active or not the user can tell
+            <span class="productname">mkvmerge</span>(1) to link the produced files to specific
+            <span class="abbrev">SIDs</span>. This is achieved with the options
+            <span class="option">--link-to-previous</span> and <span class="option">--link-to-next</span>.
+            These options accept a segment <span class="abbrev">SID</span> in the format that
+            <a href="mkvinfo.html"><span class="productname">mkvinfo</span>(1)</a> outputs: 16 hexadecimal numbers between <span class="constant">0x00</span>
+            and <span class="constant">0xff</span> prefixed with '<span class="literal">0x</span>' each,
+            e.g. '<span class="code">0x41 0xda 0x73 0x66 0xd9 0xcf 0xb2 0x1e 0xae 0x78 0xeb 0xb4 0x5e
+               0xca 0xb3 0x93</span>'. Alternatively a shorter form can be used: 16
+            hexadecimal numbers between <span class="constant">0x00</span> and
+            <span class="constant">0xff</span> without the '<span class="literal">0x</span>' prefixes and
+            without the spaces, e.g.  '<span class="code">41da7366d9cfb21eae78ebb45ecab393</span>'.
+            
+         </p>
+         
+         
+         <p>
+            Als splitsen wordt gebruikt, dan is het eerste bestand gelinkt naar het
+            <span class="abbrev">SID</span> gegeven met <span class="option">--link-to-previous</span> en het
+            laatste bestand is gelinkt naar <span class="abbrev">SID</span> gegeven met
+            <span class="option">--link-to-next</span>. Als splitsen niet is gebruikt, dan zal één
+            uitvoer bestand worden gelinkt met twee van de beide <span class="abbrev">SIDs</span>.
+            
+         </p>
+         
+         <h1><a name="mkvmerge.default_values">12. Standaard waarden</a></h1>
+         
+         
+         <p>
+            De <span class="productname">Matroska</span><sup>(tm)</sup> de specificatie verklaart dat sommige elementen een standaard
+            waarde hebben. Gewoonlijk wordt een element niet naar het bestand geschreven
+            als het niet gelijk is aan de standaard waarde, dit om ruimte te
+            besparen. De elementen die gebruiker zou kunnen missen in <a href="mkvinfo.html"><span class="productname">mkvinfo</span>(1)</a>'s
+            uitvoer, zijn de <span class="parameter">lanuage (taal) </span> en de <span class="parameter">
+               defautt track flag (standaard spoor markering)</span> elementen. De
+            standaard waarde voor de <span class="parameter">language (taal) </span>is English
+            (is Engels) ('<span class="literal">eng</span>'), en de standaard waarde voor de
+            <span class="parameter">standard track flag (standaard spoor markering)</span> is
+            <span class="parameter">true (waar)</span>. Als je daarom gebruikt de
+            <span class="option">--language 0:eng</span> voor een spoor, dan zal deze niet
+            verschijnen in de <a href="mkvinfo.html"><span class="productname">mkvinfo</span>(1)</a>'s uitvoer.
+            
+         </p>
+         
+         <h1><a name="mkvmerge.attachments">13. Bijlagen</a></h1>
+         
+         
+         <p>
+            Misschien wilt u ook sommige foto's samen met uw <span class="productname">Matroska</span><sup>(tm)</sup> bestand houden
+            of je gebruikt <span class="abbrev">SSA</span> ondertitels en je wilt een speciaal
+            <span class="productname">TrueType</span><sup>(tm)</sup> lettertype(n) gebruiken welke zeldzaam
+            zijn. In deze gevallen kan je deze bestanden vastmaken aan het <span class="productname">Matroska</span><sup>(tm)</sup>
+            bestand. Zij zullen niet enkel bijgevoegd worden aan het bestand maar er
+            ingevoegd worden. Een afspeler kan deze bestanden tonen (de 'foto' gevallen)
+            of hen gebruiken om de ondertitels te genereren (de
+            '<span class="productname">TrueType</span><sup>(tm)</sup> lettertype' gevallen).
+            
+         </p>
+         
+         
+         <p>
+            Hier is een voorbeeld hoe een foto en een
+            <span class="productname">TrueType</span><sup>(tm)</sup> lettertype aan het uitvoerbestand kan
+            vast te maken:
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o output.mkv -A video.avi sound.ogg \
+  --attachment-description "Me and the band behind the stage in a small get-together" \
+  --attachment-mime-type image/jpeg \
+  --attach-file me_and_the_band.jpg \
+  --attachment-description "The real rare and unbelievably good looking font" \
+  --attachment-type application/octet-stream \
+  --attach-file really_cool_font.ttf</pre>
+         
+         <p>
+            Als een <span class="productname">Matroska</span><sup>(tm)</sup> bestandsbijlage bevat en is gebruikt als een invoer
+            bestand dan zal <span class="productname">mkvmerge</span>(1) de bijlage kopieeren naar een nieuw bestand. De
+            selectie, welke bijlage wordt gekopieerd en welke niet kan veranderd worden
+            met de opties <a href="#mkvmerge.description.attachments">--attachments</a>
+            en <a href="#mkvmerge.description.no_attachments">--no-attachments</a>.
+            
+         </p>
+         
+         <h1><a name="mkvmerge.chapters">14. Hoofdstukken</a></h1>
+         
+         
+         <p>
+            Het <span class="productname">Matroska</span><sup>(tm)</sup> hoofdstuk systeem is krachtiger dan het oude bekende systeem
+            van<span class="abbrev">OGM</span> bestanden. De volledige specificatie kan gevonden
+            worden op de <a href="http://www.matroska.org/">Matroska</a>
+            website.
+            
+         </p>
+         
+         
+         <p>
+            <span class="productname">mkvmerge</span>(1) ondersteunt twee soorten van hoofdstuk bestanden als invoer. Het
+            eerste formaat, genoemd '<span class="foreignphrase">simpel hoofdstuk
+               format</span>', is hetzelfde format dat het <span class="abbrev">OGM</span>
+            hulpmiddel verwacht. Het tweede format is een <span class="abbrev">XML</span> gebasseerd hoofdstuk
+            format welke alle <span class="productname">Matroska</span><sup>(tm)</sup>'s hoofdstuk functionaliteiten ondersteunt.
+            
+         </p>
+         
+         
+         <h2><a name="mkvmerge.chapters.simple">14.1. Een eenvoudig hoofdstuk formaat</a></h2>
+         
+         
+         
+         <p>
+            Dit formaat bestaat uit twee paren van regels die respectievelijk starten
+            met '<span class="literal">CHAPTERxx=</span>' en
+            '<span class="literal">CHAPTERxxNAME=</span>'. De eerste bevat de start tijdcode en de
+            tweede bevat de titel. Hier is een voorbeeld:
+            
+         </p>
+         
+         <pre class="screen">CHAPTER01=00:00:00.000
+CHAPTER01NAME=Intro
+CHAPTER02=00:02:30.000
+CHAPTER02NAME=Baby prepares to rock
+CHAPTER03=00:02:42.300
+CHAPTER03NAME=Baby rocks the house</pre>
+         
+         <p>
+            <span class="productname">mkvmerge</span>(1) zal elk paar of regels transformeren naar één <span class="productname">Matroska</span><sup>(tm)</sup>
+            <span class="classname">ChapterAtom</span>. Het plaatst geen
+            <span class="classname">ChapterTrackNumber</span> Wat inhoudt, dat de hoofdstukken
+            van toepassing zijn aan alle sporen in het bestand.
+            
+         </p>
+         
+         
+         <p>
+            Aangezien dit een tekst bestand is kan karakter set conversie nog nodig
+            zijn. Zie de sectie over <a href="#mkvmerge.text_files_and_charsets">
+               tekst bestanden en karakter sets</a> voor een uitleg hoe <span class="productname">mkvmerge</span>(1)
+            converteert tussen karakter sets.
+            
+         </p>
+         
+         
+         
+         <h2><a name="mkvmerge.chapters.xml">14.2. Het XML gebaseerde hoofdstuk formaat</a></h2>
+         
+         
+         <p>
+            Het <span class="abbrev">XML</span> gebaseerde hoofdstuk formaat lijkt op dit voorbeeld:
+            
+         </p>
+         
+         <pre class="screen">&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;
+&lt;!DOCTYPE Chapters SYSTEM "matroskachapters.dtd"&gt;
+&lt;Chapters&gt;
+  &lt;EditionEntry&gt;
+    &lt;ChapterAtom&gt;
+      &lt;ChapterTimeStart&gt;00:00:30.000&lt;/ChapterTimeStart&gt;
+      &lt;ChapterTimeEnd&gt;00:01:20.000&lt;/ChapterTimeEnd&gt;
+      &lt;ChapterDisplay&gt;
+        &lt;ChapterString&gt;A short chapter&lt;/ChapterString&gt;
+        &lt;ChapterLanguage&gt;eng&lt;/ChapterLanguage&gt;
+      &lt;/ChapterDisplay&gt;
+      &lt;ChapterAtom&gt;
+        &lt;ChapterTimeStart&gt;00:00:46.000&lt;/ChapterTimeStart&gt;
+        &lt;ChapterTimeEnd&gt;00:01:10.000&lt;/ChapterTimeEnd&gt;
+        &lt;ChapterDisplay&gt;
+          &lt;ChapterString&gt;A part of that short chapter&lt;/ChapterString&gt;
+          &lt;ChapterLanguage&gt;eng&lt;/ChapterLanguage&gt;
+        &lt;/ChapterDisplay&gt;
+      &lt;/ChapterAtom&gt;
+    &lt;/ChapterAtom&gt;
+  &lt;/EditionEntry&gt;
+&lt;/Chapters&gt;</pre>
+         
+         <p>
+            Met dit format zijn drie dingen mogelijk die niet mogelijk zijn met het
+            simpele hoofdstuk format:
+            
+         </p>
+         
+         
+         <ol>
+            
+            <li>
+               <p>De tijdmarkering voor het hoofdstuk eind kan ingegeven worden,</p>
+            </li>
+            
+            <li>
+               <p>Hoofdstukken mogen ingekapseld zijn</p>
+            </li>
+            
+            <li>
+               <p>De taal en het land mag ingesteld worden</p>
+            </li>
+            
+         </ol>
+         
+         
+         <p>
+            De mkvtoolnix distributie bevat meerdere voorbeeld bestanden in de
+            <span class="filename">doc</span> sub map welke als basis gebruikt kan worden.
+            
+         </p>
+         
+         
+         <p>
+            The following lists the supported XML tags, their data types and, where
+            appropriate, the valid range for their values:
+            
+         </p>
+         
+         <pre class="screen">Chapters (master)
+  EditionEntry (master)
+    EditionUID (unsigned integer, valid range: 1 &lt;= value)
+    EditionFlagHidden (unsigned integer, valid range: 0 &lt;= value &lt;= 1)
+    EditionFlagDefault (unsigned integer, valid range: 0 &lt;= value &lt;= 1)
+    EditionFlagOrdered (unsigned integer, valid range: 0 &lt;= value &lt;= 1)
+    ChapterAtom (master)
+      ChapterAtom (master)
+      ChapterUID (unsigned integer, valid range: 1 &lt;= value)
+      ChapterTimeStart (unsigned integer)
+      ChapterTimeEnd (unsigned integer)
+      ChapterFlagHidden (unsigned integer, valid range: 0 &lt;= value &lt;= 1)
+      ChapterFlagEnabled (unsigned integer, valid range: 0 &lt;= value &lt;= 1)
+      ChapterSegmentUID (binary, valid range: 1 &lt;= length in bytes)
+      ChapterSegmentEditionUID (unsigned integer, valid range: 1 &lt;= value)
+      ChapterPhysicalEquiv (unsigned integer)
+      ChapterTrack (master)
+        ChapterTrackNumber (unsigned integer, valid range: 1 &lt;= value)
+      ChapterDisplay (master)
+        ChapterString (UTF-8 string)
+        ChapterLanguage (UTF-8 string)
+        ChapterCountry (UTF-8 string)
+      ChapterProcess (master)
+        ChapterProcessCodecID (unsigned integer)
+        ChapterProcessPrivate (binary)
+        ChapterProcessCommand (master)
+          ChapterProcessTime (unsigned integer)
+          ChapterProcessData (binary)</pre>
+         
+         
+         <h2><a name="d4e4478">14.3. Algemene opmerkingen</a></h2>
+         
+         
+         <p>
+            Bij het splitsen van bestanden dan zal <span class="productname">mkvmerge</span>(1) tevens de hoofdstukken
+            juist bijstellen. Dit betekendt, dat elk bestand slechts de
+            hoofdstukingangen omvat waarop het van toepassing is, en dat de tijd codes
+            worden gecompenseerd om te voldoen aan de nieuwe tijd codes van elk uitvoer
+            bestand.
+            
+         </p>
+         
+         
+         <p>
+            <span class="productname">mkvmerge</span>(1) is in staat hoofdstukken te kopieeren van <span class="productname">Matroska</span><sup>(tm)</sup>
+            bronbestanden tenzij dit expliciet is uitgezet met de <a href="#mkvmerge.description.no_chapters">--no-chapters</a>
+            optie. De hoofdstukken van alle bronen (<span class="productname">Matroska</span><sup>(tm)</sup> bestanden, Ogg bestanden,
+            <span class="abbrev">MP4</span> bestanden, hoofdstuk tekst bestanden) worden gewoonlijk
+            niet samengevoegd maar eindigen als een separate
+            <span class="classname">ChapterEditions</span>. Alleen wanneer de hoofdstukken
+            worden gelezen van verschillende <span class="productname">Matroska</span><sup>(tm)</sup> of <span class="abbrev">XML</span> bestanden die dezelfde
+            editie UID's delen, zullen hoofdstukken samengevoegd worden tot één
+            <span class="classname">ChapterEdition</span>. Als een dergelijke samenvoeging ook
+            in andere situaties gewenst is, dan dient de gebruiker de hoofdstukken eerst
+            te extraheren uit alle bronnen met <a href="mkvextract.html"><span class="productname">mkvextract</span>(1)</a>, handmatig de <span class="abbrev">XML</span>
+            bestanden aaneenkoppelen en nadien samenvoegen.
+            
+         </p>
+         
+         
+         <h1><a name="mkvmerge.tags">15. Markeringen</a></h1>
+         
+         
+         
+         <h2><a name="d4e4544">15.1. Introductie</a></h2>
+         
+         
+         
+         <p>
+            <span class="productname">Matroska</span><sup>(tm)</sup> ondersteunt een uitgebreide set markeringen welke zijn verouderd,
+            een nieuw simpeler systeem welke worden gebruikt in de meeste overige
+            inhoudsformaten: <span class="parameter">KEY=VALUE</span>. Hoewel, in <span class="productname">Matroska</span><sup>(tm)</sup>
+            deze markeeringen ook kunnen worden ingekapseld, en beide de
+            <span class="parameter">KEY</span> en de <span class="parameter">VALUE</span> zijn elementen
+            van zichzelf. Het voorbeeld bestand <span class="filename">example-tags-2.xml</span>
+            toont hoe dit nieuwe systeem te gebruiken.
+            
+         </p>
+         
+         
+         
+         <h2><a name="mkvmerge.tags.scope">15.2. Gebied van de markeringen</a></h2>
+         
+         
+         
+         <p>
+            <span class="productname">Matroska</span><sup>(tm)</sup> markeringen worden niet automatisch toegekend aan het hele
+            bestand. Dat kunnen zij, maar zij kunnen ook op verschillende delen van het
+            bestand van toepassing zijn: aan één of meerdere sporen, aan één of meerdere
+            hoofdstukken, of zelfs een combinatie van beide. <a href="http://matroska.org/technical/specs/index.html">De Matroska
+               specificaties</a> geeft meer informatie over dit feit.
+            
+         </p>
+         
+         
+         <p>
+            Eén belangrijk feit is, dat markeringen gelinkt zijn naar sporen of
+            hoofdstukken met de <span class="classname">Targets</span> <span class="productname">Matroska</span><sup>(tm)</sup> markeer
+            element, en dat de gebruikte UID's voor dit linken <em>niet</em>
+            zijn, de spoor ID's die overal door <span class="productname">mkvmerge</span>(1) gebruikt worden. In plaats
+            daarvan, zijn de gebruikte UID's nummers welke <span class="productname">mkvmerge</span>(1) automatisch
+            uitrekent (als het spoor genomen is anders dan van een <span class="productname">Matroska</span><sup>(tm)</sup>
+            bestandsformat) of welke zijn gekopieerd van een bronbestand, als de sporen
+            bronbestand een <span class="productname">Matroska</span><sup>(tm)</sup> bestand is. Daarom is het moeilijk te bepalen,
+            welke UID's te gebruiken in het markeer bestand voordat het bestand wordt
+            overgedragen naar <span class="productname">mkvmerge</span>(1).
+            
+         </p>
+         
+         
+         <p>
+            <span class="productname">mkvmerge</span>(1) kent twee opties waarmee je markeringen kunt toevoegen aan
+            <span class="productname">Matroska</span><sup>(tm)</sup> bestanden: De <a href="#mkvmerge.description.global_tags">--global-tags</a>
+            en de <a href="#mkvmerge.description.tags">--tags</a>
+            opties. Het verschil is dat de vroegere optie, <a href="#mkvmerge.description.global_tags">--global-tags</a>,
+            de markeringen zal maken die op het volledige bestand van toepassing zijn,
+            door te verwijderen (welke dan ook) <span class="classname">Targets</span> elementen
+            hierboven genoemd. De laatstgenoemde optie, <a href="#mkvmerge.description.tags">--tags</a>, voegt
+            automatisch het UID die <span class="productname">mkvmerge</span>(1) genereert voor de markering
+            gespecificeerd met het <span class="parameter">TID</span> deel van de<a href="#mkvmerge.description.tags">--tags</a> opties.
+            
+         </p>
+         
+         
+         
+         <h2><a name="mkvmerge.tags.example">15.3. Voorbeeld</a></h2>
+         
+         
+         <p>
+            Laten we aannemen, dat je een markering wiilt toevoegen aan een video spoor
+            gelezen van een <span class="abbrev">AVI</span>. <span class="command">mkvmerge --identify
+               file.avi</span> vertelt je, dat het video spoor ID (verwar dit ID niet
+            met het UID!) 0 is. Zodat het jouw markeer bestand kan creëren, laat weg
+            alle <span class="classname">Targets</span> elementen en start <span class="productname">mkvmerge</span>(1) op: 
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge -o file.mkv --tags 0:tags.xml file.avi</pre>
+         
+         
+         <h2><a name="mkvmerge.tags.file_format">15.4. Markeer bestandsformaat</a></h2>
+         
+         
+         <p>
+            <span class="productname">mkvmerge</span>(1) ondersteunt een <span class="abbrev">XML</span> gebasseerde markeer bestand format. Het
+            format is rijkelijk gedocumenteerd op de <a href="http://matroska.org/technical/specs/index.html">Matroska</a>
+            specificaties. Beide, zowel het binaire alsmede de bron distributies van
+            MKVToolNix komen met een voorbeeld bestand genaamd
+            <span class="filename">example-tags-2.xml</span> welke simpelweg alle bekende
+            markeringen opsomt en welke kunnen worden gebrukt als basis voor 'echte
+            leven' markeer bestanden.
+            
+         </p>
+         
+         
+         <p>
+            De basis is:
+            
+         </p>
+         
+         
+         <ul>
+            
+            <li>
+               <p>Het buitenste element moet zijn <span class="classname">&lt;Tags&gt;</span>.
+               </p>
+            </li>
+            
+            <li>
+               
+               <p>Eén logische markering welke binnenin één paar bevindt van
+                  <span class="classname">&lt;Tag&gt;</span> <span class="abbrev">XML</span> markeringen.
+               </p>
+               
+            </li>
+            
+            <li>
+               <p>Spaties direct voor en na een markering worden genegeerd.</p>
+            </li>
+            
+         </ul>
+         
+         
+         
+         <h2><a name="mkvmerge.tags.data_types">15.5. Data typen</a></h2>
+         
+         
+         <p>
+            Het nieuwe <span class="productname">Matroska</span><sup>(tm)</sup> markeer systeem kent alléén twee data typen, een UTF-8
+            reeks en een binair type. De eerste wordt gebruikt voor markeer namen en het
+            <span class="classname">&lt;String&gt;</span> element terwijl het binaire type
+            gebruikt word voor het <span class="classname">&lt;Binary&gt;</span> element.
+            
+         </p>
+         
+         
+         <p>
+            Aangezien binaire gegevens zelf niet zouden passen in een <span class="abbrev">XML</span> bestand,
+            ondersteunt <span class="productname">mkvmerge</span>(1) twee andere methoden om binaire data op te slaan. Als
+            de inhoud van een <span class="abbrev">XML</span> markering start met '<span class="literal">@</span>' dan wordt
+            de volgende tekst behandeld als een bestandsnaam. De corresponderende
+            bestandsinhoud wordt gekopieerd in een <span class="productname">Matroska</span><sup>(tm)</sup> element.
+            
+         </p>
+         
+         
+         <p>
+            Anders zou de gegeven data moeten zijn een gecodeerde
+            <span class="foreignphrase">Base64</span>. Dit is een codering die binaire data
+            codeert naar een gelimiteerde set van <span class="abbrev">ASCII</span> karakters en
+            wordt gebruikt in b.v. email programma's. <a href="mkvextract.html"><span class="productname">mkvextract</span>(1)</a> zal uitvoeren
+            <span class="foreignphrase">Base64</span> gecodeerde data voor binaire
+            elementen.
+            
+         </p>
+         
+         
+         <p>
+            Het verouderde markeer systeem kent een paar meer data typen welke gevonden
+            kunnen worden in de officiële <span class="productname">Matroska</span><sup>(tm)</sup> markeer specificaties. Aangezien in
+            <span class="productname">mkvmerge</span>(1) dit systeem niet meer wordt ondersteund, worden deze typen hier
+            niet beschreven.
+            
+         </p>
+         
+         
+         
+         <h2><a name="mkvmerge.tags.xml">15.6. Known tags for the XML file format</a></h2>
+         
+         
+         
+         <p>
+            The following lists the supported XML tags, their data types and, where
+            appropriate, the valid range for their values:
+            
+         </p>
+         
+         <pre class="screen">Tags (master)
+  Tag (master)
+    Targets (master)
+      TargetTypeValue (unsigned integer)
+      TargetType (UTF-8 string)
+      TrackUID (unsigned integer)
+      EditionUID (unsigned integer)
+      ChapterUID (unsigned integer)
+      AttachmentUID (unsigned integer)
+    Simple (master)
+      Simple (master)
+      Name (UTF-8 string)
+      TagLanguage (UTF-8 string)
+      DefaultLanguage (unsigned integer)
+      String (UTF-8 string)
+      Binary (binary)</pre>
+         
+         <h1><a name="mkvmerge.segmentinfo">16. The segment info XML files</a></h1>
+         
+         
+         
+         <p>
+            With a segment info XML file it is possible to set certain values in the
+            "segment information" header field of a Matroska file. All of
+            these values cannot be set via other command line options.
+            
+         </p>
+         
+         
+         <p>
+            Other "segment information" header fields can be set via command
+            line options but not via the XML file. This includes e.g. the <span class="option"><a href="#mkvmerge.description.title">--title</a></span> and the
+            <span class="option"><a href="#mkvmerge.description.timecode_scale">--timecode-scale</a></span>
+            options.
+            
+         </p>
+         
+         
+         <p>
+            There are other elements that can be set neither via command line options
+            nor via the XML files. These include the following elements:
+            <span class="varname">DateUTC</span> (also known as the "muxing date"),
+            <span class="varname">MuxingApp</span>, <span class="varname">WritingApp</span> and
+            <span class="varname">Duration</span>. They're always set by <span class="productname">mkvmerge</span>(1) itself.
+            
+         </p>
+         
+         
+         <p>
+            The following lists the supported XML tags, their data types and, where
+            appropriate, the valid range for their values:
+            
+         </p>
+         
+         <pre class="screen">Info (master)
+  SegmentUID (binary, valid range: length in bytes == 16)
+  SegmentFilename (UTF-8 string)
+  PreviousSegmentUID (binary, valid range: length in bytes == 16)
+  PreviousSegmentFilename (UTF-8 string)
+  NextSegmentUID (binary, valid range: length in bytes == 16)
+  NextSegmentFilename (UTF-8 string)
+  SegmentFamily (binary, valid range: length in bytes == 16)
+  ChapterTranslate (master)
+    ChapterTranslateEditionUID (unsigned integer)
+    ChapterTranslateCodec (unsigned integer)
+    ChapterTranslateID (binary)</pre>
+         <h1><a name="mkvmerge.file_layout">17. Matroska bestand layout</a></h1>
+         
+         
+         <p>
+            Het <span class="productname">Matroska</span><sup>(tm)</sup> layout bestand is redelijk flexibel. <span class="productname">mkvmerge</span>(1) zal een
+            bestand genereren op een vooraf gedefinieerde manier. Het resultaat zal er
+            zo uitzien:
+            
+         </p>
+         
+         
+         <p>
+            [EBML head] [segment {meta seek #1} [segment information] [track
+            information] {attachments} {chapters} [cluster 1] {cluster 2} ... {cluster
+            n} {cues} {meta seek #2} {tags}]
+            
+         </p>
+         
+         
+         <p>
+            De elementen in gekromde haakjes zijn optioneel en afhankelijk van de inhoud
+            en de gebruikte opties. Een paar opmerkingen:
+            
+         </p>
+         
+         
+         <ul>
+            
+            <li>
+               
+               <p>
+                  meta zoek #1 bevat slechts een klein aantal aan niveau 1 elementen, en
+                  alleen als deze ook werkelijk bestaan: bijlagen, hoofdstukken, volg
+                  document(en) (cue), markeringen, meta zoek #2. Oudere versies van <span class="productname">mkvmerge</span>(1)
+                  zijn tevens gewend om clusters binnenin het meta zoek element te
+                  plaatsen. Daarom was het noodzakelijk ietwat onnauwkeurig te gokken om
+                  genoeg ruimte te reserveren. Het faalde vaak. Nu worden alleen clusters
+                  opgeslagen in het meta zoek #2, en meta zoek #1 verwijst naar het meta zoek
+                  element #2.
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>Bijlage, hoofdstuk en markeer elementen zijn alléén aanwezig indien zij
+                  waren toegevoegd.
+               </p>
+               
+            </li>
+            
+         </ul>
+         
+         
+         <p>
+            Het kortst mogelijke Matroska bestand zou lijken op dit:
+            
+         </p>
+         
+         
+         <p>
+            [EBML head] [segment [segment information] [track information] [cluster 1]]
+            
+         </p>
+         
+         
+         <p>
+            Dit kan het geval zijn voor alléén-audio bestanden.
+            
+         </p>
+         
+         <h1><a name="mkvmerge.external_timecode_files">18. Externe tijdcode bestanden</a></h1>
+         
+         
+         <p>
+            <span class="productname">mkvmerge</span>(1) staat de gebruiker toe, de tijd codes voor een specifiek spoor
+            zelf te kiezen. Dit kan worden gebruikt, om bestanden met de variabele video
+            beeld verhouding te creëren of 'gaten' in audio te laten bevatten. Een beeld
+            in dit geval, is de unit welke <span class="productname">mkvmerge</span>(1) separaat creëert per <span class="productname">Matroska</span><sup>(tm)</sup>
+            blok. Voor video is dit exact één beeld, voor audio is dit één pakket van
+            het specifieke audio type b.v. voor <span class="abbrev">AC3</span> zou dit een pakket
+            moeten zijn inhoudende <span class="constant">1536</span> voorbeelden.
+            
+         </p>
+         
+         
+         <p>
+            Tijdcode bestanden die worden gebruikt wanneer de sporen aan elkaar worden
+            toegevoegd, moeten alleen voor het eerste deel in een reeks van sporen
+            worden gespecificeerd. Bijvoorbeeld, als je twee bestanden toevoegt, v1.avi
+            en v2.avi, en je wilt tijd codes gebruiken dan moet je commandoregel lijken
+            op dit:
+            
+         </p>
+         
+         <pre class="screen">$ mkvmerge ... --timecodes 0:my_timecodes.txt v1.avi +v2.avi</pre>
+         
+         <p>
+            Er zijn vier formaten die worden herkend door <span class="productname">mkvmerge</span>(1). De eerste regel
+            bevat altijd het versie nummer. Lege regels, regels alleen bevattende
+            spaties en regels beginnend met '<span class="literal">#</span>' worden genegeerd.
+            
+         </p>
+         
+         
+         <h2><a name="d4e4989">18.1. Tijdcode bestandsformaat v1</a></h2>
+         
+         
+         <p>
+            Dit format start met de versie regel. De tweede regel verklaart het aantal
+            beelden per seconde. Alle volgende regels bevatten drie nummers gescheiden
+            door een komma: het start beeld (<span class="constant">0</span> is het eerste
+            beeld), het eind beeld en het aantal beelden binnen dit bereik. Het
+            <span class="abbrev">FPS</span> veranderbaar nummer met een punt '<span class="literal">.</span>'
+            als het decimale punt. De bereiken kunnen 'gaten' bevatten waarvoor
+            standaard <span class="abbrev">FPS</span> is gebruikt. een voorbeeld:
+            
+         </p>
+         
+         <pre class="screen"># timecode format v1
+assume 27.930
+800,1000,25
+1500,1700,30</pre>
+         
+         
+         <h2><a name="d4e5013">18.2. Tijdcode formaat v2</a></h2>
+         
+         
+         
+         <p>
+            In dit format, bevat elke regel een tijdcode voor het corresponderende
+            beeld. Deze tijdcode moet opgeven worden in milli seconden. Het mag een
+            veranderbaar nummer zijn, maar het hoeft niet. Jij <em>moet</em>
+            minstens zo veel tijdcoderegels opgeven als er aan beelden in het spoor
+            zijn. De tijd codes in dit bestand moeten gesorteerd zijn. Voorbeeld voor
+            25fps:
+            
+         </p>
+         
+         <pre class="screen"># timecode format v2
+0
+40
+80</pre>
+         
+         
+         <h2><a name="d4e5028">18.3. Tijd code formaat v3</a></h2>
+         
+         
+         <p>
+            In dit format bevat elke regel een duur in seconden gevolgd door een
+            optioneel aantal beelden per seconde. Beide kunnen een veranderbaar nummer
+            zijn. Als het aantal beelden per seconde niet is opgegeven dan wordt het
+            standaard aantal gebruikt. Voor audio, zou jij de codec zelf de tijd codes
+            moeten laten berekenen. Daarvoor zou je moeten gebruiken
+            <span class="constant">0.0</span> als het aantal beelden per seconde. Je kunt ook
+            'gaten' creëren in de stromen door te gebruiken de '<span class="literal">gap</span>'
+            sleutelwoord gevolgd door de duur van het 'gat'. Voorbeeld voor een audio
+            bestand:
+            
+         </p>
+         
+         <pre class="screen"># timecode format v3
+assume 0.0
+25.325
+7.530,38.236
+gap, 10.050
+2.000,38.236</pre>
+         
+         
+         <h2><a name="d4e5046">18.4. Tijdcode formaat v4</a></h2>
+         
+         
+         <p>
+            Dit format is identiek aan het v2 format. Het enige verschil is dat de tijd
+            codes niet gesorteerd behoeven te zijn. Dit format zou bijna nooit gebruikt
+            moeten worden.
+            
+         </p>
+         
+         
+         <h1><a name="mkvmerge.exit_codes">19. Verlaat codes</a></h1>
+         
+         
+         
+         <p>
+            <a href="mkvinfo.html"><span class="productname">mkvinfo</span>(1)</a> verlaat met één van de drie afsluit codes:
+            
+         </p>
+         
+         
+         <ul>
+            
+            <li>
+               
+               <p>
+                  <span class="constant">0</span> -- Deze verlaat code betekend dat het samenvoegen
+                  succesvol voltooid is.
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  <span class="constant">1</span> -- In dit geval heeft <span class="productname">mkvmerge</span>(1) tenmiste één
+                  waarschuwing uitgevaardigd, maar het samenvoegen ging door. Een waarschuwing
+                  gaat vooraf met de tekst '<span class="literal">Warning:</span>'. Afhankelijk van de
+                  'tegengekomen' kwesties kan het resltaat goed of slecht zijn. De gebruiker
+                  wordt geadviseerd om zowel de waarschuwing als de resulterende bestanden te
+                  controleren.
+                  
+               </p>
+               
+            </li>
+            
+            
+            <li>
+               
+               <p>
+                  <span class="constant">2</span> -- Deze afsluit code wordt gebruikt nadat er een fout
+                  ontstond. <span class="productname">mkvmerge</span>(1) breekt direct af na het geven van dit waarschuw
+                  bericht. Fout! bereik in berichten, van een verkeerd commandoregel argument
+                  over lees/schrijf fouten naar een 'gebroken' bestanden.
+                  
+               </p>
+               
+            </li>
+            
+         </ul>
+         
+         <h1><a name="mkvmerge.environment_variables">20. Environment variables</a></h1>
+         
+         
+         
+         <p>
+            <span class="productname">mkvmerge</span>(1) uses the default variables that determine the system's locale
+            (e.g. <span class="varname">LANG</span> and the <span class="varname">LC_*</span>
+            family). Additional variables:
+            
+         </p>
+         
+         
+         <table class="variablelist">
+            <thead>
+               <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="varlistoption"><span class="varname">MKVTOOLNIX_DEBUG</span> and its short form
+                     <span class="varname">MTX_DEBUG</span></td>
+                  <td>
+                     
+                     <p>The content is treated as if it had been passed via the <a href="#mkvmerge.description.debug">--debug</a> option.
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="varname">MKVTOOLNIX_ENGAGE</span> and its short form
+                     <span class="varname">MTX_ENGAGE</span></td>
+                  <td>
+                     
+                     <p>The content is treated as if it had been passed via the <a href="#mkvmerge.description.engage">--engage</a>
+                        option.
+                     </p>
+                     
+                  </td>
+               </tr>
+               <tr>
+                  <td class="varlistoption"><span class="varname">MKVTOOLNIX_OPTIONS</span> and its short form
+                     <span class="varname">MTX_OPTIONS</span></td>
+                  <td>
+                     
+                     <p>The content is split on white space. The resulting partial strings are
+                        treated as if it had been passed as command line options. If you need to
+                        pass special characters (e.g. spaces) then you have to escape them (see
+                        <a href="#mkvmerge.escaping">the section about escaping special
+                           characters in text</a>).
+                     </p>
+                     
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+         
+         <h1><a name="mkvmerge.seealso">21. Zie ook</a></h1>
+         
+         
+         <p>
+            <a href="mkvinfo.html"><span class="productname">mkvinfo</span>(1)</a>, <a href="mkvextract.html"><span class="productname">mkvextract</span>(1)</a>, <a href="mkvpropedit.html"><span class="productname">mkvpropedit</span>(1)</a>, <a href="mmg.html"><span class="productname">mmg</span>(1)</a>
+            
+         </p>
+         
+         <h1><a name="mkvmerge.www">22. WWW</a></h1>
+         
+         
+         <p>
+            De laatste versie kan altijd gevonden worden op de <a href="http://www.bunkus.org/videotools/mkvtoolnix/">MKVToolNix</a> thuis
+            basis.
+            
+         </p>
+         
+      </div>
+   </body>
+</html>

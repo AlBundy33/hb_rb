@@ -1,0 +1,80 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <title>mmg -- mkvmerge1 的 GUI，包含章节编辑器和头部字段编辑器</title>
+      <link rel="stylesheet" type="text/css" href="mkvtoolnix-doc.css">
+   </head>
+   <body>
+      <div class="heading">mmg -- <a href="mkvmerge.html"><span class="productname">mkvmerge</span>(1)</a> 的 GUI，包含章节编辑器和头部字段编辑器
+      </div>
+      <hr>
+      <div id="toc" class="toc">
+         <h1>Table of contents</h1>
+         <ul>
+            <li><a href="#mmg.synopsis">1. 概要</a></li>
+            <li><a href="#mmg.description">2. 说明</a></li>
+            <li><a href="#mmg.seealso">3. 参阅</a></li>
+            <li><a href="#mmg.www">4. 网络</a></li>
+         </ul>
+      </div>
+      <div class="content">
+         <h1><a name="mmg.synopsis">1. 概要</a></h1>
+         
+         
+         <div class="cmdsynopsis"><span class="commandname">mmg</span> [[--edit-headers {文件名.mkv}] | [偏好设置文件.mmg] | [源文件.扩展名]]
+         </div>
+         
+         <h1><a name="mmg.description">2. 说明</a></h1>
+         
+         
+         <p>
+            <span class="productname">mmg</span>(1) 是 <a href="mkvmerge.html"><span class="productname">mkvmerge</span>(1)</a> 的 <span class="abbrev">GUI</span>，它基于
+            <span class="productname">wxWindows</span><sup>(tm)</sup>。它提供了 <a href="mkvmerge.html"><span class="productname">mkvmerge</span>(1)</a>
+            所有选项的简易使用途径。所有配置（例如源文件，轨道选项等）都可以保存和复原。它还包含了可以读取类似 <span class="abbrev">OGM</span>
+            中的简单章节与 <span class="abbrev">XML</span> 格式章节，输出 <span class="abbrev">XML</span> 格式章节文件，甚至还可以从 <span class="productname">Matroska</span><sup>(tm)</sup> 文件中读取章节，也可以将章节直接写入
+            <span class="productname">Matroska</span><sup>(tm)</sup> 文件。它还包含了一个头部编辑器，可用于快速修改现有 <span class="productname">Matroska</span><sup>(tm)</sup> 文件的属性，且无须进行完整的重新混流。
+            
+         </p>
+         
+         
+         <p>
+            <span class="productname">mmg</span>(1) 需要的选项很少。最可能的情况是附带一个文件名启动它。如果文件的扩展名为
+            '<span class="literal">.mmg</span>'，则该文件将被当作配置文件处理，<span class="productname">mmg</span>(1)
+            启动时将载入其中的配置。如果文件名包含其他扩展名，则将被理解为即将添加的输入文件名。
+            
+         </p>
+         
+         
+         <p>
+            第二个操作模式是附带选项 <span class="option">--edit-headers</span> 与一个文件名调用。这将使 <span class="productname">mmg</span>(1)
+            运行它的头部字段编辑器并载入指定文件。
+            
+         </p>
+         
+         
+         <p>
+            另有完整的 HTML 格式的文档（<span class="filename">doc/mkvmerge-gui.html</span>）。
+            
+         </p>
+         
+         <h1><a name="mmg.seealso">3. 参阅</a></h1>
+         
+         
+         <p>
+            <a href="mkvmerge.html"><span class="productname">mkvmerge</span>(1)</a>, <a href="mkvextract.html"><span class="productname">mkvextract</span>(1)</a>, <a href="mkvinfo.html"><span class="productname">mkvinfo</span>(1)</a>, <a href="mkvpropedit.html"><span class="productname">mkvpropedit</span>(1)</a>
+            
+         </p>
+         
+         <h1><a name="mmg.www">4. 网络</a></h1>
+         
+         
+         <p>
+            最新版本总可以在 <a href="http://www.bunkus.org/videotools/mkvtoolnix/">MKVToolNix 主页</a> 找到。
+            
+         </p>
+         
+      </div>
+   </body>
+</html>
