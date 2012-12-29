@@ -92,6 +92,7 @@ class Handbrake
     minLength = TimeTool::timeToSeconds(options.minLength)
     maxLength = TimeTool::timeToSeconds(options.maxLength)
     ipodCompatibility = options.ipodCompatibility || false
+    disableCropping = options.disableCropping || false
 
     dvd.titles().each do |title|
       #puts "title #{title}"
@@ -135,6 +136,9 @@ class Handbrake
       command="\"#{HANDBRAKE_CLI}\""
       command << " --input \"#{dvd.path()}\""
       command << " --output \"#{outputFile}\""
+      if not options.chapters.nil?
+        command << " --chapters #{options.chapters.join(',')}"
+      end
       command << " --verbose" if verbose
       if not preset.nil? and not preset.empty? 
         command << " --preset \"#{preset}\""
@@ -143,32 +147,8 @@ class Handbrake
         vbr = 2000
         x264_quality = nil
         x264_quality_opts = nil
-        x264_quality = "20.0"
+        x264_quality = "22.0"
 
-        # iPod
-        if ipodCompatibility
-          x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
-        end
-        
-        # https://forum.handbrake.fr/viewtopic.php?f=6&t=19426
-        # ultrafast
-        #x264_quality_opts = "ref=1:bframes=0:cabac=0:8x8dct=0:weightp=0:me=dia:subq=0:rc-lookahead=0:mbtree=0:analyse=none:trellis=0:aq-mode=0:scenecut=0:no-deblock=1"
-        # superfast
-        #x264_quality_opts = "ref=1:weightp=1:me=dia:subq=1:rc-lookahead=0:mbtree=0:analyse=i4x4,i8x8:trellis=0"
-        # veryfast
-        #x264_quality_opts = "ref=1:weightp=1:subq=2:rc-lookahead=10:trellis=0"
-        # faster
-        #x264_quality_opts = "ref=2:mixed-refs=0:weightp=1:subq=4:rc-lookahead=20"
-        # fast
-        #x264_quality_opts = "ref=2:weightp=1:subq=6:rc-lookahead=30"
-        # slow
-        #x264_quality_opts = "ref=5:b-adapt=2:direct=auto:me=umh:subq=8:rc-lookahead=50"
-        # slower
-        #x264_quality_opts = "ref=8:b-adapt=2:direct=auto:me=umh:subq=9:rc-lookahead=60:analyse=all:trellis=2"
-        # veryslow
-        #x264_quality_opts = "ref=16:bframes=8:b-adapt=2:direct=auto:me=umh:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2"
-        # placebo
-        #x264_quality_opts = "ref=16:bframes=16:b-adapt=2:direct=auto:me=tesa:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2:no-fast-pskip=1"
         command << " --encoder x264"
         if x264_quality.nil?
           command << " --vb #{vbr}"
@@ -180,6 +160,28 @@ class Handbrake
 
         # append for iPod-compatibility
         if ipodCompatibility and ismp4
+          x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
+
+          # https://forum.handbrake.fr/viewtopic.php?f=6&t=19426
+          # ultrafast
+          #x264_quality_opts = "ref=1:bframes=0:cabac=0:8x8dct=0:weightp=0:me=dia:subq=0:rc-lookahead=0:mbtree=0:analyse=none:trellis=0:aq-mode=0:scenecut=0:no-deblock=1"
+          # superfast
+          #x264_quality_opts = "ref=1:weightp=1:me=dia:subq=1:rc-lookahead=0:mbtree=0:analyse=i4x4,i8x8:trellis=0"
+          # veryfast
+          #x264_quality_opts = "ref=1:weightp=1:subq=2:rc-lookahead=10:trellis=0"
+          # faster
+          #x264_quality_opts = "ref=2:mixed-refs=0:weightp=1:subq=4:rc-lookahead=20"
+          # fast
+          #x264_quality_opts = "ref=2:weightp=1:subq=6:rc-lookahead=30"
+          # slow
+          #x264_quality_opts = "ref=5:b-adapt=2:direct=auto:me=umh:subq=8:rc-lookahead=50"
+          # slower
+          #x264_quality_opts = "ref=8:b-adapt=2:direct=auto:me=umh:subq=9:rc-lookahead=60:analyse=all:trellis=2"
+          # veryslow
+          #x264_quality_opts = "ref=16:bframes=8:b-adapt=2:direct=auto:me=umh:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2"
+          # placebo
+          #x264_quality_opts = "ref=16:bframes=16:b-adapt=2:direct=auto:me=tesa:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2:no-fast-pskip=1"
+
           command << " --ipod-atom"
 
           if x264_quality_opts.nil?
@@ -189,13 +191,35 @@ class Handbrake
           end
           x264_quality_opts << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
         end
-        
         # tune encoder
         command << " -x #{x264_quality_opts}" if not x264_quality_opts.nil?
+        
+        if ismp4 and not ipodCompatibility
+          command << " --large-file"
+        end
+        
+        if ismp4
+          command << " --format mp4"
+          command << " --optimize"
+        elsif ismkv
+          command << " --format mkv"
+        end
+        command << " --markers"
 
+        # picture settings
         command << " --decomb"
         command << " --detelecine"
-        command << " --crop 0:0:0:0"
+        if disableCropping
+          command << " --crop 0:0:0:0"
+        else
+          command << " --crop autocrop"
+        end
+        command << " --loose-anamorphic"
+        command << " --modulus 16"
+        # FullHD as Maximum
+        command << " --maxWidth 1920"
+        command << " --maxHeight 1080"
+
         # audio
         if mixdownOnly
           # create only mixdown track
@@ -223,15 +247,6 @@ class Handbrake
           command << " --arate #{Array.new(tracks.length, "auto,auto").join(",")}"
           command << " --mixdown #{Array.new(tracks.length, "auto,dpl2").join(",")}"
           command << " --ab #{Array.new(tracks.length, "auto,160").join(",")}"            
-        end
-        # common
-        if ismp4
-          command << " --format mp4"
-          command << " --optimize"
-          command << " --markers"
-        elsif ismkv
-          command << " --format mkv"
-          command << " --markers"
         end
       end
       command << " --title #{title.pos}"
@@ -428,6 +443,9 @@ optparse = OptionParser.new do |opts|
   opts.on("--compatibility", "enables iPod compatible output") do |arg|
     options.ipodCompatibility = arg
   end
+  opts.on("--disable-cropping", "disables autocrop") do |arg|
+    options.disableCropping = arg
+  end
   opts.on("--audio LANGUAGES", Array, "the audio languages") do |arg|
     options.languages = arg
   end 
@@ -448,6 +466,9 @@ optparse = OptionParser.new do |opts|
   end
   opts.on("--titles TITLES", Array, "the title-numbers to rip (use --check to see available titles)") do |arg|
     options.titles = arg
+  end
+  opts.on("--chapters CHAPTERS", Array, "the chapters to rip") do |arg|
+    options.chapters = arg
   end
   opts.on("--min-length DURATION", "the minimum-track-length - format hh:nn:ss") do |arg|
     options.minLength = arg
@@ -473,9 +494,16 @@ optparse = OptionParser.new do |opts|
   opts.on("--verbose", "enable verbose output") do |arg|
     options.verbose = arg
   end
- 
+
   opts.on_tail("--help", "Display this screen") do
     puts opts
+    puts ""
+    puts "available place-holders for output-file:"
+    puts "  #pos#   - title-no"
+    puts "  #size#  - resolution"
+    puts "  #fps#   - frame per second"
+    puts "  #input# - basename of the input-file"
+    puts
     exit
   end
 end
