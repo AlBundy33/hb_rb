@@ -137,14 +137,14 @@ class Handbrake
       command << " --input \"#{dvd.path()}\""
       command << " --output \"#{outputFile}\""
       if not options.chapters.nil?
-        command << " --chapters #{options.chapters.join(',')}"
+        command << " --chapters #{options.chapters}"
       end
       command << " --verbose" if verbose
       if not preset.nil? and not preset.empty? 
         command << " --preset \"#{preset}\""
       else
         # video
-        vbr = 2000
+        vbr = 2500
         x264_quality = nil
         x264_quality_opts = nil
         x264_quality = "22.0"
@@ -463,7 +463,7 @@ optparse = OptionParser.new do |opts|
   opts.on("--titles TITLES", Array, "the title-numbers to rip (use --check to see available titles)") do |arg|
     options.titles = arg
   end
-  opts.on("--chapters CHAPTERS", Array, "the chapters to rip") do |arg|
+  opts.on("--chapters CHAPTERS", "the chapters to rip (e.g. 2 or 3-4)") do |arg|
     options.chapters = arg
   end
   opts.on("--min-length DURATION", "the minimum-track-length - format hh:nn:ss") do |arg|
