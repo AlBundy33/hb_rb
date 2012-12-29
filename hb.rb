@@ -92,7 +92,7 @@ class Handbrake
     minLength = TimeTool::timeToSeconds(options.minLength)
     maxLength = TimeTool::timeToSeconds(options.maxLength)
     ipodCompatibility = options.ipodCompatibility || false
-    disableCropping = options.disableCropping || false
+    enableAutocrop = options.enableAutocrop || false
 
     dvd.titles().each do |title|
       #puts "title #{title}"
@@ -209,11 +209,7 @@ class Handbrake
         # picture settings
         command << " --decomb"
         command << " --detelecine"
-        if disableCropping
-          command << " --crop 0:0:0:0"
-        else
-          command << " --crop autocrop"
-        end
+        command << " --crop 0:0:0:0" if not enableAutocrop
         command << " --loose-anamorphic"
         command << " --modulus 16"
         # FullHD as Maximum
@@ -443,8 +439,8 @@ optparse = OptionParser.new do |opts|
   opts.on("--compatibility", "enables iPod compatible output") do |arg|
     options.ipodCompatibility = arg
   end
-  opts.on("--disable-cropping", "disables autocrop") do |arg|
-    options.disableCropping = arg
+  opts.on("--enable-autocrop", "automatically crop black bars") do |arg|
+    options.enableAutocrop = arg
   end
   opts.on("--audio LANGUAGES", Array, "the audio languages") do |arg|
     options.languages = arg
