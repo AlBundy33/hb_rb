@@ -1,4 +1,4 @@
-<project name="Handbrake" default="build-complete" basedir=".">
+<project name="Handbrake" default="all" basedir=".">
 
 <target name="all" depends="clean,build,build-complete" />
 

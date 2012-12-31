@@ -456,7 +456,16 @@ def showUsageAndExit(helpText, msg = nil)
   puts "  #fps#   - frame per second"
   puts "  #input# - basename of the input-file"
   puts
-  puts "./hb.rb --audio deu,eng --subtitles deu,eng --input \"/Volumes/MY_MOVIE\" --output \"~/Desktop/Movie_#input#_#pos#_#size#_#fps#.mkv\" --main"
+  puts "examples:"
+  puts
+  puts "rip complete movie with all tracks (audio and subtitle) for languages german and english"
+  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input \"/Volumes/MY_MOVIE\" --output \"~/Desktop/Movie.m4v\" --main --copy-only --all-tracks-per-language"
+  puts
+  puts "rip all episodes with all tracks (audio and subtitle) for languages german and english"
+  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input \"/Volumes/MY_SERIES\" --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates --copy-only --all-tracks-per-language"
+  puts
+  puts "rip all episodes with the first track (audio and subtitle) for languages german and english and create an additional mixdown-track for each language"
+  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input \"/Volumes/MY_SERIES\" --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates"
   puts
   if not msg.nil?
     puts msg
