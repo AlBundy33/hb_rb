@@ -1,6 +1,6 @@
 <project name="Handbrake" default="all" basedir=".">
 
-<target name="all" depends="clean,build,build-complete" />
+<target name="all" depends="clean,build-hb-scripts,build-scripts,build,build-complete" />
 
 <target name="build" depends="clean">
 	<zip destfile="build/handbrake.zip">
@@ -8,6 +8,26 @@
 			<include name="lib/" />
 			<include name="tools/handbrake/" />
 			<include name="hb.rb" />
+			<exclude name="**/.svn" />
+		</fileset>
+	</zip>    
+</target>
+	
+<target name="build-hb-scripts" depends="clean">
+	<zip destfile="build/handbrake-hb-scripts.zip">
+		<fileset dir=".">
+			<include name="lib/" />
+			<include name="hb.rb" />
+			<exclude name="**/.svn" />
+		</fileset>
+	</zip>    
+</target>
+	
+<target name="build-scripts" depends="clean">
+	<zip destfile="build/handbrake-scripts.zip">
+		<fileset dir=".">
+			<include name="lib/" />
+			<include name="*.rb" />
 			<exclude name="**/.svn" />
 		</fileset>
 	</zip>    
