@@ -29,8 +29,8 @@ class Handbrake
     title_blocks_pattern = /\+ vts .*, ttn .*, cells .* \(([0-9]+) blocks\)/
     title_pattern = /\+ title ([0-9]+):/
     title_info_pattern = /\+ size: ([0-9]+x[0-9]+).*, ([0-9.]+) fps/
-    audio_pattern = /\+ ([0-9]+), (.*?(\(.*?\))+.*?(\(.*?\))?.*?(\(.*?\))+.*?) \(iso639-2: (.*?)\), ([0-9]+Hz), ([0-9]+bps)/
-    subtitle_pattern = /\+ ([0-9]+), (.*?(\(.*?\))?) \(iso639-2: (.*?)\)/
+    audio_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\), ([0-9]+Hz), ([0-9]+bps)/
+    subtitle_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\)/
     duration_pattern = /\+ duration: (.*)/
     chapter_pattern = /\+ ([0-9]+): cells (.*), (0-9)+ blocks, duration (.*)/
     dvd = Dvd.new(path)
@@ -79,11 +79,28 @@ class Handbrake
         title.chapters().push(chapter)
       elsif line.match(audio_pattern)
         info = line.scan(audio_pattern)[0]
-        track = AudioTrack.new(info[0], info[1], (info[2]||"")[1..-2], (info[3]||"")[1..-2], (info[4]||"")[1..-2], info[5], info[6], info[7])
+        track = AudioTrack.new(info[0], info[1])
+        if info[1].match(/\((.*?)\)\s*\((.*?)\)\s*\((.*?)\)\s*/)
+          info2 = info[1].scan(/\((.*?)\)\s*\((.*?)\)\s*\((.*?)\)\s*/)[0]
+          track.codec = info2[0]
+          track.comment = info2[1]
+          track.channels = info2[2]
+        elsif info[1].match(/\((.*?)\)\s*\((.*?)\)\s*/)
+          info2 = info[1].scan(/\((.*?)\)\s*\((.*?)\)\s*/)[0]
+          track.codec = info2[0]
+          track.channels = info2[1]
+        end
+        track.lang = info[2]
+        track.rate = info[3]
+        track.bitrate = info[4]
         title.audioTracks().push(track)
       elsif line.match(subtitle_pattern)
         info = line.scan(subtitle_pattern)[0]
-        subtitle = Subtitle.new(info[0], info[1], (info[2]||"")[1..-2], info[3])
+        subtitle = Subtitle.new(info[0], info[1], info[2])
+        if info[1].match(/\((.*?)\)/)
+          info2 = info[1].scan(/\((.*?)\)/)[0]
+          subtitle.comment = info2[0]
+        end
         title.subtitles().push(subtitle)
       end
     end
@@ -102,6 +119,7 @@ class Handbrake
     mixdownOnly = options.mixdownOnly || false
     copyOnly = options.copyOnly || false
     allTracksPerLanguage = options.allTracksPerLanguage || false
+    skipCommentaries = options.skipCommentaries || false
     xtraArgs = options.xtra_args
     minLength = TimeTool::timeToSeconds(options.minLength)
     maxLength = TimeTool::timeToSeconds(options.maxLength)
@@ -250,6 +268,7 @@ class Handbrake
         end
         tracks.each do |t|
           L.info("checking audio-track #{t}") if debug or verbose
+          next if skipCommentaries and t.commentary?
           if add_copy_track
             # copy original track
             paudio << t.pos
@@ -281,9 +300,14 @@ class Handbrake
       end
       
       # subtitles
-      command << " --subtitle #{subtitles.collect{|e| e.pos}.join(",")}" if not subtitles.empty?()
+      psubtitle = []
+      subtitles.each do |s|
+        next if skipCommentaries and s.commentary?
+        psubtitle << s.pos
+      end
+      command << " --subtitle #{psubtitle.join(',')}" if not psubtitle.empty?()
 
-
+      # the rest...
       command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
       command << " 2>&1"
       
@@ -322,9 +346,9 @@ class Chapter
   attr_accessor :pos, :cells, :blocks, :duration
   def initialize(pos)
     @pos = pos.to_i
-    @duration = "unknown"
-    @cells = "unknown"
-    @blocks = "unknown"
+    @duration = nil
+    @cells = nil
+    @blocks = nil
   end
 
   def to_s
@@ -334,11 +358,11 @@ end
 
 class Subtitle
   attr_accessor :pos, :descr, :comment, :lang
-  def initialize(pos, descr, comment, lang)
+  def initialize(pos, descr, lang)
     @pos = pos.to_i
     @lang = lang
     @descr = descr
-    @comment = comment
+    @comment = nil
   end
   
   def commentary?()
@@ -347,21 +371,21 @@ class Subtitle
   end
 
   def to_s
-    "#{pos}. #{descr} (lang=#{lang}, commentary=#{commentary?()})"
+    "#{pos}. #{descr} (lang=#{lang}, comment=#{comment}, commentary=#{commentary?()})"
   end
 end
 
 class AudioTrack
   attr_accessor :pos, :descr, :codec, :comment, :channels, :lang, :rate, :bitrate
-  def initialize(pos, descr, codec, comment, channels, lang, rate, bitrate)
+  def initialize(pos, descr)
     @pos = pos.to_i
     @descr = descr
-    @codec = codec
-    @comment = comment
-    @channels = channels
-    @lang = lang
-    @rate = rate
-    @bitrate = bitrate
+    @codec = nil
+    @comment = nil
+    @channels = nil
+    @lang = nil
+    @rate = nil
+    @bitrate = nil
   end
   
   def commentary?()
@@ -382,9 +406,9 @@ class Title
     @audioTracks = []
     @subtitles = []
     @chapters = []
-    @size = "unknown"
-    @fps = "unknown"
-    @duration = "unknown"
+    @size = nil
+    @fps = nil
+    @duration = nil
     @mainFeature = false
   end
 
@@ -398,9 +422,9 @@ class Dvd
   def initialize(path)
     @titles = []
     @path = path
-    @title = "unknown"
-    @title_alt = "unknown"
-    @serial = "unknown"
+    @title = nil
+    @title_alt = nil
+    @serial = nil
   end
 
   def name()
@@ -581,6 +605,9 @@ optparse = OptionParser.new do |opts|
   end
   opts.on("--all-tracks-per-language", "convert all found audio- or subtitle-track per language (default is only the first)") do |arg|
     options.allTracksPerLanguage = arg
+  end
+  opts.on("--skip-commentaries", "ignore commentary-audio- and subtitle-tracks") do |arg|
+    options.skipCommentaries = arg
   end
   
   opts.separator("")
