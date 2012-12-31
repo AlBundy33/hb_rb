@@ -149,7 +149,7 @@ class Handbrake
         vbr = 2500
         x264_quality = nil
         x264_quality_opts = nil
-        x264_quality = "22.0"
+        x264_quality = "20.0"
 
         command << " --encoder x264"
         if x264_quality.nil?
@@ -215,8 +215,8 @@ class Handbrake
         command << " --loose-anamorphic"
         command << " --modulus 16"
         # FullHD as Maximum
-        command << " --maxWidth 1920"
-        command << " --maxHeight 1080"
+        #command << " --maxWidth 1920"
+        #command << " --maxHeight 1080"
         
         # title
         command << " --title #{title.pos}"
@@ -227,6 +227,7 @@ class Handbrake
         parate = []
         pmixdown = []
         pab = []
+        paname = []
         if mixdownOnly
           add_copy_track = false
           add_mixdown_track = true
@@ -246,6 +247,7 @@ class Handbrake
             parate << "auto"
             pmixdown << "auto"
             pab << "auto"
+            paname << "#{t.descr}"
             L.info("adding audio-track: #{t}") if debug or verbose
           end
           if add_mixdown_track
@@ -255,6 +257,7 @@ class Handbrake
             parate << "auto"
             pmixdown << "dpl2"
             pab << "160"
+            paname << "#{t.descr} (mixdown)"
             L.info("adding mixed down audio-track: #{t}") if debug or verbose
           end
         end
@@ -263,6 +266,7 @@ class Handbrake
         command << " --arate #{parate.join(',')}"
         command << " --mixdown #{pmixdown.join(',')}"
         command << " --ab #{pab.join(',')}"
+        command << " --aname \"#{paname.join('","')}\""
         command << " --audio-fallback faac"
       end
       
@@ -483,13 +487,10 @@ optparse = OptionParser.new do |opts|
 
   opts.separator("")
   opts.separator("output-options")
-  opts.on("--preset PRESET", "the preset to use") do |arg|
-    options.preset = arg
-  end
   opts.on("--compatibility", "enables iPod compatible output") do |arg|
     options.ipodCompatibility = arg
   end
-  opts.on("--enable-autocrop", "automatically crop black bars") do |arg|
+  opts.on("--autocrop", "automatically crop black bars") do |arg|
     options.enableAutocrop = arg
   end
   opts.on("--audio LANGUAGES", Array, "the audio languages") do |arg|
@@ -504,8 +505,8 @@ optparse = OptionParser.new do |opts|
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") do |arg|
     options.subtitles = arg
   end
-  opts.on("--all-tracks-per-language", "convert all found audio- or subtitle-track per language (default is only the first)") do |arg|
-    options.allTracksPerLanguage = arg
+  opts.on("--preset PRESET", "the preset to use") do |arg|
+    options.preset = arg
   end
 
   opts.separator("")
@@ -527,6 +528,9 @@ optparse = OptionParser.new do |opts|
   end
   opts.on("--skip-duplicates", "skip duplicate titles (checks block-size)") do |arg|
     options.skipDuplicates = arg
+  end
+  opts.on("--all-tracks-per-language", "convert all found audio- or subtitle-track per language (default is only the first)") do |arg|
+    options.allTracksPerLanguage = arg
   end
   
   opts.separator("")
