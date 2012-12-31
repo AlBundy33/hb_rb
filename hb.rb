@@ -11,16 +11,12 @@ class Handbrake
   
   L = Tools::Loggers.console()
 
-  if Tools::OS::windows?
-    HANDBRAKE_CLI = File.expand_path("tools/handbrake/windows/HandBrakeCLI")
-  else
-    HANDBRAKE_CLI = File.expand_path("tools/handbrake/osx/HandBrakeCLI")
-  end
+  HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform()}/HandBrakeCLI")
 
   attr_accessor :options
   
   def initialize()
-    raise "handbrake not found" if HANDBRAKE_CLI.nil?
+    raise "#{HANDBRAKE_CLI} does not exist" if not File.exists?(HANDBRAKE_CLI)
   end
 
   def readDvd(options)
@@ -337,11 +333,11 @@ class Subtitle
 end
 
 class AudioTrack
-  attr_accessor :pos, :descr, :format, :comment, :channels, :lang, :rate, :bitrate
-  def initialize(pos, descr, format, comment, channels, lang, rate, bitrate)
+  attr_accessor :pos, :descr, :codec, :comment, :channels, :lang, :rate, :bitrate
+  def initialize(pos, descr, codec, comment, channels, lang, rate, bitrate)
     @pos = pos.to_i
     @descr = descr
-    @format = format
+    @codec = codec
     @comment = comment
     @channels = channels
     @lang = lang
@@ -350,7 +346,7 @@ class AudioTrack
   end
 
   def to_s
-    "#{pos}. #{descr} (format=#{format}, channels=#{channels}, lang=#{lang}, comment=#{comment}, rate=#{rate}, bitrate=#{bitrate})"
+    "#{pos}. #{descr} (codec=#{codec}, channels=#{channels}, lang=#{lang}, comment=#{comment}, rate=#{rate}, bitrate=#{bitrate})"
   end
 end
 
@@ -586,7 +582,7 @@ if options.input.nil?() or (not options.checkOnly and options.output.nil?())
   showUsageAndExit(optparse.to_s, "output not set")
 end
 
-if not File.exist? options.input
+if not File.exists? options.input
   puts "\"#{options.input}\" does not exist"
   exit
 end

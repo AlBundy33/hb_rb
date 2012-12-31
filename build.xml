@@ -1,0 +1,35 @@
+<project name="Handbrake" default="build-complete" basedir=".">
+
+<target name="all" depends="clean,build,build-complete" />
+
+<target name="build" depends="clean">
+	<zip destfile="build/handbrake.zip">
+		<fileset dir=".">
+			<include name="lib/" />
+			<include name="tools/handbrake/" />
+			<include name="hb.rb" />
+			<exclude name="**/.svn" />
+		</fileset>
+	</zip>    
+</target>
+	
+<target name="build-complete" depends="clean">
+	<zip destfile="build/handbrake-complete.zip">
+		<fileset dir=".">
+			<include name="lib/" />
+			<include name="tools/" />
+			<include name="*.rb" />
+			<exclude name="**/.svn" />
+		</fileset>
+	</zip>    
+</target>
+
+<target name="clean">
+	<delete>
+		<fileset dir=".">
+			<include name="build/**/*"/>
+		</fileset>
+	</delete>
+</target>
+
+</project>
