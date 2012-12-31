@@ -87,6 +87,25 @@ module Tools
       f = whereis(cmd)
       return (not f.nil? and File.executable?(f))
     end
+    
+    # same as command? but checks also some known extension on windows
+    #
+    # +cmd+ the command
+    def self.command2?(cmd)
+      return command?(cmd) if not windows?()
+      win_ext = %w(cmd bat exe com)
+      # file has already a known extension
+      win_ext.each do |e|
+        return command?(cmd) if cmd.end_with?(".#{e}")
+      end
+      # check each extension
+      result = false
+      win_ext.each do |e|
+        result = command?("#{cmd}.#{e}")
+        break if result
+      end
+      return result
+    end
   
     # find the specified file in PATH
     #

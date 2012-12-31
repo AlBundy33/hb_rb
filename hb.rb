@@ -16,7 +16,7 @@ class Handbrake
   attr_accessor :options
   
   def initialize()
-    raise "#{HANDBRAKE_CLI} does not exist" if not File.exists?(HANDBRAKE_CLI)
+    raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
   end
 
   def readDvd(options)
@@ -94,12 +94,9 @@ class Handbrake
     enableAutocrop = options.enableAutocrop || false
 
     dvd.titles().each do |title|
-      #puts "title #{title}"
-      #puts "matcher #{titleMatcher.matches(title)}"
-      #puts "mainFeatureOnly #{mainFeatureOnly}"
-      #puts "main #{(not mainFeatureOnly or (mainFeatureOnly and title.mainFeature))}"
+      L.info("checking #{title}") if verbose
       next if not (titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature)))
-      L.info("#{title}")
+      L.info("ripping #{title}")
       tracks = audioMatcher.filter(title.audioTracks, false, !allTracksPerLanguage)
       subtitles = subtitleMatcher.filter(title.subtitles, false, !allTracksPerLanguage)
         
@@ -208,8 +205,10 @@ class Handbrake
         command << " --decomb"
         command << " --detelecine"
         command << " --crop 0:0:0:0" if not enableAutocrop
-        command << " --loose-anamorphic"
-        command << " --modulus 16"
+        if not ipodCompatibility
+          command << " --loose-anamorphic"
+          command << " --modulus 16"
+        end
         # FullHD as Maximum
         #command << " --maxWidth 1920"
         #command << " --maxHeight 1080"
@@ -603,8 +602,7 @@ titleMatcher = PosMatcher.new(titles)
 audioMatcher = LangMatcher.new(options.languages)
 subtitleMatcher = LangMatcher.new(options.subtitles)
 
-if options.checkOnly
-  puts dvd.info
-else
+puts dvd.info
+if not options.checkOnly
   hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
 end
