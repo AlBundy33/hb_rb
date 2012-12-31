@@ -22,6 +22,9 @@ class Handbrake
   def readDvd(options)
     path = File.expand_path(options.input)
     output = %x["#{HANDBRAKE_CLI}" -i "#{path}" --scan -t 0 2>&1]
+    dvd_title_pattern = /libdvdnav: DVD Title: (.*)/
+    dvd_alt_title_pattern = /libdvdnav: DVD Title \(Alternative\): (.*)/
+    dvd_serial_pattern = /libdvdnav: DVD Serial Number: (.*)/
     main_feature_pattern = /\+ Main Feature/
     title_blocks_pattern = /\+ vts .*, ttn .*, cells .* \(([0-9]+) blocks\)/
     title_pattern = /\+ title ([0-9]+):/
@@ -34,6 +37,18 @@ class Handbrake
     title = nil
     output.each_line do |line|
       ##L.debug("### #{line}") if options.debug and options.verbose
+      
+      if line.match(dvd_title_pattern)
+        info = line.scan(dvd_title_pattern)[0]
+        dvd.title = info[0].strip
+      elsif line.match(dvd_alt_title_pattern)
+        info = line.scan(dvd_alt_title_pattern)[0]
+        dvd.title_alt = info[0].strip
+      elsif line.match(dvd_serial_pattern)
+        info = line.scan(dvd_serial_pattern)[0]
+        dvd.serial = info[0].strip
+      end
+      
       puts "### #{line}" if options.debug and options.verbose
       if line.match(title_pattern)
         info = line.scan(title_pattern)[0]
@@ -123,7 +138,7 @@ class Handbrake
       outputFile = outputFile.gsub("#pos#", "%02d" % title.pos)
       outputFile = outputFile.gsub("#size#", title.size)
       outputFile = outputFile.gsub("#fps#", title.fps)
-      outputFile = outputFile.gsub("#input#", File.basename(dvd.path()))
+      outputFile = outputFile.gsub("#title#", dvd.name)
       ext = File.extname(outputFile).downcase
       ismp4 = ext.eql?(".mp4") or ext.eql?(".mv4")
       ismkv = ext.eql?(".mkv")
@@ -325,9 +340,14 @@ class Subtitle
     @descr = descr
     @comment = comment
   end
+  
+  def commentary?()
+    return true if @descr.downcase().include?("commentary") 
+    return false
+  end
 
   def to_s
-    "#{pos}. #{descr} (lang=#{lang})"
+    "#{pos}. #{descr} (lang=#{lang}, commentary=#{commentary?()})"
   end
 end
 
@@ -343,9 +363,14 @@ class AudioTrack
     @rate = rate
     @bitrate = bitrate
   end
+  
+  def commentary?()
+    return true if @descr.downcase().include?("commentary") 
+    return false
+  end
 
   def to_s
-    "#{pos}. #{descr} (codec=#{codec}, channels=#{channels}, lang=#{lang}, comment=#{comment}, rate=#{rate}, bitrate=#{bitrate})"
+    "#{pos}. #{descr} (codec=#{codec}, channels=#{channels}, lang=#{lang}, comment=#{comment}, rate=#{rate}, bitrate=#{bitrate}, commentary=#{commentary?()})"
   end
 end
 
@@ -369,10 +394,27 @@ class Title
 end
 
 class Dvd
-  attr_accessor :titles, :path
+  attr_accessor :title, :title_alt, :serial, :titles, :path
   def initialize(path)
     @titles = []
     @path = path
+    @title = "unknown"
+    @title_alt = "unknown"
+    @serial = "unknown"
+  end
+
+  def name()
+    return @title_alt if usable?(@title_alt)
+    return @title if usable?(@title)
+    return File.basename(path()) if usable?(File.basename(path()))
+    return "unknown" 
+  end
+  
+  def usable?(str)
+    return false if str.nil?
+    return false if str.strip.empty?
+    return false if str.strip.eql? "unknown"
+    return true
   end
   
   def info
@@ -392,7 +434,7 @@ class Dvd
   end
 
   def to_s
-    "#{path}"
+    "#{path} (title=#{title}, title_alt=#{title_alt}, serial=#{serial})"
   end
 end
 
@@ -453,7 +495,11 @@ def showUsageAndExit(helpText, msg = nil)
   puts "  #pos#   - title-no"
   puts "  #size#  - resolution"
   puts "  #fps#   - frame per second"
-  puts "  #input# - basename of the input-file"
+  puts "  #title# - title of the dvd (dvd-label or directory-basename)"
+  puts
+  puts "hint"
+  puts "use raw disk devices (e.g. /dev/rdisk1) to ensure that libdvdnav can read the title"
+  puts "see https://forum.handbrake.fr/viewtopic.php?f=10&t=26165&p=120036#p120035"
   puts
   puts "examples:"
   puts
