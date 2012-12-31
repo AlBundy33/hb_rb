@@ -588,7 +588,7 @@ options.languages = ["deu"] if options.languages.nil?()
 options.subtitles = [] if options.subtitles.nil?()
 
 if options.input.nil?() or (not options.checkOnly and options.output.nil?())
-  showUsageAndExit(optparse.to_s, "output not set")
+  showUsageAndExit(optparse.to_s, "input or output not set")
 end
 
 if not File.exists? options.input
