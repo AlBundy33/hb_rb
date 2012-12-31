@@ -319,8 +319,9 @@ class Handbrake
           FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
           system command
           if File.exists?(outputFile)
-            if File.size(outputFile) < (1 * 1024 * 1024)
-              L.warn("file-size only #{File.size(outputFile) / 1024} KB - removing file")
+            size = File.size(outputFile) 
+            if size >= 0 and size < (1 * 1024 * 1024)
+              L.warn("file-size only #{size / 1024} KB - removing file")
               File.delete(outputFile)
               ripped.delete(title.blocks())
             else
