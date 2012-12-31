@@ -30,10 +30,10 @@ class Handbrake
     title_blocks_pattern = /\+ vts .*, ttn .*, cells .* \(([0-9]+) blocks\)/
     title_pattern = /\+ title ([0-9]+):/
     title_info_pattern = /\+ size: ([0-9]+x[0-9]+).*, ([0-9.]+) fps/
-    audio_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\), ([0-9]+Hz), ([0-9]+bps)/
-    subtitle_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\)/
+    audio_pattern = /\+ ([0-9]+), (.*?(\(.*?\))+.*?(\(.*?\))?.*?(\(.*?\))+.*?) \(iso639-2: (.*?)\), ([0-9]+Hz), ([0-9]+bps)/
+    subtitle_pattern = /\+ ([0-9]+), (.*?(\(.*?\))?) \(iso639-2: (.*?)\)/
     duration_pattern = /\+ duration: (.*)/
-    chapter_pattern = /\+ ([0-9]+): cells .* duration (.*)/
+    chapter_pattern = /\+ ([0-9]+): cells (.*), (0-9)+ blocks, duration (.*)/
     dvd = Dvd.new(path)
     title = nil
     output.each_line do |line|
@@ -62,15 +62,17 @@ class Handbrake
       elsif line.match(chapter_pattern)
         info = line.scan(chapter_pattern)[0]
         chapter = Chapter.new(info[0])
-        chapter.duration = info[1]
+        chapter.cells = info[1]
+        chapter.blocks = info[2]
+        chapter.duration = info[3]
         title.chapters().push(chapter)
       elsif line.match(audio_pattern)
         info = line.scan(audio_pattern)[0]
-        track = AudioTrack.new(info[0],info[2], info[1])
+        track = AudioTrack.new(info[0], info[1], (info[2]||"")[1..-2], (info[3]||"")[1..-2], (info[4]||"")[1..-2], info[5], info[6], info[7])
         title.audioTracks().push(track)
       elsif line.match(subtitle_pattern)
         info = line.scan(subtitle_pattern)[0]
-        subtitle = Subtitle.new(info[0],info[2], info[1])
+        subtitle = Subtitle.new(info[0], info[1], (info[2]||"")[1..-2], info[3])
         title.subtitles().push(subtitle)
       end
     end
@@ -88,6 +90,7 @@ class Handbrake
     debug = options.debug || false
     mixdownOnly = options.mixdownOnly || false
     copyOnly = options.copyOnly || false
+    allTracksPerLanguage = options.allTracksPerLanguage || false
     xtraArgs = options.xtra_args
     minLength = TimeTool::timeToSeconds(options.minLength)
     maxLength = TimeTool::timeToSeconds(options.maxLength)
@@ -100,10 +103,9 @@ class Handbrake
       #puts "mainFeatureOnly #{mainFeatureOnly}"
       #puts "main #{(not mainFeatureOnly or (mainFeatureOnly and title.mainFeature))}"
       next if not (titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature)))
-
       L.info("#{title}")
-      tracks = audioMatcher.filter(title.audioTracks).collect{|e| e.pos}
-      subtitles = subtitleMatcher.filter(title.subtitles).collect{|e| e.pos}
+      tracks = audioMatcher.filter(title.audioTracks, false, !allTracksPerLanguage)
+      subtitles = subtitleMatcher.filter(title.subtitles, false, !allTracksPerLanguage)
         
       duration = TimeTool::timeToSeconds(title.duration)
       if minLength >= 0 and duration < minLength
@@ -115,7 +117,7 @@ class Handbrake
         next
       end
       if tracks.empty?() or tracks.length < audioMatcher.allowed().length
-        L.info("skipping title because it contains not all wanted audio-tracks (available: #{tracks})")
+        L.info("skipping title because it contains not all wanted audio-tracks (available: #{title.audioTracks})")
         next
       end
       if skipDuplicates and title.blocks() >= 0 and ripped.include?(title.blocks())
@@ -215,38 +217,59 @@ class Handbrake
         # FullHD as Maximum
         command << " --maxWidth 1920"
         command << " --maxHeight 1080"
-
+        
+        # title
+        command << " --title #{title.pos}"
+        
         # audio
+        paudio = []
+        paencoder = []
+        parate = []
+        pmixdown = []
+        pab = []
         if mixdownOnly
-          # create only mixdown track
-          command << " --audio #{tracks.join(",")}"
-          command << " --aencoder #{Array.new(tracks.length, "faac").join(",")}"
-          command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
-          command << " --mixdown #{Array.new(tracks.length, "dpl2").join(",")}"
-          command << " --ab #{Array.new(tracks.length, "160").join(",")}"
+          add_copy_track = false
+          add_mixdown_track = true
         elsif copyOnly
-          # copy original track
-          command << " --audio #{tracks.join(",")}"
-          command << " --aencoder #{Array.new(tracks.length, "copy").join(",")}"
-          command << " --arate #{Array.new(tracks.length, "auto").join(",")}"
-          command << " --mixdown #{Array.new(tracks.length, "auto").join(",")}"
-          command << " --ab #{Array.new(tracks.length, "auto").join(",")}"
-          command << " --audio-fallback faac"
+          add_copy_track = true
+          add_mixdown_track = false
         else
-          # copy original and create mixdown track
-          command << " --audio "
-          tracks.each do |t|
-            command << "#{t},#{t},"
-          end
-          command.chomp!(",")
-          command << " --aencoder #{Array.new(tracks.length, "copy,faac").join(",")}"
-          command << " --arate #{Array.new(tracks.length, "auto,auto").join(",")}"
-          command << " --mixdown #{Array.new(tracks.length, "auto,dpl2").join(",")}"
-          command << " --ab #{Array.new(tracks.length, "auto,160").join(",")}"            
+          add_copy_track = true
+          add_mixdown_track = true
         end
+        tracks.each do |t|
+          L.info("checking audio-track #{t}") if debug or verbose
+          if add_copy_track
+            # copy original track
+            paudio << t.pos
+            paencoder << "copy"
+            parate << "auto"
+            pmixdown << "auto"
+            pab << "auto"
+            L.info("adding audio-track: #{t}") if debug or verbose
+          end
+          if add_mixdown_track
+            # add mixdown track (just the first per language)
+            paudio << t.pos
+            paencoder << "faac"
+            parate << "auto"
+            pmixdown << "dpl2"
+            pab << "160"
+            L.info("adding mixed down audio-track: #{t}") if debug or verbose
+          end
+        end
+        command << " --audio #{paudio.join(',')}"
+        command << " --aencoder #{paencoder.join(',')}"
+        command << " --arate #{parate.join(',')}"
+        command << " --mixdown #{pmixdown.join(',')}"
+        command << " --ab #{pab.join(',')}"
+        command << " --audio-fallback faac"
       end
-      command << " --title #{title.pos}"
-      command << " --subtitle #{subtitles.join(",")}" if not subtitles.empty?()
+      
+      # subtitles
+      command << " --subtitle #{subtitles.collect{|e| e.pos}.join(",")}" if not subtitles.empty?()
+
+
       command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
       command << " 2>&1"
       
@@ -282,40 +305,48 @@ class Handbrake
 end
 
 class Chapter
-  attr_accessor :pos, :duration
+  attr_accessor :pos, :cells, :blocks, :duration
   def initialize(pos)
     @pos = pos.to_i
     @duration = "unknown"
+    @cells = "unknown"
+    @blocks = "unknown"
   end
 
   def to_s
-    "#{pos}. #{duration}"
+    "#{pos}. #{duration} (cells=#{cells}, blocks=#{blocks})"
   end
 end
 
 class Subtitle
-  attr_accessor :pos, :lang, :desc
-  def initialize(pos, lang, desc)
+  attr_accessor :pos, :descr, :comment, :lang
+  def initialize(pos, descr, comment, lang)
     @pos = pos.to_i
     @lang = lang
-    @desc = desc
+    @descr = descr
+    @comment = comment
   end
 
   def to_s
-    "#{pos}. #{desc} (#{lang})"
+    "#{pos}. #{descr} (lang=#{lang})"
   end
 end
 
 class AudioTrack
-  attr_accessor :pos, :lang, :desc
-  def initialize(pos, lang, desc)
+  attr_accessor :pos, :descr, :format, :comment, :channels, :lang, :rate, :bitrate
+  def initialize(pos, descr, format, comment, channels, lang, rate, bitrate)
     @pos = pos.to_i
+    @descr = descr
+    @format = format
+    @comment = comment
+    @channels = channels
     @lang = lang
-    @desc = desc
+    @rate = rate
+    @bitrate = bitrate
   end
 
   def to_s
-    "#{pos}. #{desc} (#{lang})"
+    "#{pos}. #{descr} (format=#{format}, channels=#{channels}, lang=#{lang}, comment=#{comment}, rate=#{rate}, bitrate=#{bitrate})"
   end
 end
 
@@ -381,7 +412,7 @@ class ValueMatcher
     allowed().nil? or allowed().include?(value(obj))
   end
 
-  def filter(list, onlyFirst = false)
+  def filter(list, onlyFirst = false, skipDuplicatedValues = true)
     return list if allowed().nil?
 
     filtered = []
@@ -389,7 +420,7 @@ class ValueMatcher
     allowed().each do |a|
       list.each do |e|
         v = value(e)
-        if (v == a or v.eql? a) and not stack.include? v
+        if (v == a or v.eql? a) and (!skipDuplicatedValues or !stack.include?(v))
           stack.push v
           filtered.push e
           break if onlyFirst
@@ -416,7 +447,26 @@ class LangMatcher < ValueMatcher
   end
 end
 
+def showUsageAndExit(helpText, msg = nil)
+  puts helpText
+  puts ""
+  puts "available place-holders for output-file:"
+  puts "  #pos#   - title-no"
+  puts "  #size#  - resolution"
+  puts "  #fps#   - frame per second"
+  puts "  #input# - basename of the input-file"
+  puts
+  puts "./hb.rb --audio deu,eng --subtitles deu,eng --input \"/Volumes/MY_MOVIE\" --output \"~/Desktop/Movie_#input#_#pos#_#size#_#fps#.mkv\" --main"
+  puts
+  if not msg.nil?
+    puts msg
+    puts
+  end
+  exit
+end
+
 options = OpenStruct.new
+
 optparse = OptionParser.new do |opts|
   
   opts.separator("")
@@ -424,7 +474,7 @@ optparse = OptionParser.new do |opts|
   opts.on("--input INPUT", "input-source") do |arg|
     options.input = arg
   end
-  opts.on("--output OUTPUT", "output-directory") do |arg|
+  opts.on("--output OUTPUT", "output-file (mp4, m4v and mkv supported)") do |arg|
     options.output = arg
   end
   opts.on("--force", "force override of existing files") do |arg|
@@ -454,6 +504,9 @@ optparse = OptionParser.new do |opts|
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") do |arg|
     options.subtitles = arg
   end
+  opts.on("--all-tracks-per-language", "convert all found audio- or subtitle-track per language (default is only the first)") do |arg|
+    options.allTracksPerLanguage = arg
+  end
 
   opts.separator("")
   opts.separator("filter-options")
@@ -472,7 +525,7 @@ optparse = OptionParser.new do |opts|
   opts.on("--max-length DURATION", "the maximum-track-length - format hh:nn:ss") do |arg|
     options.maxLength = arg
   end
-  opts.on("--skip-duplicates", "skip duplicate tracks (checks block-size)") do |arg|
+  opts.on("--skip-duplicates", "skip duplicate titles (checks block-size)") do |arg|
     options.skipDuplicates = arg
   end
   
@@ -492,25 +545,18 @@ optparse = OptionParser.new do |opts|
   end
 
   opts.on_tail("--help", "Display this screen") do
-    puts opts
-    puts ""
-    puts "available place-holders for output-file:"
-    puts "  #pos#   - title-no"
-    puts "  #size#  - resolution"
-    puts "  #fps#   - frame per second"
-    puts "  #input# - basename of the input-file"
-    puts
-    exit
+    showUsageAndExit(opts.to_s)
   end
 end
 
 begin
   optparse.parse!(ARGV)
-rescue OptionParser::InvalidOption => e
-  puts optparse
-  puts
-  puts e
-  exit 1
+rescue Exception => e
+  if not e.kind_of?(SystemExit)
+    showUsageAndExit(optparse.to_s, e.to_s)
+  else
+    exit
+  end
 end
 
 titles = nil
@@ -533,8 +579,7 @@ options.languages = ["deu"] if options.languages.nil?()
 options.subtitles = [] if options.subtitles.nil?()
 
 if options.input.nil?() or (not options.checkOnly and options.output.nil?())
-  puts optparse
-  exit
+  showUsageAndExit(optparse.to_s, "output not set")
 end
 
 if not File.exist? options.input
