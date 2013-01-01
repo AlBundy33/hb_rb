@@ -158,9 +158,13 @@ class Handbrake
       outputFile = outputFile.gsub("#fps#", title.fps)
       outputFile = outputFile.gsub("#title#", dvd.name)
       ext = File.extname(outputFile).downcase
-      ismp4 = ext.eql?(".mp4") or ext.eql?(".m4v")
-      ismkv = ext.eql?(".mkv")
-      if not ismp4 and not ismkv
+      ismp4 = false
+      ismkv = false
+      if ext.eql?(".mp4") or ext.eql?(".m4v")
+        ismp4 = true
+      elsif ext.eql?(".mkv")
+        ismkv = true
+      else
         raise "error unsupported extension #{ext}"
       end
       
