@@ -5,16 +5,16 @@ require 'tmpdir'
 require 'ostruct'
 
 class Handbrake
-  require 'fileutils'  
+  require 'fileutils'
   require 'lib/tools.rb'
   include Tools
-  
+
   L = Tools::Loggers.console()
 
   HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform()}/HandBrakeCLI")
 
   attr_accessor :options
-  
+
   def initialize()
     raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
   end
@@ -37,7 +37,7 @@ class Handbrake
     title = nil
     output.each_line do |line|
       ##L.debug("### #{line}") if options.debug and options.verbose
-      
+
       if line.match(dvd_title_pattern)
         info = line.scan(dvd_title_pattern)[0]
         dvd.title = info[0].strip
@@ -48,7 +48,7 @@ class Handbrake
         info = line.scan(dvd_serial_pattern)[0]
         dvd.serial = info[0].strip
       end
-      
+
       puts "### #{line}" if options.debug and options.verbose
       if line.match(title_pattern)
         info = line.scan(title_pattern)[0]
@@ -132,7 +132,7 @@ class Handbrake
       L.info("ripping #{title}")
       tracks = audioMatcher.filter(title.audioTracks, false, !allTracksPerLanguage)
       subtitles = subtitleMatcher.filter(title.subtitles, false, !allTracksPerLanguage)
-        
+
       duration = TimeTool::timeToSeconds(title.duration)
       if minLength >= 0 and duration < minLength
         L.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
@@ -167,7 +167,7 @@ class Handbrake
       else
         raise "error unsupported extension #{ext}"
       end
-      
+
       command="\"#{HANDBRAKE_CLI}\""
       command << " --input \"#{dvd.path()}\""
       command << " --output \"#{outputFile}\""
@@ -175,7 +175,7 @@ class Handbrake
         command << " --chapters #{options.chapters}"
       end
       command << " --verbose" if verbose
-      if not preset.nil? and not preset.empty? 
+      if not preset.nil? and not preset.empty?
         command << " --preset \"#{preset}\""
       else
         # video
@@ -221,11 +221,11 @@ class Handbrake
         end
         # tune encoder
         command << " -x #{x264_quality_opts}" if not x264_quality_opts.nil?
-        
+
         if ismp4 and not ipodCompatibility
           command << " --large-file"
         end
-        
+
         if ismp4
           command << " --format mp4"
           command << " --optimize"
@@ -245,10 +245,10 @@ class Handbrake
         # FullHD as Maximum
         #command << " --maxWidth 1920"
         #command << " --maxHeight 1080"
-        
+
         # title
         command << " --title #{title.pos}"
-        
+
         # audio
         paudio = []
         paencoder = []
@@ -310,7 +310,7 @@ class Handbrake
       # the rest...
       command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
       command << " 2>&1"
-      
+
       ripped.push(title.blocks())
       if force or (not File.exists?(outputFile) and Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").empty?)
         L.info(command)
@@ -319,7 +319,7 @@ class Handbrake
           FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
           system command
           if File.exists?(outputFile)
-            size = File.size(outputFile) 
+            size = File.size(outputFile)
             if size >= 0 and size < (1 * 1024 * 1024)
               L.warn("file-size only #{size / 1024} KB - removing file")
               File.delete(outputFile)
@@ -365,9 +365,9 @@ class Subtitle
     @descr = descr
     @comment = nil
   end
-  
+
   def commentary?()
-    return true if @descr.downcase().include?("commentary") 
+    return true if @descr.downcase().include?("commentary")
     return false
   end
 
@@ -388,9 +388,9 @@ class AudioTrack
     @rate = nil
     @bitrate = nil
   end
-  
+
   def commentary?()
-    return true if @descr.downcase().include?("commentary") 
+    return true if @descr.downcase().include?("commentary")
     return false
   end
 
@@ -432,16 +432,16 @@ class Dvd
     return @title_alt if usable?(@title_alt)
     return @title if usable?(@title)
     return File.basename(path()) if usable?(File.basename(path()))
-    return "unknown" 
+    return "unknown"
   end
-  
+
   def usable?(str)
     return false if str.nil?
     return false if str.strip.empty?
     return false if str.strip.eql? "unknown"
     return true
   end
-  
+
   def info
     s = "#{self}"
     titles().each do |t|
@@ -468,11 +468,11 @@ class ValueMatcher
   def initialize(allowed)
     @allowed = allowed
   end
-  
+
   def value(obj)
     raise "method not implemented"
   end
-  
+
   def matches(obj)
     #puts "#{allowed} #{value(obj)} -> #{allowed().nil? or allowed().include?(value(obj))}"
     allowed().nil? or allowed().include?(value(obj))
@@ -495,7 +495,7 @@ class ValueMatcher
     end
     return filtered
   end
-  
+
   def to_s
     "#{@allowed}"
   end
@@ -547,7 +547,7 @@ end
 options = OpenStruct.new
 
 optparse = OptionParser.new do |opts|
-  
+
   opts.separator("")
   opts.separator("options")
   opts.on("--input INPUT", "input-source") do |arg|
@@ -570,7 +570,7 @@ optparse = OptionParser.new do |opts|
   end
   opts.on("--audio LANGUAGES", Array, "the audio languages") do |arg|
     options.languages = arg
-  end 
+  end
   opts.on("--mixdown-only", "create only mixed down track (Dolby ProLogic 2)") do |arg|
     options.mixdownOnly = arg
   end
@@ -610,7 +610,7 @@ optparse = OptionParser.new do |opts|
   opts.on("--skip-commentaries", "ignore commentary-audio- and subtitle-tracks") do |arg|
     options.skipCommentaries = arg
   end
-  
+
   opts.separator("")
   opts.separator("shorts")
   opts.on("--default",   "sets: --audio deu,eng --subtitles deu,eng --copy-only --all-tracks-per-language --skip-commentaries") do |arg|
@@ -639,7 +639,7 @@ optparse = OptionParser.new do |opts|
     options.maxLength = "00:50:00"
     options.skipDuplicates = true
   end
-  
+
   opts.separator("")
   opts.separator("expert-options")
   opts.on("--check", "run check only and display information") do |arg|
@@ -654,7 +654,7 @@ optparse = OptionParser.new do |opts|
   opts.on("--verbose", "enable verbose output") do |arg|
     options.verbose = arg
   end
-  
+
   opts.on_tail("--help", "Display this screen") do
     showUsageAndExit(opts.to_s)
   end
@@ -674,12 +674,12 @@ titles = nil
 if not options.titles.nil?
   titles = []
   range_pattern = /([0-9]+)-([0-9]+)/
-  options.titles.each do |t| 
+  options.titles.each do |t|
     if t.match(range_pattern)
       range = t.scan(range_pattern)[0]
       rangeStart = range[0].to_i
       rangeEnd = range[1].to_i
-      rangeStart.upto(rangeEnd) { |n| titles.push(n) unless titles.include?(n) } 
+      rangeStart.upto(rangeEnd) { |n| titles.push(n) unless titles.include?(n) }
     else
       titles.push(t.to_i) unless titles.include?(t.to_i)
     end
