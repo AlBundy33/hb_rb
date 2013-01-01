@@ -160,6 +160,9 @@ class Handbrake
       ext = File.extname(outputFile).downcase
       ismp4 = ext.eql?(".mp4") or ext.eql?(".mv4")
       ismkv = ext.eql?(".mkv")
+      if not ismp4 and not ismkv
+        raise "error unsupported extension #{ext}"
+      end
       
       command="\"#{HANDBRAKE_CLI}\""
       command << " --input \"#{dvd.path()}\""
@@ -172,19 +175,12 @@ class Handbrake
         command << " --preset \"#{preset}\""
       else
         # video
-        vbr = 2500
-        x264_quality = nil
-        x264_quality_opts = nil
-        x264_quality = "20.0"
-
         command << " --encoder x264"
-        if x264_quality.nil?
-          command << " --vb #{vbr}"
-          command << " --two-pass"
-          command << " --turbo"
-        else
-          command << " --quality #{x264_quality}"
-        end
+        command << " --quality 20.0"
+        #command << " --vb 2500"
+        #command << " --two-pass"
+        #command << " --turbo"
+        x264_quality_opts = nil
 
         # append for iPod-compatibility
         if ipodCompatibility and ismp4
@@ -297,15 +293,15 @@ class Handbrake
         command << " --ab #{pab.join(',')}"
         command << " --aname \"#{paname.join('","')}\""
         command << " --audio-fallback faac"
+
+        # subtitles
+        psubtitle = []
+        subtitles.each do |s|
+          next if skipCommentaries and s.commentary?
+          psubtitle << s.pos
+        end
+        command << " --subtitle #{psubtitle.join(',')}" if not psubtitle.empty?()
       end
-      
-      # subtitles
-      psubtitle = []
-      subtitles.each do |s|
-        next if skipCommentaries and s.commentary?
-        psubtitle << s.pos
-      end
-      command << " --subtitle #{psubtitle.join(',')}" if not psubtitle.empty?()
 
       # the rest...
       command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
