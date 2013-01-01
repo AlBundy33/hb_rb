@@ -159,7 +159,7 @@ module Tools
     # +file+ the file to write in
     # +append+ true to append new data to file, falso to override file
     def self.run(cmd, file, append = false)
-      cmdLine = teeCommand(cmd,file,append)
+      cmdLine = command(cmd,file,append)
       %x[#{cmdLine}]
     end
   end
