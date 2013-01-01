@@ -699,7 +699,7 @@ if not File.exists? options.input
 end
 
 if options.verbose
-  options.each{|k,v| puts "#{k} = #{v}" }
+  options.marshal_dump.each{|k,v| puts "#{k} = #{v.inspect}" }
 end
 
 hb = Handbrake.new
