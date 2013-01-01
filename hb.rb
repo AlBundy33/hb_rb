@@ -608,6 +608,35 @@ optparse = OptionParser.new do |opts|
   end
   
   opts.separator("")
+  opts.separator("shorts")
+  opts.on("--default",   "sets: --audio deu,eng --subtitles deu,eng --copy-only --all-tracks-per-language --skip-commentaries") do |arg|
+      options.languages = ["deu", "eng"]
+      options.subtitles = ["deu", "eng"]
+      options.copyOnly = true
+      options.allTracksPerLanguage = true
+      options.skipCommentaries = true
+      options.mainFeatureOnly = true
+    end
+  opts.on("--movie",   "sets: --audio deu,eng --subtitles deu,eng --copy-only --all-tracks-per-language --skip-commentaries --main") do |arg|
+    options.languages = ["deu", "eng"]
+    options.subtitles = ["deu", "eng"]
+    options.copyOnly = true
+    options.allTracksPerLanguage = true
+    options.skipCommentaries = true
+    options.mainFeatureOnly = true
+  end
+  opts.on("--episodes", "sets: --audio deu,eng --subtitles deu,eng --copy-only --all-tracks-per-language --skip-commentaries --min-length 00:10:00 --max-length 00:50:00 --skip-duplicates") do |arg|
+    options.languages = ["deu", "eng"]
+    options.subtitles = ["deu", "eng"]
+    options.copyOnly = true
+    options.allTracksPerLanguage = true
+    options.skipCommentaries = true
+    options.minLength = "00:10:00"
+    options.maxLength = "00:50:00"
+    options.skipDuplicates = true
+  end
+  
+  opts.separator("")
   opts.separator("expert-options")
   opts.on("--check", "run check only and display information") do |arg|
     options.checkOnly = arg
@@ -621,7 +650,7 @@ optparse = OptionParser.new do |opts|
   opts.on("--verbose", "enable verbose output") do |arg|
     options.verbose = arg
   end
-
+  
   opts.on_tail("--help", "Display this screen") do
     showUsageAndExit(opts.to_s)
   end
@@ -635,6 +664,10 @@ rescue Exception => e
   else
     exit
   end
+end
+
+if options.verbose
+  options.each{|k,v| puts "#{k} = #{v}" }
 end
 
 titles = nil
