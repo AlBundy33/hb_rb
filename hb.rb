@@ -683,7 +683,7 @@ ARGV.options do |opts|
   opts.on("--verbose", "enable verbose output") do |arg|
     options.verbose = arg
   end
-  opts.on("--log", "name of the logfile") do |arg|
+  opts.on("--log FILE", "name of the logfile") do |arg|
     options.logfile = arg
   end
 
