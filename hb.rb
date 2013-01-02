@@ -738,7 +738,7 @@ titleMatcher = PosMatcher.new(titles)
 audioMatcher = LangMatcher.new(options.languages)
 subtitleMatcher = LangMatcher.new(options.subtitles)
 
-Tools::Tee::tee(options.logfile || "hb.log",true) {
+Tools::Tee::tee(options.logfile || "hb.log",true) {
   puts dvd.info
   if not options.checkOnly
     hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
