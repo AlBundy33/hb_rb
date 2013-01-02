@@ -517,10 +517,10 @@ def showUsageAndExit(helpText, msg = nil)
   puts helpText
   puts ""
   puts "available place-holders for output-file:"
-  puts "  #pos#   - title-no"
+  puts "  #pos#   - title-number on dvd"
   puts "  #size#  - resolution"
-  puts "  #fps#   - frame per second"
-  puts "  #title# - title of the dvd (dvd-label or directory-basename)"
+  puts "  #fps#   - frames per second"
+  puts "  #title# - dvd-title (dvd-label or directory-basename)"
   puts
   puts "hint"
   puts "use raw disk devices (e.g. /dev/rdisk1) to ensure that libdvdnav can read the title"
@@ -529,13 +529,13 @@ def showUsageAndExit(helpText, msg = nil)
   puts "examples:"
   puts
   puts "rip complete movie with all original-tracks (audio and subtitle) for languages german and english"
-  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input \"/Volumes/MY_MOVIE\" --output \"~/Desktop/Movie.m4v\" --main --copy-only --all-tracks-per-language"
+  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input /dev/rdisk1 --output \"~/Desktop/Movie.m4v\" --main --copy-only --all-tracks-per-language"
   puts
   puts "rip all episodes with all original-tracks (audio and subtitle) for languages german and english"
-  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input \"/Volumes/MY_SERIES\" --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates --copy-only --all-tracks-per-language"
+  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input /dev/rdisk1 --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates --copy-only --all-tracks-per-language"
   puts
   puts "rip all episodes with the first original-track (audio and subtitle) for languages german and english and create an additional mixdown-track for each language"
-  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input \"/Volumes/MY_SERIES\" --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates"
+  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input /dev/rdisk1 --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates"
   puts
   if not msg.nil?
     puts msg
