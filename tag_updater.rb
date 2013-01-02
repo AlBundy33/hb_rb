@@ -223,9 +223,9 @@ class TagDb
         L.warn("could not create command to tag file #{f}")
         next
       end
-      cmd = Tools::Tee::command(cmd,File.expand_path("tag.log"),true)
+      #cmd = Tools::TeeCommand::command(cmd,File.expand_path("tag.log"),true)
       L.info("#{cmd}")
-      %x[#{cmd}] if not debug
+      Tools::Tee::tee(File.expand_path("tag.log")) { %x[#{cmd}] } if not debug
       ext = File.extname(f)
       titled_name = nil
       titled_name = "#{info[TITLE]}.#{info[FILE_ID]}#{ext}" if not empty?(info[TITLE]) and not empty?(info[FILE_ID])

@@ -544,10 +544,39 @@ def showUsageAndExit(helpText, msg = nil)
   exit
 end
 
-options = OpenStruct.new
+options = Struct.new(
+  :input, :output, :force,
+  :ipodCompatibility, :enableAutocrop,
+  :languages, :mixdownOnly, :copyOnly, :subtitles,
+  :preset, :mainFeatureOnly, :titles, :chapters,
+  :minLength, :maxLength, :skipDuplicates,
+  :allTracksPerLanguage, :skipCommentaries,
+  :checkOnly, :xtra_args, :debug, :verbose, :logfile).new
+options.input = nil
+options.output = nil
+options.force = false
+options.ipodCompatibility = false
+options.enableAutocrop = false
+options.languages = ["deu"]
+options.mixdownOnly = false
+options.copyOnly = false
+options.subtitles = []
+options.preset = nil
+options.mainFeatureOnly = false
+options.titles = nil
+options.chapters = nil
+options.minLength = nil
+options.maxLength = nil
+options.skipDuplicates = false
+options.allTracksPerLanguage = false
+options.skipCommentaries = false
+options.checkOnly = false
+options.xtra_args = nil
+options.debug = false
+options.verbose = false
+options.logfile = nil
 
-optparse = OptionParser.new do |opts|
-
+ARGV.options do |opts|
   opts.separator("")
   opts.separator("options")
   opts.on("--input INPUT", "input-source") do |arg|
@@ -654,6 +683,9 @@ optparse = OptionParser.new do |opts|
   opts.on("--verbose", "enable verbose output") do |arg|
     options.verbose = arg
   end
+  opts.on("--log", "name of the logfile") do |arg|
+    options.logfile = arg
+  end
 
   opts.on_tail("--help", "Display this screen") do
     showUsageAndExit(opts.to_s)
@@ -661,10 +693,10 @@ optparse = OptionParser.new do |opts|
 end
 
 begin
-  optparse.parse!(ARGV)
-rescue Exception => e
+  ARGV.parse!
+rescue => e
   if not e.kind_of?(SystemExit)
-    showUsageAndExit(optparse.to_s, e.to_s)
+    showUsageAndExit(ARGV.options.to_s, e.to_s)
   else
     exit
   end
@@ -686,11 +718,8 @@ if not options.titles.nil?
   end
 end
 
-options.languages = ["deu"] if options.languages.nil?()
-options.subtitles = [] if options.subtitles.nil?()
-
 if options.input.nil?() or (not options.checkOnly and options.output.nil?())
-  showUsageAndExit(optparse.to_s, "input or output not set")
+  showUsageAndExit(ARGV.options.to_s, "input or output not set")
 end
 
 if not File.exists? options.input
@@ -709,7 +738,9 @@ titleMatcher = PosMatcher.new(titles)
 audioMatcher = LangMatcher.new(options.languages)
 subtitleMatcher = LangMatcher.new(options.subtitles)
 
-puts dvd.info
-if not options.checkOnly
-  hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
-end
+Tools::Tee::tee(options.logfile || "hb.log",true) {
+  puts dvd.info
+  if not options.checkOnly
+    hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
+  end
+}

@@ -3,7 +3,7 @@ module Tools
   class OS
     private
     @@platform = nil
-    
+
     public
     # constant for windows-platform
     WINDOWS = :WINDOWS
@@ -19,10 +19,10 @@ module Tools
     CYGWIN = :CYGWIN
     # constant for unknown platform
     UNKNOWN = :UNKNOWN
-  
+
     # constant including all known platforms
     PLATFORMS = [ WINDOWS, LINUX, OSX, FREEBSD, SOLARIS, CYGWIN, UNKNOWN ].freeze
-  
+
     # the uname-command known from linux
     def self.uname()
       if whereis("ver.dll") and ENV['COMSPEC']
@@ -60,24 +60,24 @@ module Tools
       end
       @@platform
     end
-  
+
     # checks if platform equals the current platform
     #
     # +platform+ the platform to check
     def self.platform?(platform)
       platform().eql?(platform)
     end
-    
+
     # returns true if on windows-platform
     def self.windows?()
       platform?(WINDOWS)
     end
-  
+
     # returns true if on osx-platform
     def self.osx?()
       platform?(OSX)
     end
-    
+
     # checks path if cmd exists and is executable
     #
     # +cmd+ the command
@@ -87,7 +87,7 @@ module Tools
       f = whereis(cmd)
       return (not f.nil? and File.executable?(f))
     end
-    
+
     # same as command? but checks also some known extension on windows
     #
     # +cmd+ the command
@@ -106,7 +106,7 @@ module Tools
       end
       return result
     end
-  
+
     # find the specified file in PATH
     #
     # +name+ the file to find
@@ -114,13 +114,13 @@ module Tools
       # split path
       paths = ENV["PATH"].split(File::PATH_SEPARATOR)
       # check each folder for file
-      paths.each do |folder| 
+      paths.each do |folder|
         f = File.join(folder, name)
         return f if File.exists?(f)
       end
       return nil
     end
-    
+
     # returns the platform-dependend null-device
     def self.nullDevice()
       if windows?()
@@ -130,8 +130,55 @@ module Tools
       end
     end
   end
-  
+
   class Tee
+    # redirects output to file
+    #
+    # +logfile+ the file to write to
+    # +append+ append to existing file or create a new one
+    # +stdout+ redirect stdout or not
+    # +stderr+ redirect stderr or not
+    # +block+ all output inside the block will be redirected to logfile
+    def self.tee(logfile, append = true, stdout = true, stderr = true)
+      file = File.open(logfile, append ? 'a' : 'w+')
+      stdout_write = nil
+      stderr_write = nil
+      stdout_write = decorate($stdout, :write) {|data| file.write(data)} if stdout
+      stderr_write = decorate($stderr, :write) {|data| file.write(data)} if stderr
+      begin
+        yield if block_given?
+      ensure
+        restore($stdout, :write, stdout_write) if not stdout_write.nil?
+        restore($stderr, :write, stderr_write) if not stderr_write.nil?
+        file.close
+      end
+    end
+
+    private
+
+    def self.restore(obj, methodname, method)
+      class << obj
+        self
+      end.module_eval do
+        define_method(methodname, method)
+      end
+    end
+
+    def self.decorate(obj, methodname)
+      method = obj.method(methodname)
+      class << obj
+        self
+      end.module_eval do
+        define_method(methodname) do |data|
+          method.call(data)
+          yield data
+        end
+      end
+      return method
+    end
+  end
+
+  class TeeCommand
     # creates the tee-command for cmd
     #
     # +cmd+ the command to run
@@ -152,7 +199,7 @@ module Tools
       end
       return cmdLine
     end
-    
+
     # runs cmd with tee
     #
     # +cmd+ the command to run
@@ -163,9 +210,9 @@ module Tools
       %x[#{cmdLine}]
     end
   end
-  
+
   class TimeTool
-    
+
     # converts the given time (HH:MM:SS) to seconds
     #
     # +time+ the time-string
@@ -174,11 +221,11 @@ module Tools
       times = time.split(/:/).reverse
       seconds = 0
       for i in (0...times.length)
-        seconds += times[i].to_i * (60**i) 
+        seconds += times[i].to_i * (60**i)
       end
       return seconds
     end
-    
+
     # converts the given seconds into a time string (HH:MM:SS)
     #
     # +seconds+ the seconds to convert
@@ -220,7 +267,7 @@ module Tools
     end
 
     # store values from given file
-    # +file+ the properties-file  
+    # +file+ the properties-file
     def store(file)
       File.open(File.expand_path(file), "w") do |writer|
         self.keys.sort.each do |key|
@@ -231,7 +278,7 @@ module Tools
       self
     end
   end
-  
+
   class Loggers
     def self.console
       return @consoleLogger if @consoleLogger
@@ -242,7 +289,7 @@ module Tools
       l = Logger.new(output)
       l.progname = progname || File.basename($0)
       l.datetime_format = "%Y-%m-%d, %H:%M:%S,%L "
-      return l      
+      return l
     end
   end
 end
