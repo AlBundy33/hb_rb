@@ -428,8 +428,8 @@ class Dvd
     @serial = nil
   end
 
-  def name()
-    return @title_alt if usable?(@title_alt)
+  def name(use_alt = false)
+    return @title_alt if usable?(@title_alt) and use_alt
     return @title if usable?(@title)
     return File.basename(path()) if usable?(File.basename(path()))
     return "unknown"
@@ -459,7 +459,7 @@ class Dvd
   end
 
   def to_s
-    "#{path} (title=#{title}, title_alt=#{title_alt}, serial=#{serial})"
+    "#{path} (title=#{title}, title_alt=#{title_alt}, serial=#{serial}, name=#{name()})"
   end
 end
 
