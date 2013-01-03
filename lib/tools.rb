@@ -139,42 +139,40 @@ module Tools
     # +stdout+ redirect stdout or not
     # +stderr+ redirect stderr or not
     # +block+ all output inside the block will be redirected to logfile
-    def self.tee(logfile, append = true, stdout = true, stderr = true)
-      file = File.open(logfile, append ? 'a' : 'w+')
-      stdout_write = nil
-      stderr_write = nil
-      stdout_write = decorate($stdout, :write) {|data| file.write(data)} if stdout
-      stderr_write = decorate($stderr, :write) {|data| file.write(data)} if stderr
-      begin
-        yield if block_given?
-      ensure
-        restore($stdout, :write, stdout_write) if not stdout_write.nil?
-        restore($stderr, :write, stderr_write) if not stderr_write.nil?
-        file.close
-      end
-    end
-
-    private
-
-    def self.restore(obj, methodname, method)
-      class << obj
-        self
-      end.module_eval do
-        define_method(methodname, method)
-      end
-    end
-
-    def self.decorate(obj, methodname)
-      method = obj.method(methodname)
-      class << obj
-        self
-      end.module_eval do
-        define_method(methodname) do |data|
-          method.call(data)
-          yield data
+    def self.tee(logfile, append=true)
+      file = File.open(logfile, append ? 'a' : 'w')
+      stdout_old = $stdout.dup
+      stderr_old = $stderr.dup
+      #stdout_old.close_on_exec = true  # only in ruby 1.9
+      #stderr_old.close_on_exec = true  # only in ruby 1.9
+      stdout_r, stdout_w = IO.pipe
+      stderr_r, stderr_w = IO.pipe
+      t1 = Thread.new do
+        while data = stdout_r.readpartial(1024) rescue nil
+          stdout_old.write(data)
+          file.write(data)
         end
+        stdout_r.close
       end
-      return method
+      t2 = Thread.new do
+        while data = stderr_r.readpartial(1024) rescue nil
+          stderr_old.write(data)
+          file.write(data)
+        end
+        stderr_r.close
+      end
+      begin
+        $stdout.reopen(stdout_w)
+        $stderr.reopen(stderr_w)
+        yield
+      ensure
+        $stdout.reopen(stdout_old)
+        $stderr.reopen(stderr_old)
+        [stdout_w,stderr_w].each { |f| f.close }
+        t1.join
+        t2.join
+        [stdout_old,stderr_old,file].each { |f| f.close }
+      end
     end
   end
 

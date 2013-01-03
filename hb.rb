@@ -551,7 +551,7 @@ options = Struct.new(
   :preset, :mainFeatureOnly, :titles, :chapters,
   :minLength, :maxLength, :skipDuplicates,
   :allTracksPerLanguage, :skipCommentaries,
-  :checkOnly, :xtra_args, :debug, :verbose, :logfile).new
+  :checkOnly, :xtra_args, :debug, :verbose).new
 options.input = nil
 options.output = nil
 options.force = false
@@ -574,7 +574,6 @@ options.checkOnly = false
 options.xtra_args = nil
 options.debug = false
 options.verbose = false
-options.logfile = nil
 
 ARGV.options do |opts|
   opts.separator("")
@@ -648,7 +647,6 @@ ARGV.options do |opts|
       options.copyOnly = true
       options.allTracksPerLanguage = true
       options.skipCommentaries = true
-      options.mainFeatureOnly = true
     end
   opts.on("--movie",   "sets: --audio deu,eng --subtitles deu,eng --copy-only --all-tracks-per-language --skip-commentaries --main") do |arg|
     options.languages = ["deu", "eng"]
@@ -682,9 +680,6 @@ ARGV.options do |opts|
   end
   opts.on("--verbose", "enable verbose output") do |arg|
     options.verbose = arg
-  end
-  opts.on("--log FILE", "name of the logfile") do |arg|
-    options.logfile = arg
   end
 
   opts.on_tail("--help", "Display this screen") do
@@ -738,9 +733,7 @@ titleMatcher = PosMatcher.new(titles)
 audioMatcher = LangMatcher.new(options.languages)
 subtitleMatcher = LangMatcher.new(options.subtitles)
 
-Tools::Tee::tee(options.logfile || "hb.log",true) {
-  puts dvd.info
-  if not options.checkOnly
-    hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
-  end
-}
+puts dvd.info
+if not options.checkOnly
+  hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
+end
