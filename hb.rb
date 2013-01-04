@@ -551,7 +551,7 @@ options = Struct.new(
   :preset, :mainFeatureOnly, :titles, :chapters,
   :minLength, :maxLength, :skipDuplicates,
   :allTracksPerLanguage, :skipCommentaries,
-  :checkOnly, :xtra_args, :debug, :verbose).new
+  :checkOnly, :xtra_args, :debug, :verbose, :logfile).new
 options.input = nil
 options.output = nil
 options.force = false
@@ -574,81 +574,55 @@ options.checkOnly = false
 options.xtra_args = nil
 options.debug = false
 options.verbose = false
+options.logfile = nil
 
 ARGV.options do |opts|
   opts.separator("")
-  opts.separator("options")
-  opts.on("--input INPUT", "input-source") do |arg|
-    options.input = arg
-  end
-  opts.on("--output OUTPUT", "output-file (mp4, m4v and mkv supported)") do |arg|
-    options.output = arg
-  end
-  opts.on("--force", "force override of existing files") do |arg|
-    options.force = arg
-  end
+  opts.separator("files")
+  opts.on("--input INPUT", "input-source") { |arg| options.input = arg }
+  opts.on("--output OUTPUT", "output-file (mp4, m4v and mkv supported)") { |arg| options.output = arg }
+  opts.on("--force", "force override of existing files") { |arg| options.force = arg }
+  opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
+  opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts.to_s) }
 
   opts.separator("")
   opts.separator("output-options")
-  opts.on("--compatibility", "enables iPod compatible output") do |arg|
-    options.ipodCompatibility = arg
-  end
-  opts.on("--autocrop", "automatically crop black bars") do |arg|
-    options.enableAutocrop = arg
-  end
-  opts.on("--audio LANGUAGES", Array, "the audio languages") do |arg|
-    options.languages = arg
-  end
-  opts.on("--mixdown-only", "create only mixed down track (Dolby ProLogic 2)") do |arg|
-    options.mixdownOnly = arg
-  end
-  opts.on("--copy-only", "copy original-audio track") do |arg|
-    options.copyOnly = arg
-  end
-  opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") do |arg|
-    options.subtitles = arg
-  end
-  opts.on("--preset PRESET", "the preset to use") do |arg|
-    options.preset = arg
-  end
+  opts.on("--compatibility", "enables iPod compatible output") { |arg| options.ipodCompatibility = arg }
+  opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
+  opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
+  opts.on("--mixdown-only", "create only mixed down track (Dolby ProLogic 2)") { |arg| options.mixdownOnly = arg }
+  opts.on("--copy-only", "copy original-audio track") { |arg| options.copyOnly = arg }
+  opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
+  opts.on("--preset PRESET", "the preset to use") { |arg| options.preset = arg }
 
   opts.separator("")
   opts.separator("filter-options")
-  opts.on("--main", "main-feature only") do |arg|
-    options.mainFeatureOnly = arg
-  end
-  opts.on("--titles TITLES", Array, "the title-numbers to rip (use --check to see available titles)") do |arg|
-    options.titles = arg
-  end
-  opts.on("--chapters CHAPTERS", "the chapters to rip (e.g. 2 or 3-4)") do |arg|
-    options.chapters = arg
-  end
-  opts.on("--min-length DURATION", "the minimum-track-length - format hh:nn:ss") do |arg|
-    options.minLength = arg
-  end
-  opts.on("--max-length DURATION", "the maximum-track-length - format hh:nn:ss") do |arg|
-    options.maxLength = arg
-  end
-  opts.on("--skip-duplicates", "skip duplicate titles (checks block-size)") do |arg|
-    options.skipDuplicates = arg
-  end
-  opts.on("--all-tracks-per-language", "convert all found audio- or subtitle-track per language (default is only the first)") do |arg|
-    options.allTracksPerLanguage = arg
-  end
-  opts.on("--skip-commentaries", "ignore commentary-audio- and subtitle-tracks") do |arg|
-    options.skipCommentaries = arg
-  end
+  opts.on("--main", "main-feature only") { |arg| options.mainFeatureOnly = arg }
+  opts.on("--titles TITLES", Array, "the title-numbers to rip (use --check to see available titles)") { |arg| options.titles = arg }
+  opts.on("--chapters CHAPTERS", "the chapters to rip (e.g. 2 or 3-4)") { |arg| options.chapters = arg }
+  opts.on("--min-length DURATION", "the minimum-track-length - format hh:nn:ss") { |arg| options.minLength = arg }
+  opts.on("--max-length DURATION", "the maximum-track-length - format hh:nn:ss") { |arg| options.maxLength = arg }
+  opts.on("--skip-duplicates", "skip duplicate titles (checks block-size)") { |arg| options.skipDuplicates = arg }
+  opts.on("--all-tracks-per-language", "convert all found audio- or subtitle-track per language (default is only the first)") { |arg| options.allTracksPerLanguage = arg }
+  opts.on("--skip-commentaries", "ignore commentary-audio- and subtitle-tracks") { |arg| options.skipCommentaries = arg }
+
+  opts.separator("")
+  opts.separator("expert-options")
+  opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
+  opts.on("--debug", "enable debug-mode (doesn't start ripping)") { |arg| options.debug = arg }
+  opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
+  opts.on("--log FILE", "log all output to FILE") { |arg| options.logfile = arg }
 
   opts.separator("")
   opts.separator("shorts")
   opts.on("--default",   "sets: --audio deu,eng --subtitles deu,eng --copy-only --all-tracks-per-language --skip-commentaries") do |arg|
-      options.languages = ["deu", "eng"]
-      options.subtitles = ["deu", "eng"]
-      options.copyOnly = true
-      options.allTracksPerLanguage = true
-      options.skipCommentaries = true
-    end
-  opts.on("--movie",   "sets: --audio deu,eng --subtitles deu,eng --copy-only --all-tracks-per-language --skip-commentaries --main") do |arg|
+    options.languages = ["deu", "eng"]
+    options.subtitles = ["deu", "eng"]
+    options.copyOnly = true
+    options.allTracksPerLanguage = true
+    options.skipCommentaries = true
+  end
+  opts.on("--movie",   "sets: --default --main") do |arg|
     options.languages = ["deu", "eng"]
     options.subtitles = ["deu", "eng"]
     options.copyOnly = true
@@ -656,7 +630,7 @@ ARGV.options do |opts|
     options.skipCommentaries = true
     options.mainFeatureOnly = true
   end
-  opts.on("--episodes", "sets: --audio deu,eng --subtitles deu,eng --copy-only --all-tracks-per-language --skip-commentaries --min-length 00:10:00 --max-length 00:50:00 --skip-duplicates") do |arg|
+  opts.on("--episodes", "sets: --default --min-length 00:10:00 --max-length 00:50:00 --skip-duplicates") do |arg|
     options.languages = ["deu", "eng"]
     options.subtitles = ["deu", "eng"]
     options.copyOnly = true
@@ -665,25 +639,6 @@ ARGV.options do |opts|
     options.minLength = "00:10:00"
     options.maxLength = "00:50:00"
     options.skipDuplicates = true
-  end
-
-  opts.separator("")
-  opts.separator("expert-options")
-  opts.on("--check", "run check only and display information") do |arg|
-    options.checkOnly = arg
-  end
-  opts.on("--xtra ARGS", "additional arguments for handbrake") do |arg|
-    options.xtra_args = arg
-  end
-  opts.on("--debug", "enable debug-mode (doesn't start ripping)") do |arg|
-    options.debug = arg
-  end
-  opts.on("--verbose", "enable verbose output") do |arg|
-    options.verbose = arg
-  end
-
-  opts.on_tail("--help", "Display this screen") do
-    showUsageAndExit(opts.to_s)
   end
 end
 
@@ -694,22 +649,6 @@ rescue => e
     showUsageAndExit(ARGV.options.to_s, e.to_s)
   else
     exit
-  end
-end
-
-titles = nil
-if not options.titles.nil?
-  titles = []
-  range_pattern = /([0-9]+)-([0-9]+)/
-  options.titles.each do |t|
-    if t.match(range_pattern)
-      range = t.scan(range_pattern)[0]
-      rangeStart = range[0].to_i
-      rangeEnd = range[1].to_i
-      rangeStart.upto(rangeEnd) { |n| titles.push(n) unless titles.include?(n) }
-    else
-      titles.push(t.to_i) unless titles.include?(t.to_i)
-    end
   end
 end
 
@@ -726,14 +665,22 @@ if options.debug
   options.marshal_dump.each{|k,v| puts "#{k} = #{v.inspect}" }
 end
 
-hb = Handbrake.new
-dvd = hb.readDvd(options)
+def run(options)
+  hb = Handbrake.new
+  dvd = hb.readDvd(options)
 
-titleMatcher = PosMatcher.new(titles)
-audioMatcher = LangMatcher.new(options.languages)
-subtitleMatcher = LangMatcher.new(options.subtitles)
+  titleMatcher = PosMatcher.new(options.titles)
+  audioMatcher = LangMatcher.new(options.languages)
+  subtitleMatcher = LangMatcher.new(options.subtitles)
+  
+  puts dvd.info
+  if not options.checkOnly
+    hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
+  end
+end
 
-puts dvd.info
-if not options.checkOnly
-  hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
+if options.logfile.nil?
+  run(options)
+else
+  Tools::Tee::tee(options.logfile, true) { run(options) }
 end

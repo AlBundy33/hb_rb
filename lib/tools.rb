@@ -132,7 +132,8 @@ module Tools
   end
 
   class Tee
-    # redirects output to file
+    @@alread_redirected = false
+    # redirects output to file (uses no tee-command!)
     #
     # +logfile+ the file to write to
     # +append+ append to existing file or create a new one
@@ -140,11 +141,11 @@ module Tools
     # +stderr+ redirect stderr or not
     # +block+ all output inside the block will be redirected to logfile
     def self.tee(logfile, append=true)
+      raise "output is already redirected!" if @@alread_redirected
+      @@alread_redirected = true
       file = File.open(logfile, append ? 'a' : 'w')
       stdout_old = $stdout.dup
       stderr_old = $stderr.dup
-      #stdout_old.close_on_exec = true  # only in ruby 1.9
-      #stderr_old.close_on_exec = true  # only in ruby 1.9
       stdout_r, stdout_w = IO.pipe
       stderr_r, stderr_w = IO.pipe
       t1 = Thread.new do
@@ -174,10 +175,9 @@ module Tools
         [stdout_old,stderr_old,file].each { |f| f.close }
       end
     end
-  end
 
-  class TeeCommand
-    # creates the tee-command for cmd
+    # creates the tee-command for cmd which redirects stderr to stdout and pipes the output to the given file.
+    # If tee is not available nil will be returned.
     #
     # +cmd+ the command to run
     # +file+ the file to write in
@@ -194,18 +194,9 @@ module Tools
         cmdLine << " | #{teeCommand}"
         cmdLine << " -a" if append
         cmdLine << " \"#{file}\""
+        return cmdLine
       end
-      return cmdLine
-    end
-
-    # runs cmd with tee
-    #
-    # +cmd+ the command to run
-    # +file+ the file to write in
-    # +append+ true to append new data to file, falso to override file
-    def self.run(cmd, file, append = false)
-      cmdLine = command(cmd,file,append)
-      %x[#{cmdLine}]
+      return nil
     end
   end
 
