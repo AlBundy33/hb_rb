@@ -34,8 +34,8 @@ class Handbrake
     dvd = Dvd.new(path)
     title = nil
     output.each_line do |line|
-      ##L.debug("### #{line}") if options.debug and options.verbose
-
+      puts "out> #{line}" if options.debug and options.verbose
+      
       if line.match(dvd_title_pattern)
         info = line.scan(dvd_title_pattern)[0]
         dvd.title = info[0].strip
@@ -47,7 +47,6 @@ class Handbrake
         dvd.serial = info[0].strip
       end
 
-      puts "### #{line}" if options.debug and options.verbose
       if line.match(title_pattern)
         info = line.scan(title_pattern)[0]
         title = Title.new(info[0])
