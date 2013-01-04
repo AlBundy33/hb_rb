@@ -1,8 +1,6 @@
 #!/usr/bin/ruby
 
 require 'optparse'
-require 'tmpdir'
-require 'ostruct'
 
 class Handbrake
   require 'fileutils'
