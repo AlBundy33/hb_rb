@@ -132,33 +132,34 @@ module Tools
   end
 
   class Tee
-    @@alread_redirected = false
     # redirects output to file (uses no tee-command!)
     #
     # +logfile+ the file to write to
     # +append+ append to existing file or create a new one
-    # +stdout+ redirect stdout or not
-    # +stderr+ redirect stderr or not
+    # +unique+ output only lines to file that are different to the previous one
     # +block+ all output inside the block will be redirected to logfile
-    def self.tee(logfile, append=true)
-      raise "output is already redirected!" if @@alread_redirected
-      @@alread_redirected = true
+    def self.tee(logfile, append=true, unique=false)
+      raise "no block given" unless block_given?
       file = File.open(logfile, append ? 'a' : 'w')
       stdout_old = $stdout.dup
       stderr_old = $stderr.dup
       stdout_r, stdout_w = IO.pipe
       stderr_r, stderr_w = IO.pipe
       t1 = Thread.new do
-        while data = stdout_r.readpartial(1024) rescue nil
+        last = nil
+        while data = (unique ? stdout_r.readline : stdout_r.readpartial(1024)) rescue nil
           stdout_old.write(data)
-          file.write(data)
+          file.write(data) if !unique or last.nil? or !last.eql?(data)
+          last = data
         end
         stdout_r.close
       end
       t2 = Thread.new do
-        while data = stderr_r.readpartial(1024) rescue nil
+        last = nil
+        while data = (unique ? stderr_r.readline : stderr_r.readpartial(1024)) rescue nil
           stderr_old.write(data)
-          file.write(data)
+          file.write(data) if !unique or last.nil? or !last.eql?(data)
+          last = data
         end
         stderr_r.close
       end
@@ -169,10 +170,10 @@ module Tools
       ensure
         $stdout.reopen(stdout_old)
         $stderr.reopen(stderr_old)
-        [stdout_w,stderr_w].each { |f| f.close }
+        [stdout_w,stderr_w].each { |f| f.close rescue nil }
         t1.join
         t2.join
-        [stdout_old,stderr_old,file].each { |f| f.close }
+        [stdout_old,stderr_old,file].each { |f| f.close rescue nil}
       end
     end
 

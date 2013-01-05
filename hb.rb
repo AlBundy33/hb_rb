@@ -677,8 +677,8 @@ def run(options)
   end
 end
 
-if options.logfile.nil?
+if options.logfile.nil? and not options.logfile.strip.empty?
   run(options)
 else
-  Tools::Tee::tee(options.logfile, true) { run(options) }
+  Tools::Tee::tee(options.logfile, true, true) { run(options) }
 end
