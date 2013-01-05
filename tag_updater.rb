@@ -277,18 +277,20 @@ class TagDb
 
       info = data[id]
       info = {} if info.nil?
-      # 0 = filename, 1 = season for episodes or name for movies, 2 = name for series  
+      info[FILE_ID] = id if empty?(info[FILE_ID])
+      # 0 = filename, 1 = season for episodes, 2 = name for series  
       if path[1] =~ /Season/i
         info[NAME] = path[2]
+        info[SEASON] = id.gsub(/#{ID_PATTERN_STR}/, "\\1")
+        info[DISC] = id.gsub(/#{ID_PATTERN_STR}/, "\\2")
+        info[TRACK] = id.gsub(/#{ID_PATTERN_STR}/, "\\3")
+        updateInfoFromSerienjunkies(info) if sj
       else
-        info[NAME] = path[1]
+        info[NAME] = File.basename(path[0], ".*")
+        info[SEASON] = nil
+        info[DISC] = nil
+        info[TRACK] = nil
       end
-
-      info[SEASON] = id.gsub(/#{ID_PATTERN_STR}/, "\\1")
-      info[DISC] = id.gsub(/#{ID_PATTERN_STR}/, "\\2")
-      info[TRACK] = id.gsub(/#{ID_PATTERN_STR}/, "\\3")
-      info[FILE_ID] = id if empty?(info[FILE_ID])
-      updateInfoFromSerienjunkies(info) if sj
       data[info[FILE_ID]] = info
     }
     
@@ -298,6 +300,7 @@ class TagDb
     k = data.keys.sort
     k.each do |key|
       info = data[key]
+      next if info[SEASON].nil?
 
       season = info[SEASON].to_i
 
