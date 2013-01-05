@@ -136,9 +136,8 @@ module Tools
     #
     # +logfile+ the file to write to
     # +append+ append to existing file or create a new one
-    # +unique+ output only lines to file that are different to the previous one
     # +block+ all output inside the block will be redirected to logfile
-    def self.tee(logfile, append=true, unique=false)
+    def self.tee(logfile, append=true)
       raise "no block given" unless block_given?
       file = File.open(logfile, append ? 'a' : 'w')
       stdout_old = $stdout.dup
@@ -146,20 +145,16 @@ module Tools
       stdout_r, stdout_w = IO.pipe
       stderr_r, stderr_w = IO.pipe
       t1 = Thread.new do
-        last = nil
-        while data = (unique ? stdout_r.readline : stdout_r.readpartial(1024)) rescue nil
+        while data = stdout_r.readpartial(1024) rescue nil
           stdout_old.write(data)
-          file.write(data) if !unique or last.nil? or !last.eql?(data)
-          last = data
+          file.write(data)
         end
         stdout_r.close
       end
       t2 = Thread.new do
-        last = nil
-        while data = (unique ? stderr_r.readline : stderr_r.readpartial(1024)) rescue nil
+        while data = stderr_r.readpartial(1024) rescue nil
           stderr_old.write(data)
-          file.write(data) if !unique or last.nil? or !last.eql?(data)
-          last = data
+          file.write(data)
         end
         stderr_r.close
       end

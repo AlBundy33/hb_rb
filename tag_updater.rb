@@ -220,12 +220,16 @@ class TagDb
         L.warn("could not create command to tag file #{f}")
         next
       end
-      #cmd = Tools::TeeCommand::command(cmd,File.expand_path("tag.log"),true)
       L.info("#{cmd}")
-      Tools::Tee::tee(File.expand_path("tag.log")) { %x[#{cmd}] } if not debug
+      system(cmd) if not debug
       ext = File.extname(f)
-      titled_name = nil
-      titled_name = "#{info[TITLE]}.#{info[FILE_ID]}#{ext}" if not empty?(info[TITLE]) and not empty?(info[FILE_ID])
+      titled_name = info[TITLE]
+      titled_name = "%s - %02dx%02d - %s" % [ info[NAME], info[SEASON], info[EPISODE], titled_name ]
+      # Enable this for Plex
+      #titled_name = "%s - s%02de%02d - %s" % [ info[NAME], info[SEASON], info[EPISODE], titled_name ]
+      # add original title
+      titled_name = "#{titled_name} (#{info[TITLE_ORG]})" if not empty?(info[TITLE_ORG])
+      titled_name = "#{titled_name}.#{info[FILE_ID]}#{ext}" if not empty?(info[FILE_ID])
       titled_name.gsub!(/[\/:"*?<>|]+/, "_")
       titled_name = File.join(File.dirname(f), titled_name)
       if renamefiles and not empty?(titled_name) and not f.eql? titled_name
@@ -246,13 +250,6 @@ class TagDb
     }.each do |from,to|
       tags[to] = tags[from] if empty?(tags[to]) and not empty?(tags[from])
     end
-
-    title = tags[TITLE]
-    title = "%s - %02dx%02d - %s" % [ tags[NAME], tags[SEASON], tags[EPISODE], title ]
-    title = "%s (%s)" % [ title, tags[TITLE_ORG] ] if not empty?(tags[TITLE_ORG])
-    tags[TITLE] = title
-
-    tags[NAME] = nil 
 
     return tags
   end
@@ -375,15 +372,15 @@ ARGV.options do |opts|
   opts.separator("")
   opts.separator("update database")
   opts.on("--add FILES", "add files to database") do |arg|
-    options.add_files_to_db = arg
+    options.add_files_to_db = arg.gsub(/\\/, "/")
   end
   opts.on("--sj", "update entries with values from serienjunkies.de") do |arg|
-    options.sj = arg
+    options.sj = arg.gsub(/\\/, "/")
   end
   opts.separator("")
   opts.separator("update files")
   opts.on("--update-files FILES", "update tags in files") do |arg|
-    options.update_files = arg
+    options.update_files = arg.gsub(/\\/, "/")
   end
   opts.on("--rename", "update filesnames according to the tags") do |arg|
     options.rename = arg
@@ -404,6 +401,8 @@ if options.add_files_to_db.nil? and options.update_files.nil?
   showUsageAndExit(ARGV.options, "nothing to do")
 end
 
-db = TagDb.new(options)
-db.addFilesToDB(options.add_files_to_db) if not options.add_files_to_db.nil?
-db.updateFiles(update_files) if not options.update_files.nil?
+Tools::Tee::tee("tag.log",true) {
+  db = TagDb.new(options)
+  db.addFilesToDB(options.add_files_to_db) if not options.add_files_to_db.nil?
+  db.updateFiles(options.update_files) if not options.update_files.nil?
+}
