@@ -20,9 +20,9 @@
 	<zip destfile="build/handbrake-complete.zip">
 		<fileset dir=".">
 			<exclude name="**/.svn" />
-			<include name="tools/handbrake/" />
-			<include name="lib/tools.rb" />
-			<include name="hb.rb" />
+			<include name="tools/**/*" />
+			<include name="lib/**/*" />
+			<include name="*.rb" />
 		</fileset>
 	</zip>    
 </target>
