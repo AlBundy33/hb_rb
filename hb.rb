@@ -35,7 +35,7 @@ class Handbrake
     title = nil
     output.each_line do |line|
       puts "out> #{line}" if options.debug and options.verbose
-      
+
       if line.match(dvd_title_pattern)
         info = line.scan(dvd_title_pattern)[0]
         dvd.title = info[0].strip
@@ -669,9 +669,10 @@ def run(options)
   titleMatcher = PosMatcher.new(options.titles)
   audioMatcher = LangMatcher.new(options.languages)
   subtitleMatcher = LangMatcher.new(options.subtitles)
-  
-  puts dvd.info
-  if not options.checkOnly
+
+  if options.checkOnly
+    puts dvd.info
+  else
     hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
   end
 end
