@@ -6,12 +6,18 @@
 	<zip destfile="build/handbrake.zip">
 		<fileset dir=".">
 			<exclude name="**/.svn" />
-			<include name="tools/handbrake/" />
+			<include name="tools/**/*" />
 			<exclude name="tools/handbrake/windows/**/*"/>
 			<exclude name="tools/handbrake/osx/**/*"/>
 			<exclude name="tools/handbrake/linux/**/*"/>
-			<include name="lib/tools.rb" />
-			<include name="hb.rb" />
+			<exclude name="tools/atomicparsley/windows/**/*"/>
+			<exclude name="tools/atomicparsley/osx/**/*"/>
+			<exclude name="tools/atomicparsley/linux/**/*"/>
+			<exclude name="tools/subler/windows/**/*"/>
+			<exclude name="tools/subler/osx/**/*"/>
+			<exclude name="tools/subler/linux/**/*"/>
+			<include name="lib/**/*" />
+			<include name="*.rb" />
 		</fileset>
 	</zip>    
 </target>
