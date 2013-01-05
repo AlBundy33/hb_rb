@@ -2,7 +2,6 @@
 
 require 'optparse'
 require 'csv'
-require 'ostruct'
 require 'lib/tools.rb'
 require 'lib/taggers.rb'
 require 'iconv'
@@ -100,7 +99,6 @@ class TagDb
   attr_accessor :data, :options, :db, :columns
   L = Tools::Loggers.console()
   
-  DEFAULT_FILE_PATTERN = "**/*.{mp4,m4v}"
   ALWAYS_UPDATE_SJ_VALUES = true
   
   DB_NAME = "tagdb.csv"
@@ -203,10 +201,9 @@ class TagDb
     return k1 <=> k2
   end
   
-  def updateTags
+  def updateFiles(pattern)
     debug = options.debug || false
     renamefiles = options.rename || false
-    pattern = options.pattern || DEFAULT_FILE_PATTERN
     Dir["#{pattern}"].each do |f|
       next if not File.exists? f
       L.info("updating mp4-tags for #{f}")
@@ -266,8 +263,7 @@ class TagDb
     return id
   end
 
-  def updateDb
-    pattern = options.pattern || DEFAULT_FILE_PATTERN
+  def addFilesToDB(pattern)
     sj = options.sj || false
     Dir["#{pattern}"].each { |f|
       next if not File.exists? f
@@ -348,42 +344,63 @@ class TagDb
   end
 end
 
-options = OpenStruct.new
-options.updatedb = false
-options.updatetags = false
-options.pattern = nil
+def showUsageAndExit(help, msg = nil)
+  puts help
+  puts
+  puts "examples"
+  puts "add all mp4- and m4v-files to database and try to get information from seriejunkies.de"
+  puts "#{File.basename($0)} --add '**/*.{mp4,m4v}' --sj"
+  puts
+  puts "update tags with data from database and also update filename"
+  puts "#{File.basename($0)} --update-files '**/*.{mp4,m4v}' --rename"
+  if not msg.nil?
+    puts
+    puts msg
+  end
+  puts
+  exit
+end
+
+options = Struct.new(:add_files_to_db, :update_files, :debug, :sj, :rename).new
+options.add_files_to_db = nil
+options.update_files = nil
 options.debug = false
 options.sj = false
 options.rename = false
-options.directory = nil
 
-optparse = OptionParser.new do |opts|
-  opts.on("--update-db", "update tag-database") do |arg|
-    options.updatedb = arg
+ARGV.options do |opts|
+  opts.separator("")
+  opts.separator("update database")
+  opts.on("--add FILES", "add files to database") do |arg|
+    options.add_files_to_db = arg
   end
-  opts.on("--sj", "update database with values from serienjunkies.de") do |arg|
+  opts.on("--sj", "update entries with values from serienjunkies.de") do |arg|
     options.sj = arg
   end
-  opts.on("--update-tags", "update tags in files") do |arg|
-    options.updatetags = arg
+  opts.separator("")
+  opts.separator("update files")
+  opts.on("--update-files FILES", "update tags in files") do |arg|
+    options.update_files = arg
   end
-  opts.on("--update-names", "update filesnames according to the tags") do |arg|
+  opts.on("--rename", "update filesnames according to the tags") do |arg|
     options.rename = arg
   end
-  opts.on("--files PATTERN", "the pattern for the files to update e.g. firefly/**/*.mp4") do |arg|
-    options.pattern = arg
-  end
+  
+  opts.separator("")
+  opts.separator("common")
   opts.on("--debug", "debug-mode (log commands without executing)") do |arg|
     options.debug = arg
   end
   opts.on("--help", "Display this screen") do
-    puts opts
-    exit
+    showUsageAndExit(opts.to_s)
   end
 end
 
-optparse.parse!(ARGV)
+ARGV.parse!
+if options.add_files_to_db.nil? and options.update_files.nil?
+  showUsageAndExit(ARGV.options, "nothing to do")
+end
 
 db = TagDb.new(options)
-db.updateDb if options.updatedb
-db.updateTags if options.updatetags
+db.addFilesToDB(options.add_files_to_db) if not options.add_files_to_db.nil?
+db.updateFiles(update_files) if not options.update_files.nil?
