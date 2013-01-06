@@ -612,7 +612,7 @@ ARGV.options do |opts|
   opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
   opts.on("--debug", "enable debug-mode (doesn't start ripping)") { |arg| options.debug = arg }
   opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
-  opts.on("--log FILE", "log all output to FILE") { |arg| options.logfile = arg }
+  #opts.on("--log FILE", "log all output to FILE") { |arg| options.logfile = arg }
 
   opts.separator("")
   opts.separator("shorts")
