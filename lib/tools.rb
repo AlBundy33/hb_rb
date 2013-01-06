@@ -1,5 +1,7 @@
 module Tools
   require 'logger'
+  require 'thread'
+
   class OS
     private
     @@platform = nil
@@ -140,21 +142,26 @@ module Tools
     def self.tee(logfile, append=true)
       raise "no block given" unless block_given?
       file = File.open(logfile, append ? 'a' : 'w')
+      mutex = Mutex.new
       stdout_old = $stdout.dup
       stderr_old = $stderr.dup
       stdout_r, stdout_w = IO.pipe
       stderr_r, stderr_w = IO.pipe
       t1 = Thread.new do
         while data = stdout_r.readpartial(1024) rescue nil
-          stdout_old.write(data)
-          file.write(data)
+          mutex.synchronize do
+            stdout_old.write(data)
+            file.write(data)
+          end
         end
         stdout_r.close
       end
       t2 = Thread.new do
         while data = stderr_r.readpartial(1024) rescue nil
-          stderr_old.write(data)
-          file.write(data)
+          mutex.synchronize do
+            stderr_old.write(data)
+            file.write(data)
+          end
         end
         stderr_r.close
       end
