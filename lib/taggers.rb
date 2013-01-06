@@ -31,7 +31,10 @@ class AtomicParsley < Tagger
     "disc" => "--disknum",
     "name" => "--artist",
     "episode" => "--tracknum",
-    "season" => "--TVSeason",
+    "name" => "--TVShowName",
+    "season" => "--TVSeasonNum",
+    "title" => "--TVEpisode",
+    "episode" => "--TVEpisodeNum",
     "descr" => "--description"
   }
 
