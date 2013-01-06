@@ -27,25 +27,28 @@ class AtomicParsley < Tagger
   WIN_COMMAND = File.expand_path("tools/atomicparsley/windows/AtomicParsley.exe") 
 
   ARG_MAP = {
-    "title" => "--title",
-    "disc" => "--disknum",
-    "name" => "--artist",
-    "episode" => "--tracknum",
-    "name" => "--TVShowName",
-    "season" => "--TVSeasonNum",
-    "title" => "--TVEpisode",
-    "episode" => "--TVEpisodeNum",
-    "descr" => "--description"
+    "title" => ["--title", "--TVEpisode"],
+    "disc" => ["--disknum"],
+    "name" => ["--artist", "--TVShowName"],
+    "episode" => ["--tracknum", "--TVEpisodeNum"],
+    "season" => ["--TVSeasonNum"],
+    "descr" => ["--description"]
   }
 
   def createCommand(file, tagInfo)
     cmd = "#{@command} \"#{file}\""
     cmd << " --overWrite"
     tagInfo.each do |key, value|
-      arg = ARG_MAP[key]
-      next if arg.nil?()
+      params = ARG_MAP[key]
+      next if params.nil?()
       value = "" if value.nil?()
-      cmd << " #{arg} \"#{value}\""
+      if key.eql?"title" and not value.strip.empty?
+        title_org = tagInfo["title_org"]
+        value << " (#{title_org})" if !title_org.nil? and !title_org.strip.empty?
+      end
+      params.each do |p|
+        cmd << " #{p} \"#{value}\""
+      end
     end
     return cmd
   end
