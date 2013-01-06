@@ -401,8 +401,6 @@ if options.add_files_to_db.nil? and options.update_files.nil?
   showUsageAndExit(ARGV.options, "nothing to do")
 end
 
-Tools::Tee::tee("tag.log",true) {
-  db = TagDb.new(options)
-  db.addFilesToDB(options.add_files_to_db) if not options.add_files_to_db.nil?
-  db.updateFiles(options.update_files) if not options.update_files.nil?
-}
+db = TagDb.new(options)
+db.addFilesToDB(options.add_files_to_db) if not options.add_files_to_db.nil?
+db.updateFiles(options.update_files) if not options.update_files.nil?
