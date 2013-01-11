@@ -662,9 +662,8 @@ if not File.exists? options.input
   exit
 end
 
-if options.debug
-  options.marshal_dump.each{|k,v| puts "#{k} = #{v.inspect}" }
-end
+
+#options.marshal_dump.each{|k,v| puts "#{k} = #{v.inspect}" } if options.debug
 
 def run(options)
   hb = Handbrake.new
