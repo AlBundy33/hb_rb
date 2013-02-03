@@ -153,6 +153,7 @@ class Handbrake
       outputFile = outputFile.gsub("#pos#", "%02d" % title.pos)
       outputFile = outputFile.gsub("#size#", title.size)
       outputFile = outputFile.gsub("#fps#", title.fps)
+      outputFile = outputFile.gsub("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
       outputFile = outputFile.gsub("#title#", dvd.name)
       ext = File.extname(outputFile).downcase
       ismp4 = false
@@ -243,9 +244,6 @@ class Handbrake
         #command << " --maxWidth 1920"
         #command << " --maxHeight 1080"
 
-        # title
-        command << " --title #{title.pos}"
-
         # audio
         paudio = []
         paencoder = []
@@ -303,6 +301,9 @@ class Handbrake
         end
         command << " --subtitle #{psubtitle.join(',')}" if not psubtitle.empty?()
       end
+
+      # title (useed by default and if preset is selected)
+      command << " --title #{title.pos}"
 
       # the rest...
       command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
@@ -521,6 +522,7 @@ def showUsageAndExit(helpText, msg = nil)
   puts "  #pos#   - title-number on dvd"
   puts "  #size#  - resolution"
   puts "  #fps#   - frames per second"
+  puts "  #ts#    - current timestamp"
   puts "  #title# - dvd-title (dvd-label or directory-basename)"
   puts
   puts "hint"
