@@ -375,7 +375,7 @@ ARGV.options do |opts|
     options.add_files_to_db = arg.gsub(/\\/, "/")
   end
   opts.on("--sj", "update entries with values from serienjunkies.de") do |arg|
-    options.sj = arg.gsub(/\\/, "/")
+    options.sj = true
   end
   opts.separator("")
   opts.separator("update files")
