@@ -17,64 +17,86 @@ class Handbrake
     raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
   end
 
-  def readDvd(options)
+  def readInfo(options)
     path = File.expand_path(options.input)
-    output = %x["#{HANDBRAKE_CLI}" -i "#{path}" --scan -t 0 2>&1]
+    cmd = "\"#{HANDBRAKE_CLI}\" -i \"#{path}\" --scan -t 0 2>&1"
+    output = %x[#{cmd}]
+
     dvd_title_pattern = /libdvdnav: DVD Title: (.*)/
     dvd_alt_title_pattern = /libdvdnav: DVD Title \(Alternative\): (.*)/
     dvd_serial_pattern = /libdvdnav: DVD Serial Number: (.*)/
     main_feature_pattern = /\+ Main Feature/
+
     title_blocks_pattern = /\+ vts .*, ttn .*, cells .* \(([0-9]+) blocks\)/
     title_pattern = /\+ title ([0-9]+):/
     title_info_pattern = /\+ size: ([0-9]+x[0-9]+).*, ([0-9.]+) fps/
+    in_audio_section_pattern = /\+ audio tracks:/
     audio_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\), ([0-9]+Hz), ([0-9]+bps)/
+    file_audio_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\)/
+    in_subtitle_section_pattern = /\+ subtitles:/
     subtitle_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\)/
     duration_pattern = /\+ duration: (.*)/
-    chapter_pattern = /\+ ([0-9]+): cells (.*), (0-9)+ blocks, duration (.*)/
-    dvd = Dvd.new(path)
+    chapter_pattern = /\+ ([0-9]+): cells (.*), ([0-9]+) blocks, duration (.*)/
+
+    source = MovieSource.new(path)
     title = nil
+
+    in_audio_section = false
+    in_subtitle_section = false
     output.each_line do |line|
       puts "out> #{line}" if options.debug and options.verbose
 
       if line.match(dvd_title_pattern)
+        puts "> match: dvd-title" if options.debug and options.verbose
         info = line.scan(dvd_title_pattern)[0]
-        dvd.title = info[0].strip
+        source.title = info[0].strip
       elsif line.match(dvd_alt_title_pattern)
+        puts "> match: dvd-alt-title" if options.debug and options.verbose
         info = line.scan(dvd_alt_title_pattern)[0]
-        dvd.title_alt = info[0].strip
+        source.title_alt = info[0].strip
       elsif line.match(dvd_serial_pattern)
+        puts "> match: dvd-serial" if options.debug and options.verbose
         info = line.scan(dvd_serial_pattern)[0]
-        dvd.serial = info[0].strip
-      end
-
-      if line.match(title_pattern)
+        source.serial = info[0].strip
+      elsif line.match(in_audio_section_pattern)
+        in_audio_section = true
+      elsif line.match(in_subtitle_section_pattern)
+        in_subtitle_section = true
+      elsif line.match(title_pattern)
+        puts "> match: title" if options.debug and options.verbose
         info = line.scan(title_pattern)[0]
         title = Title.new(info[0])
-        dvd.titles().push(title)
+        source.titles().push(title)
       end
 
       next if title.nil?
 
       if line.match(main_feature_pattern)
+        puts "> match: main-feature" if options.debug and options.verbose
         title.mainFeature = true
       elsif line.match(title_blocks_pattern)
+        puts "> match: blocks" if options.debug and options.verbose
         info = line.scan(title_blocks_pattern)[0]
         title.blocks = info[0].to_i
       elsif line.match(title_info_pattern)
+        puts "> match: info" if options.debug and options.verbose
         info = line.scan(title_info_pattern)[0]
         title.size = info[0]
         title.fps = info[1]
       elsif line.match(duration_pattern)
+        puts "> match: duration" if options.debug and options.verbose
         info = line.scan(duration_pattern)[0]
         title.duration = info[0]
       elsif line.match(chapter_pattern)
+        puts "> match: chapter" if options.debug and options.verbose
         info = line.scan(chapter_pattern)[0]
         chapter = Chapter.new(info[0])
         chapter.cells = info[1]
         chapter.blocks = info[2]
         chapter.duration = info[3]
         title.chapters().push(chapter)
-      elsif line.match(audio_pattern)
+      elsif in_audio_section and line.match(audio_pattern)
+        puts "> match: audio" if options.debug and options.verbose
         info = line.scan(audio_pattern)[0]
         track = AudioTrack.new(info[0], info[1])
         if info[1].match(/\((.*?)\)\s*\((.*?)\)\s*\((.*?)\)\s*/)
@@ -91,7 +113,24 @@ class Handbrake
         track.rate = info[3]
         track.bitrate = info[4]
         title.audioTracks().push(track)
-      elsif line.match(subtitle_pattern)
+      elsif in_audio_section and line.match(file_audio_pattern)
+        puts "> match: audio" if options.debug and options.verbose
+        info = line.scan(file_audio_pattern)[0]
+        track = AudioTrack.new(info[0], info[1])
+        if info[1].match(/\((.*?)\)\s*\((.*?)\)\s*\((.*?)\)\s*/)
+          info2 = info[1].scan(/\((.*?)\)\s*\((.*?)\)\s*\((.*?)\)\s*/)[0]
+          track.codec = info2[0]
+          track.comment = info2[1]
+          track.channels = info2[2]
+        elsif info[1].match(/\((.*?)\)\s*\((.*?)\)\s*/)
+          info2 = info[1].scan(/\((.*?)\)\s*\((.*?)\)\s*/)[0]
+          track.codec = info2[0]
+          track.channels = info2[1]
+        end
+        track.lang = info[2]
+        title.audioTracks().push(track)
+      elsif in_subtitle_section and line.match(subtitle_pattern)
+        puts "> match: subtitle" if options.debug and options.verbose
         info = line.scan(subtitle_pattern)[0]
         subtitle = Subtitle.new(info[0], info[1], info[2])
         if info[1].match(/\((.*?)\)/)
@@ -101,10 +140,11 @@ class Handbrake
         title.subtitles().push(subtitle)
       end
     end
-    return dvd
+    source.titles().first().mainFeature = true if source.titles().size == 1
+    return source
   end
 
-  def ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
+  def convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
     ripped = []
     output = options.output
     preset = options.preset
@@ -123,7 +163,7 @@ class Handbrake
     ipodCompatibility = options.ipodCompatibility || false
     enableAutocrop = options.enableAutocrop || false
 
-    dvd.titles().each do |title|
+    source.titles().each do |title|
       L.info("checking #{title}") if verbose
       next if not (titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature)))
       L.info("ripping #{title}")
@@ -154,7 +194,7 @@ class Handbrake
       outputFile = outputFile.gsub("#size#", title.size)
       outputFile = outputFile.gsub("#fps#", title.fps)
       outputFile = outputFile.gsub("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
-      outputFile = outputFile.gsub("#title#", dvd.name)
+      outputFile = outputFile.gsub("#title#", source.name)
       ext = File.extname(outputFile).downcase
       ismp4 = false
       ismkv = false
@@ -167,7 +207,7 @@ class Handbrake
       end
 
       command="\"#{HANDBRAKE_CLI}\""
-      command << " --input \"#{dvd.path()}\""
+      command << " --input \"#{source.path()}\""
       command << " --output \"#{outputFile}\""
       if not options.chapters.nil?
         command << " --chapters #{options.chapters}"
@@ -416,7 +456,7 @@ class Title
   end
 end
 
-class Dvd
+class MovieSource
   attr_accessor :title, :title_alt, :serial, :titles, :path
   def initialize(path)
     @titles = []
@@ -519,11 +559,11 @@ def showUsageAndExit(helpText, msg = nil)
   puts helpText
   puts ""
   puts "available place-holders for output-file:"
-  puts "  #pos#   - title-number on dvd"
+  puts "  #pos#   - title-number on input-source"
   puts "  #size#  - resolution"
   puts "  #fps#   - frames per second"
   puts "  #ts#    - current timestamp"
-  puts "  #title# - dvd-title (dvd-label or directory-basename)"
+  puts "  #title# - source-title (dvd-label, directory-basename, filename)"
   puts
   puts "hint"
   puts "use raw disk devices (e.g. /dev/rdisk1) to ensure that libdvdnav can read the title"
@@ -669,16 +709,16 @@ end
 
 def run(options)
   hb = Handbrake.new
-  dvd = hb.readDvd(options)
+  source = hb.readInfo(options)
 
   titleMatcher = PosMatcher.new(options.titles)
   audioMatcher = LangMatcher.new(options.languages)
   subtitleMatcher = LangMatcher.new(options.subtitles)
 
   if options.checkOnly
-    puts dvd.info
+    puts source.info
   else
-    hb.ripDvd(options, dvd, titleMatcher, audioMatcher, subtitleMatcher)
+    hb.convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
   end
 end
 
