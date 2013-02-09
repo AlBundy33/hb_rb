@@ -12,6 +12,19 @@ class Handbrake
   HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform()}/HandBrakeCLI")
   raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
 
+  # https://forum.handbrake.fr/viewtopic.php?f=6&t=19426
+  X264_PRESETS = {}
+  X264_PRESETS["ultrafast"] = "ref=1:bframes=0:cabac=0:8x8dct=0:weightp=0:me=dia:subq=0:rc-lookahead=0:mbtree=0:analyse=none:trellis=0:aq-mode=0:scenecut=0:no-deblock=1"
+  X264_PRESETS["superfast"] = "ref=1:weightp=1:me=dia:subq=1:rc-lookahead=0:mbtree=0:analyse=i4x4,i8x8:trellis=0"
+  X264_PRESETS["veryfast"] = "ref=1:weightp=1:subq=2:rc-lookahead=10:trellis=0"
+  X264_PRESETS["faster"] = "ref=2:mixed-refs=0:weightp=1:subq=4:rc-lookahead=20"
+  X264_PRESETS["fast"] = "ref=2:weightp=1:subq=6:rc-lookahead=30"
+  X264_PRESETS["medium"] = ""  
+  X264_PRESETS["slow"] = "ref=5:b-adapt=2:direct=auto:me=umh:subq=8:rc-lookahead=50"
+  X264_PRESETS["slower"] = "ref=8:b-adapt=2:direct=auto:me=umh:subq=9:rc-lookahead=60:analyse=all:trellis=2"
+  X264_PRESETS["veryslow"] = "ref=16:bframes=8:b-adapt=2:direct=auto:me=umh:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2"
+  X264_PRESETS["placebo"] = "ref=16:bframes=16:b-adapt=2:direct=auto:me=tesa:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2:no-fast-pskip=1"
+
   def self.readInfo(options)
     path = File.expand_path(options.input)
     cmd = "\"#{HANDBRAKE_CLI}\" -i \"#{path}\" --scan -t 0 2>&1"
@@ -157,6 +170,7 @@ class Handbrake
     maxLength = TimeTool::timeToSeconds(options.maxLength)
     ipodCompatibility = options.ipodCompatibility || false
     enableAutocrop = options.enableAutocrop || false
+    x264preset = options.x264preset
 
     source.titles().each do |title|
       L.info("checking #{title}") if verbose
@@ -226,29 +240,13 @@ class Handbrake
         #command << " --turbo"
         x264_quality_opts = nil
 
+        if not x264preset.nil? and X264_PRESETS[x264preset]
+          x264_quality_opts = X264_PRESETS[x264preset]
+        end
+
         # append for iPod-compatibility
         if ipodCompatibility and ismp4
           x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
-
-          # https://forum.handbrake.fr/viewtopic.php?f=6&t=19426
-          # ultrafast
-          #x264_quality_opts = "ref=1:bframes=0:cabac=0:8x8dct=0:weightp=0:me=dia:subq=0:rc-lookahead=0:mbtree=0:analyse=none:trellis=0:aq-mode=0:scenecut=0:no-deblock=1"
-          # superfast
-          #x264_quality_opts = "ref=1:weightp=1:me=dia:subq=1:rc-lookahead=0:mbtree=0:analyse=i4x4,i8x8:trellis=0"
-          # veryfast
-          #x264_quality_opts = "ref=1:weightp=1:subq=2:rc-lookahead=10:trellis=0"
-          # faster
-          #x264_quality_opts = "ref=2:mixed-refs=0:weightp=1:subq=4:rc-lookahead=20"
-          # fast
-          #x264_quality_opts = "ref=2:weightp=1:subq=6:rc-lookahead=30"
-          # slow
-          #x264_quality_opts = "ref=5:b-adapt=2:direct=auto:me=umh:subq=8:rc-lookahead=50"
-          # slower
-          #x264_quality_opts = "ref=8:b-adapt=2:direct=auto:me=umh:subq=9:rc-lookahead=60:analyse=all:trellis=2"
-          # veryslow
-          #x264_quality_opts = "ref=16:bframes=8:b-adapt=2:direct=auto:me=umh:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2"
-          # placebo
-          #x264_quality_opts = "ref=16:bframes=16:b-adapt=2:direct=auto:me=tesa:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2:no-fast-pskip=1"
 
           command << " --ipod-atom"
 
@@ -567,20 +565,19 @@ def showUsageAndExit(helpText, msg = nil)
   puts "  #ts#    - current timestamp"
   puts "  #title# - source-title (dvd-label, directory-basename, filename)"
   puts
-  puts "hint"
+  puts "hints:"
   puts "use raw disk devices (e.g. /dev/rdisk1) to ensure that libdvdnav can read the title"
   puts "see https://forum.handbrake.fr/viewtopic.php?f=10&t=26165&p=120036#p120035"
   puts
-  puts "examples:"
+  puts "for x264-presets have a look at"
+  puts "https://forum.handbrake.fr/viewtopic.php?f=6&t=19426"
   puts
+  puts "examples:"
   puts "convert main-feature with all original-tracks (audio and subtitle) for languages german and english"
-  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input /dev/rdisk1 --output \"~/Desktop/Movie.m4v\" --main --copy-only --all-tracks-per-language"
+  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Movie.m4v\" --movie"
   puts
   puts "convert all episodes with all original-tracks (audio and subtitle) for languages german and english"
-  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input /dev/rdisk1 --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates --copy-only --all-tracks-per-language"
-  puts
-  puts "convert all episodes with the first original-track (audio and subtitle) for languages german and english and create an additional mixdown-track for each language"
-  puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input /dev/rdisk1 --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates"
+  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --episodes"
   puts
   if not msg.nil?
     puts msg
@@ -596,7 +593,8 @@ options = Struct.new(
   :preset, :mainFeatureOnly, :titles, :chapters,
   :minLength, :maxLength, :skipDuplicates,
   :allTracksPerLanguage, :skipCommentaries,
-  :checkOnly, :xtra_args, :debug, :verbose, :logfile).new
+  :checkOnly, :xtra_args, :debug, :verbose, :logfile,
+  :x264preset).new
 options.input = nil
 options.output = nil
 options.force = false
@@ -620,6 +618,7 @@ options.xtra_args = nil
 options.debug = false
 options.verbose = false
 options.logfile = nil
+options.x264preset = nil
 
 ARGV.options do |opts|
   opts.separator("")
@@ -656,6 +655,7 @@ ARGV.options do |opts|
   opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
   opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
   opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
+  opts.on("--x264preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.keys().join(', ')})") { |arg| options.x264preset = arg }
 
   opts.separator("")
   opts.separator("shorts")
@@ -698,6 +698,10 @@ end
 
 if options.input.nil?() or (not options.checkOnly and options.output.nil?())
   showUsageAndExit(ARGV.options.to_s, "input or output not set")
+end
+
+if not options.x264preset.nil? and not Handbrake::X264_PRESETS[options.x264preset]
+  showUsageAndExit(ARGV.options.to_s,"unknown x264-preset: #{options.x264preset}")
 end
 
 if not File.exists? options.input
