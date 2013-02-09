@@ -179,7 +179,7 @@ class Handbrake
         next
       end
       if skipDuplicates and title.blocks() >= 0 and converted.include?(title.blocks())
-        L.info("skipping because disc contains it twice")
+        L.info("skipping because source contains it twice")
         next
       end
 
