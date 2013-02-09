@@ -161,35 +161,42 @@ class Handbrake
     source.titles().each do |title|
       L.info("checking #{title}") if verbose
       next if not (titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature)))
-      L.info("converting #{title}")
+
       tracks = audioMatcher.filter(title.audioTracks, false, !allTracksPerLanguage)
       subtitles = subtitleMatcher.filter(title.subtitles, false, !allTracksPerLanguage)
 
       duration = TimeTool::timeToSeconds(title.duration)
       if minLength >= 0 and duration < minLength
-        L.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+        L.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})") if verbose
         next
       end
       if maxLength >= 0 and duration > maxLength
-        L.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+        L.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})") if verbose
         next
       end
       if tracks.empty?() or tracks.length < audioMatcher.allowed().length
-        L.info("skipping title because it contains not all wanted audio-tracks (available: #{title.audioTracks})")
+        L.info("skipping title because it contains not all wanted audio-tracks (available: #{title.audioTracks})") if verbose
         next
       end
       if skipDuplicates and title.blocks() >= 0 and converted.include?(title.blocks())
-        L.info("skipping because source contains it twice")
+        L.info("skipping because source contains it twice") if verbose
         next
       end
 
-      extra_arguments = xtraArgs
       outputFile = File.expand_path(output)
       outputFile = outputFile.gsub("#pos#", "%02d" % title.pos)
       outputFile = outputFile.gsub("#size#", title.size)
       outputFile = outputFile.gsub("#fps#", title.fps)
       outputFile = outputFile.gsub("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
       outputFile = outputFile.gsub("#title#", source.name)
+      if File.exists?(outputFile) and not force
+        L.info("skipping title because \"#{outputFile}\" already exists") if verbose
+        next
+      end
+      
+      L.info("converting #{title}")
+
+      extra_arguments = xtraArgs
       ext = File.extname(outputFile).downcase
       ismp4 = false
       ismkv = false
@@ -307,7 +314,7 @@ class Handbrake
             pmixdown << "auto"
             pab << "auto"
             paname << "#{t.descr}"
-            L.info("adding audio-track: #{t}") if debug or verbose
+            L.info("adding audio-track: #{t}") if verbose
           end
           if add_mixdown_track
             # add mixdown track (just the first per language)
@@ -317,7 +324,7 @@ class Handbrake
             pmixdown << "dpl2"
             pab << "160"
             paname << "#{t.descr} (mixdown)"
-            L.info("adding mixed down audio-track: #{t}") if debug or verbose
+            L.info("adding mixed down audio-track: #{t}") if verbose
           end
         end
         command << " --audio #{paudio.join(',')}"
@@ -354,7 +361,7 @@ class Handbrake
           if File.exists?(outputFile)
             size = File.size(outputFile)
             if size >= 0 and size < (1 * 1024 * 1024)
-              L.warn("file-size only #{size / 1024} KB - removing file")
+              L.warn("file-size only #{size / 1024} KB - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
             else
