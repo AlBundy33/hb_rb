@@ -140,7 +140,7 @@ class Handbrake
   end
 
   def self.convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
-    ripped = []
+    converted = []
     output = options.output
     preset = options.preset
     mainFeatureOnly = options.mainFeatureOnly || false
@@ -161,7 +161,7 @@ class Handbrake
     source.titles().each do |title|
       L.info("checking #{title}") if verbose
       next if not (titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature)))
-      L.info("ripping #{title}")
+      L.info("converting #{title}")
       tracks = audioMatcher.filter(title.audioTracks, false, !allTracksPerLanguage)
       subtitles = subtitleMatcher.filter(title.subtitles, false, !allTracksPerLanguage)
 
@@ -178,7 +178,7 @@ class Handbrake
         L.info("skipping title because it contains not all wanted audio-tracks (available: #{title.audioTracks})")
         next
       end
-      if skipDuplicates and title.blocks() >= 0 and ripped.include?(title.blocks())
+      if skipDuplicates and title.blocks() >= 0 and converted.include?(title.blocks())
         L.info("skipping because disc contains it twice")
         next
       end
@@ -344,7 +344,7 @@ class Handbrake
       command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
       command << " 2>&1"
 
-      ripped.push(title.blocks())
+      converted.push(title.blocks())
       if force or (not File.exists?(outputFile) and Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").empty?)
         L.info(command)
         if not debug
@@ -356,7 +356,7 @@ class Handbrake
             if size >= 0 and size < (1 * 1024 * 1024)
               L.warn("file-size only #{size / 1024} KB - removing file")
               File.delete(outputFile)
-              ripped.delete(title.blocks())
+              converted.delete(title.blocks())
             else
               L.info("file #{outputFile} created")
             end
@@ -566,13 +566,13 @@ def showUsageAndExit(helpText, msg = nil)
   puts
   puts "examples:"
   puts
-  puts "rip complete movie with all original-tracks (audio and subtitle) for languages german and english"
+  puts "convert main-feature with all original-tracks (audio and subtitle) for languages german and english"
   puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input /dev/rdisk1 --output \"~/Desktop/Movie.m4v\" --main --copy-only --all-tracks-per-language"
   puts
-  puts "rip all episodes with all original-tracks (audio and subtitle) for languages german and english"
+  puts "convert all episodes with all original-tracks (audio and subtitle) for languages german and english"
   puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input /dev/rdisk1 --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates --copy-only --all-tracks-per-language"
   puts
-  puts "rip all episodes with the first original-track (audio and subtitle) for languages german and english and create an additional mixdown-track for each language"
+  puts "convert all episodes with the first original-track (audio and subtitle) for languages german and english and create an additional mixdown-track for each language"
   puts "#{File.basename($0)} --audio deu,eng --subtitles deu,eng --input /dev/rdisk1 --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --min-length 00:10:00 --max-length 00:30:00 --skip-duplicates"
   puts
   if not msg.nil?
@@ -647,7 +647,7 @@ ARGV.options do |opts|
   opts.separator("")
   opts.separator("expert-options")
   opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
-  opts.on("--debug", "enable debug-mode (doesn't start ripping)") { |arg| options.debug = arg }
+  opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
   opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
 
   opts.separator("")
