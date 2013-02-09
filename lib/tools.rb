@@ -284,4 +284,7 @@ module Tools
       return l
     end
   end
+
+  # global constant for default console-logger
+  CON = Tools::Loggers.console()
 end

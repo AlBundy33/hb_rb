@@ -1,13 +1,12 @@
 #!/usr/bin/ruby
 
 require 'optparse'
+require 'logger'
 
 class Handbrake
   require 'fileutils'
   require 'lib/tools.rb'
   include Tools
-
-  L = Tools::Loggers.console()
 
   HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform()}/HandBrakeCLI")
   raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
@@ -154,63 +153,63 @@ class Handbrake
 
   def self.convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
     converted = []
-    output = options.output
-    preset = options.preset
-    mainFeatureOnly = options.mainFeatureOnly || false
-    force = options.force || false
-    skipDuplicates = options.skipDuplicates || false
-    verbose = options.verbose || false
-    debug = options.debug || false
-    mixdownOnly = options.mixdownOnly || false
-    copyOnly = options.copyOnly || false
-    allTracksPerLanguage = options.allTracksPerLanguage || false
-    skipCommentaries = options.skipCommentaries || false
-    xtraArgs = options.xtra_args
-    minLength = TimeTool::timeToSeconds(options.minLength)
-    maxLength = TimeTool::timeToSeconds(options.maxLength)
-    ipodCompatibility = options.ipodCompatibility || false
-    enableAutocrop = options.enableAutocrop || false
-    x264preset = options.x264preset
+    if options.minLength.nil?
+      minLength = -1
+    else
+      minLength = TimeTool::timeToSeconds(options.minLength)
+    end
+    if options.maxLength.nil?
+      maxLength = -1
+    else
+      maxLength = TimeTool::timeToSeconds(options.maxLength)
+    end
 
     source.titles().each do |title|
-      L.info("checking #{title}") if verbose
-      next if not (titleMatcher.matches(title) and (not mainFeatureOnly or (mainFeatureOnly and title.mainFeature)))
+      Tools::CON.info("checking #{title}")
+      
+      if options.mainFeatureOnly and not title.mainFeature
+        Tools::CON.info("skipping title because it's not the main-feature")
+        next
+      elsif not titleMatcher.matches(title)
+        Tools::CON.info("skipping unwanted title")
+        next
+      end
 
-      tracks = audioMatcher.filter(title.audioTracks, false, !allTracksPerLanguage)
-      subtitles = subtitleMatcher.filter(title.subtitles, false, !allTracksPerLanguage)
+      tracks = audioMatcher.filter(title.audioTracks, options.onlyFirstTrackPerLanguage, options.skipDuplicates)
+      subtitles = subtitleMatcher.filter(title.subtitles, options.onlyFirstTrackPerLanguage, options.skipDuplicates)
 
       duration = TimeTool::timeToSeconds(title.duration)
       if minLength >= 0 and duration < minLength
-        L.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})") if verbose
+        Tools::CON.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
         next
       end
       if maxLength >= 0 and duration > maxLength
-        L.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})") if verbose
+        Tools::CON.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
         next
       end
-      if tracks.empty?() or tracks.length < audioMatcher.allowed().length
-        L.info("skipping title because it contains not all wanted audio-tracks (available: #{title.audioTracks})") if verbose
+      if tracks.empty?() or (!audioMatcher.allowed().nil? and tracks.length < audioMatcher.allowed().length)
+        Tools::CON.info("skipping title because it contains not all wanted audio-tracks (available: #{title.audioTracks})")
         next
       end
-      if skipDuplicates and title.blocks() >= 0 and converted.include?(title.blocks())
-        L.info("skipping because source contains it twice") if verbose
+      if options.skipDuplicates and title.blocks() >= 0 and converted.include?(title.blocks())
+        Tools::CON.info("skipping because source contains it twice")
         next
       end
 
-      outputFile = File.expand_path(output)
+      outputFile = File.expand_path(options.output)
       outputFile = outputFile.gsub("#pos#", "%02d" % title.pos)
       outputFile = outputFile.gsub("#size#", title.size)
       outputFile = outputFile.gsub("#fps#", title.fps)
       outputFile = outputFile.gsub("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
       outputFile = outputFile.gsub("#title#", source.name)
-      if File.exists?(outputFile) and not force
-        L.info("skipping title because \"#{outputFile}\" already exists") if verbose
+      if File.exists?(outputFile) and not options.force
+        Tools::CON.info("skipping title because \"#{outputFile}\" already exists")
         next
       end
       
-      L.info("converting #{title}")
+      Tools::CON.info("converting #{title}")
 
-      extra_arguments = xtraArgs
+      extra_arguments = options.xtra_args
       ext = File.extname(outputFile).downcase
       ismp4 = false
       ismkv = false
@@ -228,8 +227,8 @@ class Handbrake
       if not options.chapters.nil?
         command << " --chapters #{options.chapters}"
       end
-      command << " --verbose" if verbose
-      if not preset.nil? and not preset.empty?
+      command << " --verbose" if options.verbose
+      if not options.preset.nil? and not options.preset.empty?
         command << " --preset \"#{preset}\""
       else
         # video
@@ -240,12 +239,12 @@ class Handbrake
         #command << " --turbo"
         x264_quality_opts = nil
 
-        if not x264preset.nil? and X264_PRESETS[x264preset]
-          x264_quality_opts = X264_PRESETS[x264preset]
+        if not options.x264preset.nil? and X264_PRESETS[options.x264preset]
+          x264_quality_opts = X264_PRESETS[options.x264preset]
         end
 
         # append for iPod-compatibility
-        if ipodCompatibility and ismp4
+        if options.ipodCompatibility and ismp4
           x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
 
           command << " --ipod-atom"
@@ -260,7 +259,7 @@ class Handbrake
         # tune encoder
         command << " -x #{x264_quality_opts}" if not x264_quality_opts.nil?
 
-        if ismp4 and not ipodCompatibility
+        if ismp4 and not options.ipodCompatibility
           command << " --large-file"
         end
 
@@ -275,8 +274,8 @@ class Handbrake
         # picture settings
         command << " --decomb"
         command << " --detelecine"
-        command << " --crop 0:0:0:0" if not enableAutocrop
-        if not ipodCompatibility
+        command << " --crop 0:0:0:0" if not options.enableAutocrop
+        if not options.ipodCompatibility
           command << " --loose-anamorphic"
           command << " --modulus 16"
         end
@@ -291,20 +290,10 @@ class Handbrake
         pmixdown = []
         pab = []
         paname = []
-        if mixdownOnly
-          add_copy_track = false
-          add_mixdown_track = true
-        elsif copyOnly
-          add_copy_track = true
-          add_mixdown_track = false
-        else
-          add_copy_track = true
-          add_mixdown_track = true
-        end
         tracks.each do |t|
-          L.info("checking audio-track #{t}") if debug or verbose
-          next if skipCommentaries and t.commentary?
-          if add_copy_track
+          Tools::CON.info("checking audio-track #{t}")
+          next if options.skipCommentaries and t.commentary?
+          if options.audioCopy
             # copy original track
             paudio << t.pos
             paencoder << "copy"
@@ -312,9 +301,9 @@ class Handbrake
             pmixdown << "auto"
             pab << "auto"
             paname << "#{t.descr}"
-            L.info("adding audio-track: #{t}") if verbose
+            Tools::CON.info("adding audio-track: #{t}")
           end
-          if add_mixdown_track
+          if options.audioMixdown
             # add mixdown track (just the first per language)
             paudio << t.pos
             paencoder << "faac"
@@ -322,7 +311,7 @@ class Handbrake
             pmixdown << "dpl2"
             pab << "160"
             paname << "#{t.descr} (mixdown)"
-            L.info("adding mixed down audio-track: #{t}") if verbose
+            Tools::CON.info("adding mixed down audio-track: #{t}")
           end
         end
         command << " --audio #{paudio.join(',')}"
@@ -336,7 +325,7 @@ class Handbrake
         # subtitles
         psubtitle = []
         subtitles.each do |s|
-          next if skipCommentaries and s.commentary?
+          next if options.skipCommentaries and s.commentary?
           psubtitle << s.pos
         end
         command << " --subtitle #{psubtitle.join(',')}" if not psubtitle.empty?()
@@ -350,23 +339,23 @@ class Handbrake
       command << " 2>&1"
 
       converted.push(title.blocks())
-      if force or (not File.exists?(outputFile) and Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").empty?)
-        L.info(command)
-        if not debug
+      if options.force or (not File.exists?(outputFile) and Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").empty?)
+        Tools::CON.info(command)
+        if not options.debug
           parentDir = File.dirname(outputFile)
           FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
           system command
           if File.exists?(outputFile)
             size = File.size(outputFile)
             if size >= 0 and size < (1 * 1024 * 1024)
-              L.warn("file-size only #{size / 1024} KB - removing file #{File.basename(outputFile)}")
+              Tools::CON.warn("file-size only #{size / 1024} KB - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
             else
-              L.info("file #{outputFile} created")
+              Tools::CON.warn("file #{outputFile} created")
             end
           else
-            L.warn("file #{outputFile} not created")
+            Tools::CON.warn("file #{outputFile} not created")
           end
         end
       else
@@ -375,7 +364,7 @@ class Handbrake
         else
           f = Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").join(", ")
         end
-        L.info("skipping title because \"#{f}\" already exists")
+        Tools::CON.info("skipping title because \"#{f}\" already exists")
       end
     end
   end
@@ -516,8 +505,9 @@ class ValueMatcher
   end
 
   def matches(obj)
-    #puts "#{allowed} #{value(obj)} -> #{allowed().nil? or allowed().include?(value(obj))}"
-    allowed().nil? or allowed().include?(value(obj))
+    m = (allowed().nil? or allowed().include?(value(obj))) 
+    Tools::CON.debug("#{self.class().name()}: #{value(obj).inspect} is allowed (#{allowed.inspect()})? -> #{m}")
+    return m
   end
 
   def filter(list, onlyFirst = false, skipDuplicatedValues = true)
@@ -545,7 +535,7 @@ end
 
 class PosMatcher < ValueMatcher
   def value(obj)
-    obj.pos
+    return obj.pos
   end
 end
 
@@ -579,6 +569,9 @@ def showUsageAndExit(helpText, msg = nil)
   puts "convert all episodes with all original-tracks (audio and subtitle) for languages german and english"
   puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --episodes"
   puts
+  puts "convert complete file or DVD with all tracks, languages etc."
+  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Output_#pos#.m4v\""
+  puts
   if not msg.nil?
     puts msg
     puts
@@ -589,36 +582,12 @@ end
 options = Struct.new(
   :input, :output, :force,
   :ipodCompatibility, :enableAutocrop,
-  :languages, :mixdownOnly, :copyOnly, :subtitles,
+  :languages, :audioMixdown, :audioCopy, :subtitles,
   :preset, :mainFeatureOnly, :titles, :chapters,
   :minLength, :maxLength, :skipDuplicates,
-  :allTracksPerLanguage, :skipCommentaries,
-  :checkOnly, :xtra_args, :debug, :verbose, :logfile,
+  :onlyFirstTrackPerLanguage, :skipCommentaries,
+  :checkOnly, :xtra_args, :debug, :verbose,
   :x264preset).new
-options.input = nil
-options.output = nil
-options.force = false
-options.ipodCompatibility = false
-options.enableAutocrop = false
-options.languages = ["deu"]
-options.mixdownOnly = false
-options.copyOnly = false
-options.subtitles = []
-options.preset = nil
-options.mainFeatureOnly = false
-options.titles = nil
-options.chapters = nil
-options.minLength = nil
-options.maxLength = nil
-options.skipDuplicates = false
-options.allTracksPerLanguage = false
-options.skipCommentaries = false
-options.checkOnly = false
-options.xtra_args = nil
-options.debug = false
-options.verbose = false
-options.logfile = nil
-options.x264preset = nil
 
 ARGV.options do |opts|
   opts.separator("")
@@ -631,23 +600,23 @@ ARGV.options do |opts|
 
   opts.separator("")
   opts.separator("output-options")
-  opts.on("--compatibility", "enables iPod compatible output") { |arg| options.ipodCompatibility = arg }
+  opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
   opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
   opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
-  opts.on("--mixdown-only", "create only mixed down track (Dolby ProLogic 2)") { |arg| options.mixdownOnly = arg }
-  opts.on("--copy-only", "copy original-audio track") { |arg| options.copyOnly = arg }
+  opts.on("--audio-mixdown", "add mixed down track (Dolby ProLogic 2)") { |arg| options.audioMixdown = arg }
+  opts.on("--audio-copy", "add original-audio track") { |arg| options.audioCopy = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
-  opts.on("--preset PRESET", "the preset to use") { |arg| options.preset = arg }
+  opts.on("--preset PRESET", "the handbrake-preset to use") { |arg| options.preset = arg }
 
   opts.separator("")
   opts.separator("filter-options")
   opts.on("--main", "main-feature only") { |arg| options.mainFeatureOnly = arg }
-  opts.on("--titles TITLES", Array, "the title-numbers to rip (use --check to see available titles)") { |arg| options.titles = arg }
-  opts.on("--chapters CHAPTERS", "the chapters to rip (e.g. 2 or 3-4)") { |arg| options.chapters = arg }
+  opts.on("--titles TITLES", Array, "the title-numbers to convert (use --check to see available titles)") { |arg| options.titles = arg }
+  opts.on("--chapters CHAPTERS", "the chapters to convert (e.g. 2 or 3-4)") { |arg| options.chapters = arg }
   opts.on("--min-length DURATION", "the minimum-track-length - format hh:nn:ss") { |arg| options.minLength = arg }
   opts.on("--max-length DURATION", "the maximum-track-length - format hh:nn:ss") { |arg| options.maxLength = arg }
   opts.on("--skip-duplicates", "skip duplicate titles (checks block-size)") { |arg| options.skipDuplicates = arg }
-  opts.on("--all-tracks-per-language", "convert all found audio- or subtitle-track per language (default is only the first)") { |arg| options.allTracksPerLanguage = arg }
+  opts.on("--only-first-track-per-language", "convert only first audio- or subtitle-track per language") { |arg| options.onlyFirstTrackPerLanguage = arg }
   opts.on("--skip-commentaries", "ignore commentary-audio- and subtitle-tracks") { |arg| options.skipCommentaries = arg }
 
   opts.separator("")
@@ -659,26 +628,26 @@ ARGV.options do |opts|
 
   opts.separator("")
   opts.separator("shorts")
-  opts.on("--default",   "sets: --audio deu,eng --subtitles deu,eng --copy-only --all-tracks-per-language --skip-commentaries") do |arg|
+  opts.on("--default",   "sets: --audio deu,eng --subtitles deu,eng --audio-copy --skip-commentaries --only-first-track-per-language") do |arg|
     options.languages = ["deu", "eng"]
     options.subtitles = ["deu", "eng"]
-    options.copyOnly = true
-    options.allTracksPerLanguage = true
+    options.onlyFirstTrackPerLanguage = true
+    options.audioCopy = true
     options.skipCommentaries = true
   end
   opts.on("--movie",   "sets: --default --main") do |arg|
     options.languages = ["deu", "eng"]
     options.subtitles = ["deu", "eng"]
-    options.copyOnly = true
-    options.allTracksPerLanguage = true
+    options.onlyFirstTrackPerLanguage = true
+    options.audioCopy = true
     options.skipCommentaries = true
     options.mainFeatureOnly = true
   end
   opts.on("--episodes", "sets: --default --min-length 00:10:00 --max-length 00:50:00 --skip-duplicates") do |arg|
     options.languages = ["deu", "eng"]
     options.subtitles = ["deu", "eng"]
-    options.copyOnly = true
-    options.allTracksPerLanguage = true
+    options.onlyFirstTrackPerLanguage = true
+    options.audioCopy = true
     options.skipCommentaries = true
     options.minLength = "00:10:00"
     options.maxLength = "00:50:00"
@@ -696,17 +665,46 @@ rescue => e
   end
 end
 
-if options.input.nil?() or (not options.checkOnly and options.output.nil?())
-  showUsageAndExit(ARGV.options.to_s, "input or output not set")
-end
+# set default values
+options.force = false if options.force.nil?
+options.ipodCompatibility = false if options.ipodCompatibility.nil?
+options.enableAutocrop = false if options.enableAutocrop.nil?
+options.audioCopy = true if options.audioMixdown.nil? and options.audioCopy.nil?
+options.mainFeatureOnly = false if options.mainFeatureOnly.nil?
+options.skipDuplicates = false if options.skipDuplicates.nil?
+options.onlyFirstTrackPerLanguage = false if options.onlyFirstTrackPerLanguage.nil?
+options.skipCommentaries = false if options.skipCommentaries.nil?
+options.checkOnly = false if options.checkOnly.nil?
+options.debug = false if options.debug.nil?
+options.verbose = false if options.verbose.nil?
+options.titles.collect!{ |t| t.to_i } if not options.titles.nil?
 
+if options.verbose and options.debug
+  Tools::CON.level = Logger::DEBUG
+elsif options.verbose or options.debug
+  Tools::CON.level = Logger::INFO
+else
+  Tools::CON.level = Logger::WARN
+end 
+
+# check settings
+if options.input.nil?()
+  showUsageAndExit(ARGV.options.to_s, "input not set")
+end
+if not options.checkOnly and options.output.nil?()
+  showUsageAndExit(ARGV.options.to_s, "output not set")
+end
 if not options.x264preset.nil? and not Handbrake::X264_PRESETS[options.x264preset]
   showUsageAndExit(ARGV.options.to_s,"unknown x264-preset: #{options.x264preset}")
 end
-
 if not File.exists? options.input
-  puts "\"#{options.input}\" does not exist"
-  exit
+  showUsageAndExit(ARGV.options.to_s, "\"#{options.input}\" does not exist")
+end
+
+if options.verbose and options.debug
+  options.each_pair do |k,v|
+    puts "#{k} = #{v.inspect}"
+  end
 end
 
 source = Handbrake::readInfo(options)
