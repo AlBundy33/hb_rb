@@ -10,14 +10,9 @@ class Handbrake
   L = Tools::Loggers.console()
 
   HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform()}/HandBrakeCLI")
+  raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
 
-  attr_accessor :options
-
-  def initialize()
-    raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
-  end
-
-  def readInfo(options)
+  def self.readInfo(options)
     path = File.expand_path(options.input)
     cmd = "\"#{HANDBRAKE_CLI}\" -i \"#{path}\" --scan -t 0 2>&1"
     output = %x[#{cmd}]
@@ -144,7 +139,7 @@ class Handbrake
     return source
   end
 
-  def convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
+  def self.convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
     ripped = []
     output = options.output
     preset = options.preset
@@ -654,7 +649,6 @@ ARGV.options do |opts|
   opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
   opts.on("--debug", "enable debug-mode (doesn't start ripping)") { |arg| options.debug = arg }
   opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
-  #opts.on("--log FILE", "log all output to FILE") { |arg| options.logfile = arg }
 
   opts.separator("")
   opts.separator("shorts")
@@ -704,26 +698,14 @@ if not File.exists? options.input
   exit
 end
 
+source = Handbrake::readInfo(options)
 
-#options.marshal_dump.each{|k,v| puts "#{k} = #{v.inspect}" } if options.debug
+titleMatcher = PosMatcher.new(options.titles)
+audioMatcher = LangMatcher.new(options.languages)
+subtitleMatcher = LangMatcher.new(options.subtitles)
 
-def run(options)
-  hb = Handbrake.new
-  source = hb.readInfo(options)
-
-  titleMatcher = PosMatcher.new(options.titles)
-  audioMatcher = LangMatcher.new(options.languages)
-  subtitleMatcher = LangMatcher.new(options.subtitles)
-
-  if options.checkOnly
-    puts source.info
-  else
-    hb.convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
-  end
-end
-
-if options.logfile.nil? or options.logfile.strip.empty?
-  run(options)
+if options.checkOnly
+  puts source.info
 else
-  Tools::Tee::tee(options.logfile, true) { run(options) }
+  Handbrake::convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
 end
