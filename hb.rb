@@ -195,9 +195,11 @@ class Handbrake
       outputFile = outputFile.gsub("#fps#", title.fps)
       outputFile = outputFile.gsub("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
       outputFile = outputFile.gsub("#title#", source.name)
-      if File.exists?(outputFile) and not options.force
-        Tools::CON.info("skipping title because \"#{outputFile}\" already exists")
-        next
+      if not options.force
+        if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
+          Tools::CON.info("skipping title because \"#{outputFile}\" already exists")
+          next
+        end
       end
       
       Tools::CON.info("converting #{title}")
@@ -320,32 +322,24 @@ class Handbrake
       command << " 2>&1"
 
       converted.push(title.blocks())
-      if options.force or (not File.exists?(outputFile) and Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").empty?)
-        Tools::CON.info(command)
-        if not options.debug
-          parentDir = File.dirname(outputFile)
-          FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
-          system command
-          if File.exists?(outputFile)
-            size = File.size(outputFile)
-            if size >= 0 and size < (1 * 1024 * 1024)
-              Tools::CON.warn("file-size only #{size / 1024} KB - removing file #{File.basename(outputFile)}")
-              File.delete(outputFile)
-              converted.delete(title.blocks())
-            else
-              Tools::CON.warn("file #{outputFile} created")
-            end
-          else
-            Tools::CON.warn("file #{outputFile} not created")
-          end
-        end
-      else
+
+      Tools::CON.info(command)
+      if not options.debug
+        parentDir = File.dirname(outputFile)
+        FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
+        system command
         if File.exists?(outputFile)
-          f = outputFile
+          size = File.size(outputFile)
+          if size >= 0 and size < (1 * 1024 * 1024)
+            Tools::CON.warn("file-size only #{size / 1024} KB - removing file #{File.basename(outputFile)}")
+            File.delete(outputFile)
+            converted.delete(title.blocks())
+          else
+            Tools::CON.warn("file #{outputFile} created")
+          end
         else
-          f = Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").join(", ")
+          Tools::CON.warn("file #{outputFile} not created")
         end
-        Tools::CON.info("skipping title because \"#{f}\" already exists")
       end
     end
   end
