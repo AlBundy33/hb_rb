@@ -340,7 +340,11 @@ class Handbrake
 
       # the rest...
       command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
-      command << " 2>&1"
+      if options.verbose
+        command << " 2>&1"
+      else
+        command << " 2>#{Tools::OS::nullDevice()}"
+      end
 
       converted.push(title.blocks())
 
