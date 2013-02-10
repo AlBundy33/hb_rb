@@ -246,9 +246,7 @@ class Handbrake
       command="\"#{HANDBRAKE_CLI}\""
       command << " --input \"#{source.path()}\""
       command << " --output \"#{outputFile}\""
-      if not options.chapters.nil?
-        command << " --chapters #{options.chapters}"
-      end
+      command << " --chapters #{options.chapters}" if not options.chapters.nil?
       command << " --verbose" if options.verbose
       if not options.preset.nil? and not options.preset.empty?
         command << " --preset \"#{preset}\""
@@ -334,9 +332,9 @@ class Handbrake
         command << " --audio-fallback faac"
 
         # subtitles
+        subtitles.reject!{ |s| s.commentary? } if options.skipCommentaries
         psubtitle = []
         subtitles.each do |s|
-          next if options.skipCommentaries and s.commentary?
           psubtitle << s.pos
         end
         command << " --subtitle #{psubtitle.join(',')}" if not psubtitle.empty?()
