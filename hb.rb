@@ -583,7 +583,7 @@ ARGV.options do |opts|
   opts.on("--audio-mixdown", "add mixed down track (faac, Dolby ProLogic 2)") { |arg| options.audioMixdown = arg }
   opts.on("--audio-copy", "add original-audio track") { |arg| options.audioCopy = arg }
   opts.on("--audio-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioEncoder = arg }
-  opts.on("--audio-encoder-mixdown MOXDOWN", "mixdown encoded audio track (#{Handbrake::AUDIO_MIXDOWNS.join(', ')})") { |arg| options.audioEncoderMixdown = arg }
+  opts.on("--audio-encoder-mixdown MIXDOWN", "mixdown encoded audio track (#{Handbrake::AUDIO_MIXDOWNS.join(', ')})") { |arg| options.audioEncoderMixdown = arg }
   opts.on("--audio-encoder-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioEncoderBitrate = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
   opts.on("--preset PRESET", "the handbrake-preset to use") { |arg| options.preset = arg }
