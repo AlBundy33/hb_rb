@@ -166,6 +166,11 @@ class Handbrake
       puts source.info
       return
     end
+    
+    if source.titles.empty?
+      Tools::CON::info("#{source.path} contains no titles")
+      return
+    end
 
     converted = []
     if options.minLength.nil?
@@ -721,7 +726,6 @@ if options.audioEncoderMixdown.nil?
 elsif not Handbrake::AUDIO_MIXDOWNS.include?(options.audioEncoderMixdown)
   showUsageAndExit(ARGV.options,"unknown mixdown-option: #{options.audioEncoderMixdown}")
 end
-
 
 if options.verbose and options.debug
   options.each_pair do |k,v|
