@@ -22,7 +22,7 @@ class Handbrake
     cmd = "\"#{HANDBRAKE_CLI}\" --preset-list 2>&1"
     output = %x[#{cmd}]
     preset_pattern = /\+ (.*?): (.*)/
-    result = [] 
+    result = []
     output.each_line do |line|
       next if not line =~ preset_pattern
       info = line.scan(preset_pattern)[0]
