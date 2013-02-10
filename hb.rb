@@ -14,8 +14,22 @@ class Handbrake
   AUDIO_ENCODERS = %w(ca_aac ca_haac faac ffaac ffac3 lame vorbis ffflac)
   AUDIO_MIXDOWNS = %w(mono stereo dpl1 dpl2 6ch)
 
+  X264_PROFILES = %w(baseline main high high10 high422 high444)
   X264_PRESETS = %w(ultrafast superfast veryfast faster fast medium slow slower veryslow placebo)
   X264_TUNES = %w(film animation grain stillimage psnr ssim fastdecode zerolatency)
+  
+  def self.getPresets()
+    cmd = "\"#{HANDBRAKE_CLI}\" --preset-list 2>&1"
+    output = %x[#{cmd}]
+    preset_pattern = /\+ (.*?): (.*)/
+    result = [] 
+    output.each_line do |line|
+      next if not line =~ preset_pattern
+      info = line.scan(preset_pattern)[0]
+      result << [info[0], info[1]]
+    end
+    return result
+  end
 
   def self.readInfo(options)
     path = File.expand_path(options.input)
@@ -234,6 +248,7 @@ class Handbrake
       else
         # video
         command << " --encoder x264"
+        command << " --x264-profile #{options.x264profile}" if not options.x264profile.nil?
         command << " --x264-preset #{options.x264preset}" if not options.x264preset.nil?
         command << " --x264-tune #{options.x264tune}" if not options.x264tune.nil?
         command << " --quality 20.0"
@@ -242,7 +257,7 @@ class Handbrake
         if ismp4
           if options.ipodCompatibility
             command << " --ipod-atom"
-            command << " -x level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
+            command << " --encopts level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
           else
             command << " --large-file"
           end
@@ -526,8 +541,8 @@ class LangMatcher < ValueMatcher
   end
 end
 
-def showUsageAndExit(helpText, msg = nil)
-  puts helpText
+def showUsageAndExit(options, msg = nil)
+  puts options.to_s
   puts ""
   puts "available place-holders for output-file:"
   puts "  #pos#   - title-number on input-source"
@@ -539,9 +554,6 @@ def showUsageAndExit(helpText, msg = nil)
   puts "hints:"
   puts "use raw disk devices (e.g. /dev/rdisk1) to ensure that libdvdnav can read the title"
   puts "see https://forum.handbrake.fr/viewtopic.php?f=10&t=26165&p=120036#p120035"
-  puts
-  puts "for x264-presets have a look at"
-  puts "https://forum.handbrake.fr/viewtopic.php?f=6&t=19426"
   puts
   puts "examples:"
   puts "convert main-feature with all original-tracks (audio and subtitle) for languages german and english"
@@ -569,7 +581,7 @@ options = Struct.new(
   :minLength, :maxLength, :skipDuplicates,
   :onlyFirstTrackPerLanguage, :skipCommentaries,
   :checkOnly, :xtra_args, :debug, :verbose,
-  :x264preset, :x264tune).new
+  :x264profile, :x264preset, :x264tune).new
 
 ARGV.options do |opts|
   opts.separator("")
@@ -592,7 +604,7 @@ ARGV.options do |opts|
   opts.on("--audio-encoder-mixdown MIXDOWN", "mixdown encoded audio track (#{Handbrake::AUDIO_MIXDOWNS.join(', ')})") { |arg| options.audioEncoderMixdown = arg }
   opts.on("--audio-encoder-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioEncoderBitrate = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
-  opts.on("--preset PRESET", "the handbrake-preset to use") { |arg| options.preset = arg }
+  opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().collect(){|p,s| p}.join(', ')})") { |arg| options.preset = arg }
 
   opts.separator("")
   opts.separator("filter-options")
@@ -610,6 +622,7 @@ ARGV.options do |opts|
   opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
   opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
   opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
+  opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
   opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
   opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
 
@@ -646,7 +659,7 @@ begin
   ARGV.parse!
 rescue => e
   if not e.kind_of?(SystemExit)
-    showUsageAndExit(ARGV.options.to_s, e.to_s)
+    showUsageAndExit(ARGV.options, e.to_s)
   else
     exit
   end
@@ -676,29 +689,19 @@ else
 end 
 
 # check settings
-if options.input.nil?()
-  showUsageAndExit(ARGV.options.to_s, "input not set")
-end
-if not options.checkOnly and options.output.nil?()
-  showUsageAndExit(ARGV.options.to_s, "output not set")
-end
-if not options.x264preset.nil? and not Handbrake::X264_PRESETS.include?(options.x264preset)
-  showUsageAndExit(ARGV.options.to_s,"unknown x264-preset: #{options.x264preset}")
-end
-if not options.x264tune.nil? and not Handbrake::X264_TUNES.include?(options.x264tune)
-  showUsageAndExit(ARGV.options.to_s,"unknown x264-tune option: #{options.x264tune}")
-end
-if not options.audioEncoder.nil? and not Handbrake::AUDIO_ENCODERS.include?(options.audioEncoder)
-  showUsageAndExit(ARGV.options.to_s,"unknown audio-encoder: #{options.audioEncoder}")
-end
+showUsageAndExit(ARGV.options, "input not set") if options.input.nil?()
+showUsageAndExit(ARGV.options, "output not set") if not options.checkOnly and options.output.nil?()
+showUsageAndExit(ARGV.options, "\"#{options.input}\" does not exist") if not File.exists? options.input
+showUsageAndExit(ARGV.options,"unknown x264-profile: #{options.x264profile}") if not options.x264profile.nil? and not Handbrake::X264_PROFILES.include?(options.x264profile)
+showUsageAndExit(ARGV.options,"unknown x264-preset: #{options.x264preset}") if not options.x264preset.nil? and not Handbrake::X264_PRESETS.include?(options.x264preset)
+showUsageAndExit(ARGV.options,"unknown x264-tune option: #{options.x264tune}") if not options.x264tune.nil? and not Handbrake::X264_TUNES.include?(options.x264tune)
+showUsageAndExit(ARGV.options,"unknown audio-encoder: #{options.audioEncoder}") if not options.audioEncoder.nil? and not Handbrake::AUDIO_ENCODERS.include?(options.audioEncoder)
 if options.audioEncoderMixdown.nil?
-  options.audioEncoderMixdown = "auto"
+  options.audioEncoderMixdown = "auto"  
 elsif not Handbrake::AUDIO_MIXDOWNS.include?(options.audioEncoderMixdown)
-  showUsageAndExit(ARGV.options.to_s,"unknown mixdown-option: #{options.audioEncoderMixdown}")
+  showUsageAndExit(ARGV.options,"unknown mixdown-option: #{options.audioEncoderMixdown}")
 end
-if not File.exists? options.input
-  showUsageAndExit(ARGV.options.to_s, "\"#{options.input}\" does not exist")
-end
+
 
 if options.verbose and options.debug
   options.each_pair do |k,v|
