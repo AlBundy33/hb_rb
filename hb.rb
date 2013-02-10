@@ -144,7 +144,13 @@ class Handbrake
     return source
   end
 
-  def self.convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
+  def self.convert(options, titleMatcher, audioMatcher, subtitleMatcher)
+    source = Handbrake::readInfo(options)
+    if options.checkOnly
+      puts source.info
+      return
+    end
+
     converted = []
     if options.minLength.nil?
       minLength = -1
@@ -700,14 +706,8 @@ if options.verbose and options.debug
   end
 end
 
-source = Handbrake::readInfo(options)
-
 titleMatcher = PosMatcher.new(options.titles)
 audioMatcher = LangMatcher.new(options.languages)
 subtitleMatcher = LangMatcher.new(options.subtitles)
 
-if options.checkOnly
-  puts source.info
-else
-  Handbrake::convert(options, source, titleMatcher, audioMatcher, subtitleMatcher)
-end
+Handbrake::convert(options, titleMatcher, audioMatcher, subtitleMatcher)
