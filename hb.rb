@@ -47,7 +47,7 @@ class Handbrake
     in_audio_section_pattern = /\+ audio tracks:/
     audio_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\), ([0-9]+Hz), ([0-9]+bps)/
     file_audio_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\)/
-    in_subtitle_section_pattern = /\+ subtitles:/
+    in_subtitle_section_pattern = /\+ (subtitles|subtitle tracks):/
     subtitle_pattern = /\+ ([0-9]+), (.*?) \(iso639-2: (.*?)\)/
     duration_pattern = /\+ duration: (.*)/
     chapter_pattern = /\+ ([0-9]+): cells (.*), ([0-9]+) blocks, duration (.*)/
@@ -74,7 +74,9 @@ class Handbrake
         source.serial = info[0].strip
       elsif line.match(in_audio_section_pattern)
         in_audio_section = true
+        in_subtitle_section = false
       elsif line.match(in_subtitle_section_pattern)
+        in_audio_section = false
         in_subtitle_section = true
       elsif line.match(title_pattern)
         puts "> match: title" if options.debug and options.verbose
@@ -347,6 +349,20 @@ class Handbrake
       end
 
       converted.push(title.blocks())
+
+      Tools::CON::warn "title #{title.pos} #{title.duration} #{title.size}"
+      if not tracks.empty?
+        Tools::CON::warn "audio-tracks"
+        tracks.each do |t|
+          Tools::CON::warn " - track #{t.pos}: #{t.descr}"
+        end
+      end
+      if not subtitles.empty?
+        Tools::CON::warn "subtitles"
+        subtitles.each do |s|
+          Tools::CON::warn " - track #{s.pos}: #{s.descr}"
+        end
+      end
 
       Tools::CON.info(command)
       if not options.debug
