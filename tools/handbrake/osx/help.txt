@@ -68,7 +68,7 @@ Syntax: HandBrakeCLI [options] -i <device> -o <file>
                             on the first pass to improve speed
                             (only works with x264, affects PSNR by about 0.05dB,
                             and increases first pass speed two to four times)
-    -r, --rate              Set video framerate (5/10/12/15/23.976/24/25/29.97)
+    -r, --rate              Set video framerate (5/10/12/15/23.976/24/25/29.97/30/50/59.94/60)
                             Be aware that not specifying a framerate lets
                             HandBrake preserve a source's time stamps,
                             potentially creating variable framerate video
@@ -217,7 +217,7 @@ Syntax: HandBrakeCLI [options] -i <device> -o <file>
                             Separated by commas for more than one subtitle track.
                             Example: "1,2,3" for multiple tracks.
                             If "string" is omitted, the first track is forced.
-        --subtitle-burn     "Burn" the selected subtitle into the video track
+        --subtitle-burned   "Burn" the selected subtitle into the video track
           <number>          If "number" is omitted, the first track is burned.
                             "number" is an index into the subtitle list
                             specified with '--subtitle'.
@@ -255,4 +255,3 @@ Syntax: HandBrakeCLI [options] -i <device> -o <file>
                             means no subtitle will be automatically displayed
                             If "number" is omitted, the first srt is default.
                             "number" is an 1 based index into the srt-file list
-

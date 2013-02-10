@@ -10,19 +10,12 @@ class Handbrake
 
   HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform()}/HandBrakeCLI")
   raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
+  
+  AUDIO_ENCODERS = %w(ca_aac ca_haac faac ffaac ffac3 lame vorbis ffflac)
+  AUDIO_MIXDOWNS = %w(mono stereo dpl1 dpl2 6ch)
 
-  # https://forum.handbrake.fr/viewtopic.php?f=6&t=19426
-  X264_PRESETS = {}
-  X264_PRESETS["ultrafast"] = "ref=1:bframes=0:cabac=0:8x8dct=0:weightp=0:me=dia:subq=0:rc-lookahead=0:mbtree=0:analyse=none:trellis=0:aq-mode=0:scenecut=0:no-deblock=1"
-  X264_PRESETS["superfast"] = "ref=1:weightp=1:me=dia:subq=1:rc-lookahead=0:mbtree=0:analyse=i4x4,i8x8:trellis=0"
-  X264_PRESETS["veryfast"] = "ref=1:weightp=1:subq=2:rc-lookahead=10:trellis=0"
-  X264_PRESETS["faster"] = "ref=2:mixed-refs=0:weightp=1:subq=4:rc-lookahead=20"
-  X264_PRESETS["fast"] = "ref=2:weightp=1:subq=6:rc-lookahead=30"
-  X264_PRESETS["medium"] = ""  
-  X264_PRESETS["slow"] = "ref=5:b-adapt=2:direct=auto:me=umh:subq=8:rc-lookahead=50"
-  X264_PRESETS["slower"] = "ref=8:b-adapt=2:direct=auto:me=umh:subq=9:rc-lookahead=60:analyse=all:trellis=2"
-  X264_PRESETS["veryslow"] = "ref=16:bframes=8:b-adapt=2:direct=auto:me=umh:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2"
-  X264_PRESETS["placebo"] = "ref=16:bframes=16:b-adapt=2:direct=auto:me=tesa:merange=24:subq=10:rc-lookahead=60:analyse=all:trellis=2:no-fast-pskip=1"
+  X264_PRESETS = %w(ultrafast superfast veryfast faster fast medium slow slower veryslow placebo)
+  X264_TUNES = %w(film animation grain stillimage psnr ssim fastdecode zerolatency)
 
   def self.readInfo(options)
     path = File.expand_path(options.input)
@@ -233,42 +226,24 @@ class Handbrake
       else
         # video
         command << " --encoder x264"
+        command << " --x264-preset #{options.x264preset}" if not options.x264preset.nil?
+        command << " --x264-tune #{options.x264tune}" if not options.x264tune.nil?
         command << " --quality 20.0"
-        #command << " --vb 2500"
-        #command << " --two-pass"
-        #command << " --turbo"
-        x264_quality_opts = nil
 
-        if not options.x264preset.nil? and X264_PRESETS[options.x264preset]
-          x264_quality_opts = X264_PRESETS[options.x264preset]
-        end
-
-        # append for iPod-compatibility
-        if options.ipodCompatibility and ismp4
-          x264_quality_opts = "level=30:bframes=0:weightp=0:cabac=0:8x8dct=0:ref=1:vbv-maxrate=#{vbr}:vbv-bufsize=2500:analyse=all:me=umh:no-fast-pskip=1:psy-rd=0,0:subme=6:trellis=0"
-
-          command << " --ipod-atom"
-
-          if x264_quality_opts.nil?
-            x264_quality_opts = ""
-          else
-            x264_quality_opts << ":"
-          end
-          x264_quality_opts << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
-        end
-        # tune encoder
-        command << " -x #{x264_quality_opts}" if not x264_quality_opts.nil?
-
-        if ismp4 and not options.ipodCompatibility
-          command << " --large-file"
-        end
-
+        # iPod-compatibility
         if ismp4
+          if options.ipodCompatibility
+            command << " --ipod-atom"
+            command << " -x level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
+          else
+            command << " --large-file"
+          end
           command << " --format mp4"
           command << " --optimize"
         elsif ismkv
           command << " --format mkv"
         end
+
         command << " --markers"
 
         # picture settings
@@ -279,9 +254,7 @@ class Handbrake
           command << " --loose-anamorphic"
           command << " --modulus 16"
         end
-        # FullHD as Maximum
-        #command << " --maxWidth 1920"
-        #command << " --maxHeight 1080"
+        command << " --maxHeight #{options.maxHeight}" if options.maxHeight
 
         # audio
         paudio = []
@@ -304,7 +277,6 @@ class Handbrake
             Tools::CON.info("adding audio-track: #{t}")
           end
           if options.audioMixdown
-            # add mixdown track (just the first per language)
             paudio << t.pos
             paencoder << "faac"
             parate << "auto"
@@ -312,6 +284,15 @@ class Handbrake
             pab << "160"
             paname << "#{t.descr} (mixdown)"
             Tools::CON.info("adding mixed down audio-track: #{t}")
+          end
+          if not options.audioEncoder.nil?
+            paudio << t.pos
+            paencoder << options.audioEncoder
+            parate << "auto"
+            pmixdown << options.audioEncoderMixdown
+            pab << options.audioEncoderBitrate
+            paname << "#{t.descr} (#{options.audioEncoder})"
+            Tools::CON.info("adding #{options.audioEncoder} encoded audio-track: #{t}") 
           end
         end
         command << " --audio #{paudio.join(',')}"
@@ -582,12 +563,13 @@ end
 options = Struct.new(
   :input, :output, :force,
   :ipodCompatibility, :enableAutocrop,
-  :languages, :audioMixdown, :audioCopy, :subtitles,
-  :preset, :mainFeatureOnly, :titles, :chapters,
+  :languages, :audioMixdown, :audioCopy,
+  :audioEncoder, :audioEncoderMixdown, :audioEncoderBitrate,
+  :maxHeight, :subtitles, :preset, :mainFeatureOnly, :titles, :chapters,
   :minLength, :maxLength, :skipDuplicates,
   :onlyFirstTrackPerLanguage, :skipCommentaries,
   :checkOnly, :xtra_args, :debug, :verbose,
-  :x264preset).new
+  :x264preset, :x264tune).new
 
 ARGV.options do |opts|
   opts.separator("")
@@ -602,9 +584,13 @@ ARGV.options do |opts|
   opts.separator("output-options")
   opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
   opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
+  opts.on("--max-height HEIGTH", "maximum video height (e.g. 720, 1080)") { |arg| options.maxHeight = arg }
   opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
-  opts.on("--audio-mixdown", "add mixed down track (Dolby ProLogic 2)") { |arg| options.audioMixdown = arg }
+  opts.on("--audio-mixdown", "add mixed down track (faac, Dolby ProLogic 2)") { |arg| options.audioMixdown = arg }
   opts.on("--audio-copy", "add original-audio track") { |arg| options.audioCopy = arg }
+  opts.on("--audio-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioEncoder = arg }
+  opts.on("--audio-encoder-mixdown MOXDOWN", "mixdown encoded audio track (#{Handbrake::AUDIO_MIXDOWNS.join(', ')})") { |arg| options.audioEncoderMixdown = arg }
+  opts.on("--audio-encoder-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioEncoderBitrate = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
   opts.on("--preset PRESET", "the handbrake-preset to use") { |arg| options.preset = arg }
 
@@ -624,7 +610,8 @@ ARGV.options do |opts|
   opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
   opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
   opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
-  opts.on("--x264preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.keys().join(', ')})") { |arg| options.x264preset = arg }
+  opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
+  opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
 
   opts.separator("")
   opts.separator("shorts")
@@ -669,7 +656,7 @@ end
 options.force = false if options.force.nil?
 options.ipodCompatibility = false if options.ipodCompatibility.nil?
 options.enableAutocrop = false if options.enableAutocrop.nil?
-options.audioCopy = true if options.audioMixdown.nil? and options.audioCopy.nil?
+options.audioCopy = true if options.audioMixdown.nil? and options.audioCopy.nil? and options.audioEncoder.nil?
 options.mainFeatureOnly = false if options.mainFeatureOnly.nil?
 options.skipDuplicates = false if options.skipDuplicates.nil?
 options.onlyFirstTrackPerLanguage = false if options.onlyFirstTrackPerLanguage.nil?
@@ -678,6 +665,7 @@ options.checkOnly = false if options.checkOnly.nil?
 options.debug = false if options.debug.nil?
 options.verbose = false if options.verbose.nil?
 options.titles.collect!{ |t| t.to_i } if not options.titles.nil?
+options.audioEncoderBitrate = "160" if options.audioEncoderBitrate.nil?
 
 if options.verbose and options.debug
   Tools::CON.level = Logger::DEBUG
@@ -694,8 +682,19 @@ end
 if not options.checkOnly and options.output.nil?()
   showUsageAndExit(ARGV.options.to_s, "output not set")
 end
-if not options.x264preset.nil? and not Handbrake::X264_PRESETS[options.x264preset]
+if not options.x264preset.nil? and not Handbrake::X264_PRESETS.include?(options.x264preset)
   showUsageAndExit(ARGV.options.to_s,"unknown x264-preset: #{options.x264preset}")
+end
+if not options.x264tune.nil? and not Handbrake::X264_TUNES.include?(options.x264tune)
+  showUsageAndExit(ARGV.options.to_s,"unknown x264-tune option: #{options.x264tune}")
+end
+if not options.audioEncoder.nil? and not Handbrake::AUDIO_ENCODERS.include?(options.audioEncoder)
+  showUsageAndExit(ARGV.options.to_s,"unknown audio-encoder: #{options.audioEncoder}")
+end
+if options.audioEncoderMixdown.nil?
+  options.audioEncoderMixdown = "auto"
+elsif not Handbrake::AUDIO_MIXDOWNS.include?(options.audioEncoderMixdown)
+  showUsageAndExit(ARGV.options.to_s,"unknown mixdown-option: #{options.audioEncoderMixdown}")
 end
 if not File.exists? options.input
   showUsageAndExit(ARGV.options.to_s, "\"#{options.input}\" does not exist")
