@@ -97,7 +97,6 @@ end
 
 class TagDb
   attr_accessor :data, :options, :db, :columns
-  L = Tools::Loggers.console()
   
   ALWAYS_UPDATE_SJ_VALUES = true
   
@@ -130,7 +129,7 @@ class TagDb
     @columns = KNOWN_COLUMNS if columns.nil? or columns.empty?
     unknown_columns = @columns - KNOWN_COLUMNS
     if not unknown_columns.empty?
-      L.warn("database contains unknown columns: #{unknown_columns.join(", ")}")
+      Tools::CON.warn("database contains unknown columns: #{unknown_columns.join(", ")}")
     end
     missing_columns = KNOWN_COLUMNS - @columns
     @columns = @columns + missing_columns if not missing_columns.empty?
@@ -206,22 +205,22 @@ class TagDb
     renamefiles = options.rename || false
     Dir["#{pattern}"].each do |f|
       next if not File.exists? f
-      L.info("updating mp4-tags for #{f}")
+      Tools::CON.info("updating mp4-tags for #{f}")
       id = fileid(f)
       next if empty?(id)
 
       info = createTagMap(data[id])
 
       if info.nil?
-        L.warn("found no tags for #{f}")
+        Tools::CON.warn("found no tags for #{f}")
         next
       end
       cmd = TaggerFactory.newTagger().createCommand(f, info)
       if cmd.nil?
-        L.warn("could not create command to tag file #{f}")
+        Tools::CON.warn("could not create command to tag file #{f}")
         next
       end
-      L.info("#{cmd}")
+      Tools::CON.info("#{cmd}")
       system(cmd) if not debug
       ext = File.extname(f)
       titled_name = info[TITLE]
@@ -238,10 +237,10 @@ class TagDb
 
       if renamefiles and not empty?(titled_name) and not f.eql? titled_name
         if not File.exists?(titled_name)
-          L.info("renaming file\n\tfrom: #{File.basename(f)}\n\tto  : #{File.basename(titled_name)}")
+          Tools::CON.info("renaming file\n\tfrom: #{File.basename(f)}\n\tto  : #{File.basename(titled_name)}")
           File.rename(f, titled_name) if not debug
         else
-          L.warn("could not rename #{f} to #{File.basename(titled_name)} because target already exists!")
+          Tools::CON.warn("could not rename #{f} to #{File.basename(titled_name)} because target already exists!")
         end
       end
     end
@@ -266,9 +265,9 @@ class TagDb
 
   def addFilesToDB(pattern)
     sj = options.sj
-    Dir["#{pattern}"].each do |f|
+    Dir[pattern].each do |f|
       next if not File.exists? f
-      L.info("updating database entry for #{f}")
+      Tools::CON.info("updating database entry for #{f}")
       
       id = fileid(f)
       next if empty?(id)
