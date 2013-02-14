@@ -228,8 +228,12 @@ class TagDb
       titled_name = "%s - %02dx%02d - %s" % [ info[NAME], info[SEASON], info[EPISODE], titled_name ]
       # add original title
       titled_name = "#{titled_name} (#{info[TITLE_ORG]})" if not empty?(info[TITLE_ORG])
-      titled_name = "#{titled_name}.#{info[FILE_ID]}#{ext}" if not empty?(info[FILE_ID])
+      # ... and file-id
+      titled_name = "#{titled_name}.#{info[FILE_ID]}" if not empty?(info[FILE_ID])
+      # remove invalid characters
       titled_name.gsub!(/[\/:"*?<>|]+/, "_")
+      # add extension
+      titled_name = "#{titled_name}#{ext}"
       titled_name = File.join(File.dirname(f), titled_name)
 
       if renamefiles and not empty?(titled_name) and not f.eql? titled_name
