@@ -41,13 +41,13 @@ class AtomicParsley < Tagger
     tagInfo.each do |key, value|
       params = ARG_MAP[key]
       next if params.nil?()
-      value = "" if value.nil?()
+      v = "#{value}"
       if key.eql?"title" and not value.strip.empty?
         title_org = tagInfo["title_org"]
-        value << " (#{title_org})" if !title_org.nil? and !title_org.strip.empty?
+        v << " (#{title_org})" if !title_org.nil? and !title_org.strip.empty?
       end
       params.each do |p|
-        cmd << " #{p} \"#{value}\""
+        cmd << " #{p} \"#{v}\""
       end
     end
     return cmd
