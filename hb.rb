@@ -291,9 +291,9 @@ class Handbrake
         pmixdown = []
         pab = []
         paname = []
+        tracks.reject!{ |t| t.commentary? } if options.skipCommentaries
         tracks.each do |t|
           Tools::CON.info("checking audio-track #{t}")
-          next if options.skipCommentaries and t.commentary?
           if options.audioCopy
             # copy original track
             paudio << t.pos
@@ -340,7 +340,7 @@ class Handbrake
         command << " --subtitle #{psubtitle.join(',')}" if not psubtitle.empty?()
       end
 
-      # title (useed by default and if preset is selected)
+      # title (used by default and if preset is selected)
       command << " --title #{title.pos}"
 
       # the rest...
@@ -353,7 +353,7 @@ class Handbrake
 
       converted.push(title.blocks())
 
-      Tools::CON::warn "title #{title.pos} #{title.duration} #{title.size}"
+      Tools::CON::warn "converting title #{title.pos} #{title.duration} #{title.size}"
       if not tracks.empty?
         Tools::CON::warn "audio-tracks"
         tracks.each do |t|
@@ -709,7 +709,7 @@ elsif options.verbose or options.debug
   Tools::CON.level = Logger::INFO
 else
   Tools::CON.level = Logger::WARN
-end 
+end
 
 # check settings
 showUsageAndExit(ARGV.options, "input not set") if options.input.nil?()

@@ -280,8 +280,46 @@ module Tools
     def self.createLogger(progname = nil, output = STDOUT)
       l = Logger.new(output)
       l.progname = progname || File.basename($0)
-      l.datetime_format = "%Y-%m-%d, %H:%M:%S,%L "
+      l.formatter = JavaLogFormatter.new
+      l.formatter.datetime_format = "%Y-%m-%d, %H:%M:%S"
       return l
+    end
+  end
+  
+  class JavaLogFormatter
+    Format = "[%s] %5s -- %s: %s\n"
+  
+    attr_accessor :datetime_format
+  
+    def initialize
+      @datetime_format = nil
+    end
+  
+    def call(severity, time, progname, msg)
+      Format % [format_datetime(time), severity, progname,
+        msg2str(msg)]
+    end
+  
+  private
+  
+    def format_datetime(time)
+      if @datetime_format.nil?
+        time.strftime("%Y-%m-%dT%H:%M:%S.") << "%06d " % time.usec
+      else
+        time.strftime(@datetime_format)
+      end
+    end
+  
+    def msg2str(msg)
+      case msg
+      when ::String
+        msg
+      when ::Exception
+        "#{ msg.message } (#{ msg.class })\n" <<
+          (msg.backtrace || []).join("\n")
+      else
+        msg.inspect
+      end
     end
   end
 
