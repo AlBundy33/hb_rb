@@ -211,6 +211,7 @@ class TagDb
       next if empty?(id)
 
       info = createTagMap(data[id])
+
       if info.nil?
         L.warn("found no tags for #{f}")
         next
@@ -225,13 +226,12 @@ class TagDb
       ext = File.extname(f)
       titled_name = info[TITLE]
       titled_name = "%s - %02dx%02d - %s" % [ info[NAME], info[SEASON], info[EPISODE], titled_name ]
-      # Enable this for Plex
-      #titled_name = "%s - s%02de%02d - %s" % [ info[NAME], info[SEASON], info[EPISODE], titled_name ]
       # add original title
       titled_name = "#{titled_name} (#{info[TITLE_ORG]})" if not empty?(info[TITLE_ORG])
       titled_name = "#{titled_name}.#{info[FILE_ID]}#{ext}" if not empty?(info[FILE_ID])
       titled_name.gsub!(/[\/:"*?<>|]+/, "_")
       titled_name = File.join(File.dirname(f), titled_name)
+
       if renamefiles and not empty?(titled_name) and not f.eql? titled_name
         if not File.exists?(titled_name)
           L.info("renaming file\n\tfrom: #{File.basename(f)}\n\tto  : #{File.basename(titled_name)}")
@@ -261,8 +261,8 @@ class TagDb
   end
 
   def addFilesToDB(pattern)
-    sj = options.sj || false
-    Dir["#{pattern}"].each { |f|
+    sj = options.sj
+    Dir["#{pattern}"].each do |f|
       next if not File.exists? f
       L.info("updating database entry for #{f}")
       
@@ -281,7 +281,10 @@ class TagDb
         info[SEASON] = id.gsub(/#{ID_PATTERN_STR}/, "\\1")
         info[DISC] = id.gsub(/#{ID_PATTERN_STR}/, "\\2")
         info[TRACK] = id.gsub(/#{ID_PATTERN_STR}/, "\\3")
-        updateInfoFromSerienjunkies(info) if sj
+        if not sj.nil? 
+          info[SJ_ID] = sj if info[SJ_ID].nil? 
+          updateInfoFromSerienjunkies(info) if not info[EPISODE].nil?
+        end
       else
         info[NAME] = File.basename(path[0], ".*")
         info[SEASON] = nil
@@ -289,7 +292,7 @@ class TagDb
         info[TRACK] = nil
       end
       data[info[FILE_ID]] = info
-    }
+    end
     
     # update episodes
     last_season = -1
@@ -335,6 +338,7 @@ class TagDb
 
     info[SJ_TITLE] = sj.title_de() if not empty?(sj.title_de())
     info[SJ_TITLE_ORG] = sj.title_en() if not empty?(sj.title_en())
+    info[SJ_TITLE] = info[SJ_TITLE_ORG] if info[SJ_TITLE].nil?  
     #infoSJ_[DESCR] = sj.descr() if not empty?(sj.descr())
     info[SJ_URL] = sj.sj_url() if not empty?(sj.sj_url())
   end
@@ -374,8 +378,8 @@ ARGV.options do |opts|
   opts.on("--add FILES", "add files to database") do |arg|
     options.add_files_to_db = arg.gsub(/\\/, "/")
   end
-  opts.on("--sj", "update entries with values from serienjunkies.de") do |arg|
-    options.sj = true
+  opts.on("--sj SJID", "update entries with values from serienjunkies.de") do |arg|
+    options.sj = arg
   end
   opts.separator("")
   opts.separator("update files")
