@@ -355,15 +355,15 @@ class Handbrake
 
       Tools::CON::warn "converting title #{title.pos} #{title.duration} #{title.size}"
       if not tracks.empty?
-        Tools::CON::warn "audio-tracks"
+        Tools::CON::warn "  audio-tracks"
         tracks.each do |t|
-          Tools::CON::warn " - track #{t.pos}: #{t.descr}"
+          Tools::CON::warn "    - track #{t.pos}: #{t.descr}"
         end
       end
       if not subtitles.empty?
-        Tools::CON::warn "subtitles"
+        Tools::CON::warn "  subtitles"
         subtitles.each do |s|
-          Tools::CON::warn " - track #{s.pos}: #{s.descr}"
+          Tools::CON::warn "    - track #{s.pos}: #{s.descr}"
         end
       end
 
