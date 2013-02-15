@@ -218,8 +218,8 @@ class Handbrake
 
       outputFile = File.expand_path(options.output)
       outputFile = outputFile.gsub("#pos#", "%02d" % title.pos)
-      outputFile = outputFile.gsub("#size#", title.size)
-      outputFile = outputFile.gsub("#fps#", title.fps)
+      outputFile = outputFile.gsub("#size#", title.size || "")
+      outputFile = outputFile.gsub("#fps#", title.fps || "")
       outputFile = outputFile.gsub("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
       outputFile = outputFile.gsub("#title#", source.name)
       if not options.force
