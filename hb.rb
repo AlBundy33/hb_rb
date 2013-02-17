@@ -648,30 +648,26 @@ ARGV.options do |opts|
   opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
   opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
   opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
+    
+  def setdefaults(options)
+    options.languages = ["deu", "eng"]
+    options.subtitles = ["deu", "eng"]
+    options.onlyFirstTrackPerLanguage = true
+    options.audioCopy = true
+    options.skipCommentaries = true
+  end
 
   opts.separator("")
   opts.separator("shorts")
   opts.on("--default",   "sets: --audio deu,eng --subtitles deu,eng --audio-copy --skip-commentaries --only-first-track-per-language") do |arg|
-    options.languages = ["deu", "eng"]
-    options.subtitles = ["deu", "eng"]
-    options.onlyFirstTrackPerLanguage = true
-    options.audioCopy = true
-    options.skipCommentaries = true
+    setdefaults(options)
   end
   opts.on("--movie",   "sets: --default --main") do |arg|
-    options.languages = ["deu", "eng"]
-    options.subtitles = ["deu", "eng"]
-    options.onlyFirstTrackPerLanguage = true
-    options.audioCopy = true
-    options.skipCommentaries = true
+    setdefaults(options)
     options.mainFeatureOnly = true
   end
   opts.on("--episodes", "sets: --default --min-length 00:10:00 --max-length 00:50:00 --skip-duplicates") do |arg|
-    options.languages = ["deu", "eng"]
-    options.subtitles = ["deu", "eng"]
-    options.onlyFirstTrackPerLanguage = true
-    options.audioCopy = true
-    options.skipCommentaries = true
+    setdefaults(options)
     options.minLength = "00:10:00"
     options.maxLength = "00:50:00"
     options.skipDuplicates = true
