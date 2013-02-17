@@ -195,8 +195,8 @@ class Handbrake
         next
       end
 
-      tracks = audioMatcher.filter(title.audioTracks, options.onlyFirstTrackPerLanguage, options.skipDuplicates)
-      subtitles = subtitleMatcher.filter(title.subtitles, options.onlyFirstTrackPerLanguage, options.skipDuplicates)
+      tracks = audioMatcher.filter(title.audioTracks)
+      subtitles = subtitleMatcher.filter(title.subtitles)
 
       duration = TimeTool::timeToSeconds(title.duration)
       if minLength >= 0 and duration < minLength
@@ -291,7 +291,6 @@ class Handbrake
         pmixdown = []
         pab = []
         paname = []
-        tracks.reject!{ |t| t.commentary? } if options.skipCommentaries
         tracks.each do |t|
           Tools::CON.info("checking audio-track #{t}")
           if options.audioCopy
@@ -332,7 +331,6 @@ class Handbrake
         command << " --audio-fallback faac"
 
         # subtitles
-        subtitles.reject!{ |s| s.commentary? } if options.skipCommentaries
         psubtitle = []
         subtitles.each do |s|
           psubtitle << s.pos
@@ -514,9 +512,11 @@ class MovieSource
 end
 
 class ValueMatcher
-  attr_accessor :allowed
+  attr_accessor :allowed, :onlyFirstPerAllowedValue, :skipCommentaries
   def initialize(allowed)
     @allowed = allowed
+    @onlyFirstPerAllowedValue = false
+    @skipCommentaries = false
   end
 
   def value(obj)
@@ -524,12 +524,13 @@ class ValueMatcher
   end
 
   def matches(obj)
-    m = (allowed().nil? or allowed().include?(value(obj))) 
+    m = (allowed().nil? or allowed().include?(value(obj)))
+    m = false if @skipCommentaries and obj.respond_to?("commentary?") and obj.commentary?
     Tools::CON.debug("#{self.class().name()}: #{value(obj).inspect} is allowed (#{allowed.inspect()})? -> #{m}")
     return m
   end
 
-  def filter(list, onlyFirst = false, skipDuplicatedValues = true)
+  def filter(list)
     return list if allowed().nil?
 
     filtered = []
@@ -537,10 +538,11 @@ class ValueMatcher
     allowed().each do |a|
       list.each do |e|
         v = value(e)
-        if (v == a or v.eql? a) and (!skipDuplicatedValues or !stack.include?(v))
+        next if @onlyFirstPerAllowedValue and stack.include?(v)
+        next if @skipCommentaries and e.respond_to?("commentary?") and e.commentary?
+        if (v == a or v.eql? a)
           stack.push v
           filtered.push e
-          break if onlyFirst
         end
       end
     end
@@ -729,6 +731,10 @@ end
 
 titleMatcher = PosMatcher.new(options.titles)
 audioMatcher = LangMatcher.new(options.languages)
+audioMatcher.onlyFirstPerAllowedValue = options.onlyFirstTrackPerLanguage
+audioMatcher.skipCommentaries = options.skipCommentaries
 subtitleMatcher = LangMatcher.new(options.subtitles)
+subtitleMatcher.onlyFirstPerAllowedValue = options.onlyFirstTrackPerLanguage
+subtitleMatcher.skipCommentaries = options.skipCommentaries
 
 Handbrake::convert(options, titleMatcher, audioMatcher, subtitleMatcher)
