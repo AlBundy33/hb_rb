@@ -265,6 +265,8 @@ class TagDb
 
   def addFilesToDB(pattern)
     sj = options.sj
+    updated_keys = []
+    # add files to database
     Dir[pattern].each do |f|
       next if not File.exists? f
       Tools::CON.info("updating database entry for #{f}")
@@ -284,20 +286,19 @@ class TagDb
         info[SEASON] = id.gsub(/#{ID_PATTERN_STR}/, "\\1")
         info[DISC] = id.gsub(/#{ID_PATTERN_STR}/, "\\2")
         info[TRACK] = id.gsub(/#{ID_PATTERN_STR}/, "\\3")
-        if not sj.nil? 
-          info[SJ_ID] = sj if info[SJ_ID].nil? 
-          updateInfoFromSerienjunkies(info) if not info[EPISODE].nil?
-        end
       else
         info[NAME] = File.basename(path[0], ".*")
         info[SEASON] = nil
         info[DISC] = nil
         info[TRACK] = nil
       end
+      info[SJ_ID] = sj if info[SJ_ID].nil?
+
       data[info[FILE_ID]] = info
+      updated_keys << info[FILE_ID] 
     end
     
-    # update episodes
+    # update episode-numbers
     last_season = -1
     episode = -1
     k = data.keys.sort
@@ -317,6 +318,22 @@ class TagDb
 
       episode += 1
       last_season = season
+    end
+    
+    # update infos from serienjunkies
+    if not sj.nil?
+      idx = 1
+      updated_keys.each do |k|
+        info = data[k]
+        idx_str = "[#{idx}/#{updated_keys.size()}]"
+        idx = idx + 1
+        if info[EPISODE].nil?
+          Tools::CON.info("#{idx_str} could not update info from serienjunkies for #{info[FILE_ID]} (#{sj})")
+        else
+          Tools::CON.info("#{idx_str} update info from serienjunkies for #{info[FILE_ID]} (#{sj})")
+          updateInfoFromSerienjunkies(info)
+        end
+      end
     end
 
     save if not options.debug
@@ -372,7 +389,7 @@ options = Struct.new(:add_files_to_db, :update_files, :debug, :sj, :rename).new
 options.add_files_to_db = nil
 options.update_files = nil
 options.debug = false
-options.sj = false
+options.sj = nil
 options.rename = false
 
 ARGV.options do |opts|
