@@ -312,6 +312,7 @@ class Handbrake
             Tools::CON.info("adding audio-track: #{t}")
           end
           if options.audioMixdown
+            # add mixdown track
             paudio << t.pos
             paencoder << "faac"
             parate << "auto"
@@ -321,6 +322,7 @@ class Handbrake
             Tools::CON.info("adding mixed down audio-track: #{t}")
           end
           if not options.audioEncoder.nil?
+            # add own encoded track
             paudio << t.pos
             paencoder << options.audioEncoder
             parate << "auto"
