@@ -34,7 +34,16 @@ class Handbrake
   def self.readInfo(options)
     path = File.expand_path(options.input)
     cmd = "\"#{HANDBRAKE_CLI}\" -i \"#{path}\" --scan -t 0 2>&1"
-    output = %x[#{cmd}]
+    if !options.testdata.nil? and File.exists?(options.testdata)
+      output = File.read(options.testdata)
+    else
+      output = %x[#{cmd}]
+    end
+    if !options.testdata.nil? and !File.exists?(options.testdata)
+      File.open(options.testdata, 'w') { |f|
+        f.write(output)
+      }
+    end
 
     dvd_title_pattern = /libdvdnav: DVD Title: (.*)/
     dvd_alt_title_pattern = /libdvdnav: DVD Title \(Alternative\): (.*)/
@@ -156,7 +165,6 @@ class Handbrake
         title.subtitles().push(subtitle)
       end
     end
-    source.titles().first().mainFeature = true if source.titles().size == 1
     return source
   end
 
@@ -366,7 +374,7 @@ class Handbrake
       end
 
       Tools::CON.info(command)
-      if not options.debug
+      if not options.debug and not options.testdata
         parentDir = File.dirname(outputFile)
         FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
         system command
@@ -512,11 +520,14 @@ class MovieSource
 end
 
 class ValueMatcher
-  attr_accessor :allowed, :onlyFirstPerAllowedValue, :skipCommentaries
+  attr_accessor :allowed, :onlyFirstPerAllowedValue
   def initialize(allowed)
     @allowed = allowed
     @onlyFirstPerAllowedValue = false
-    @skipCommentaries = false
+  end
+  
+  def check(obj)
+    return true
   end
 
   def value(obj)
@@ -525,7 +536,7 @@ class ValueMatcher
 
   def matches(obj)
     m = (allowed().nil? or allowed().include?(value(obj)))
-    m = false if @skipCommentaries and obj.respond_to?("commentary?") and obj.commentary?
+    m = false if not check(obj)
     Tools::CON.debug("#{self.class().name()}: #{value(obj).inspect} is allowed (#{allowed.inspect()})? -> #{m}")
     return m
   end
@@ -539,7 +550,7 @@ class ValueMatcher
       list.each do |e|
         v = value(e)
         next if @onlyFirstPerAllowedValue and stack.include?(v)
-        next if @skipCommentaries and e.respond_to?("commentary?") and e.commentary?
+        next if not check(e)
         if (v == a or v.eql? a)
           stack.push v
           filtered.push e
@@ -561,8 +572,16 @@ class PosMatcher < ValueMatcher
 end
 
 class LangMatcher < ValueMatcher
+  attr_accessor :skipCommentaries
+  skipCommentaries = false
+
   def value(obj)
     obj.lang
+  end
+
+  def check(obj)
+    return false if @skipCommentaries and obj.commentary?
+    return true
   end
 end
 
@@ -606,7 +625,8 @@ options = Struct.new(
   :minLength, :maxLength, :skipDuplicates,
   :onlyFirstTrackPerLanguage, :skipCommentaries,
   :checkOnly, :xtra_args, :debug, :verbose,
-  :x264profile, :x264preset, :x264tune).new
+  :x264profile, :x264preset, :x264tune,
+  :testdata).new
 
 ARGV.options do |opts|
   opts.separator("")
@@ -647,6 +667,7 @@ ARGV.options do |opts|
   opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
   opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
   opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
+  opts.on("--test FILE", "read info from/write info to file") { |arg| options.testdata = arg }
   opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
   opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
   opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
