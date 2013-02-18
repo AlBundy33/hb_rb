@@ -406,7 +406,7 @@ ARGV.options do |opts|
   opts.on("--update-files FILES", "update tags in files") do |arg|
     options.update_files = arg.gsub(/\\/, "/")
   end
-  opts.on("--rename", "update filesnames according to the tags") do |arg|
+  opts.on("--rename", "update filenames according to the tags") do |arg|
     options.rename = arg
   end
   
