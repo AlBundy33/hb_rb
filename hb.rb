@@ -11,6 +11,8 @@ class Handbrake
   HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform()}/HandBrakeCLI")
   raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
   
+  PREVIEW_DURATION = 60
+  
   AUDIO_ENCODERS = %w(ca_aac ca_haac faac ffaac ffac3 lame vorbis ffflac)
   AUDIO_MIXDOWNS = %w(mono stereo dpl1 dpl2 6ch)
 
@@ -271,8 +273,6 @@ class Handbrake
           if options.ipodCompatibility
             command << " --ipod-atom"
             command << " --encopts level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
-          else
-            command << " --large-file"
           end
           command << " --format mp4"
           command << " --optimize"
@@ -281,6 +281,11 @@ class Handbrake
         end
 
         command << " --markers"
+        
+        if options.preview
+          command << " --start-at duration:0"
+          command << " --stop-at duration:#{PREVIEW_DURATION}"
+        end
 
         # picture settings
         command << " --decomb"
@@ -628,7 +633,7 @@ options = Struct.new(
   :onlyFirstTrackPerLanguage, :skipCommentaries,
   :checkOnly, :xtra_args, :debug, :verbose,
   :x264profile, :x264preset, :x264tune,
-  :testdata).new
+  :testdata, :preview).new
 
 ARGV.options do |opts|
   opts.separator("")
@@ -652,6 +657,7 @@ ARGV.options do |opts|
   opts.on("--audio-encoder-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioEncoderBitrate = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
   opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().collect(){|p,s| p}.join(', ')})") { |arg| options.preset = arg }
+  opts.on("--preview", "convert only a preview of #{Handbrake::PREVIEW_DURATION}s") { |arg| options.preview = true }
 
   opts.separator("")
   opts.separator("filter-options")
@@ -723,6 +729,7 @@ options.debug = false if options.debug.nil?
 options.verbose = false if options.verbose.nil?
 options.titles.collect!{ |t| t.to_i } if not options.titles.nil?
 options.audioEncoderBitrate = "160" if options.audioEncoderBitrate.nil?
+options.preview = false if options.preview.nil?
 
 if options.verbose and options.debug
   Tools::CON.level = Logger::DEBUG
