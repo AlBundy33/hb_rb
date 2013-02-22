@@ -241,7 +241,6 @@ class Handbrake
       
       Tools::CON.info("converting #{title}")
 
-      extra_arguments = options.xtra_args
       ext = File.extname(outputFile).downcase
       ismp4 = false
       ismkv = false
@@ -267,18 +266,22 @@ class Handbrake
         command << " --x264-preset #{options.x264preset}" if not options.x264preset.nil?
         command << " --x264-tune #{options.x264tune}" if not options.x264tune.nil?
         command << " --quality 20.0"
+        
+        encopts = []
 
-        # iPod-compatibility
+        # format
         if ismp4
           if options.ipodCompatibility
             command << " --ipod-atom"
-            command << " --encopts level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
+            encopts << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
           end
           command << " --format mp4"
           command << " --optimize"
         elsif ismkv
           command << " --format mkv"
         end
+
+        command << " --encopts #{encopts.join(':')}" if not encopts.empty?
 
         command << " --markers"
         
@@ -346,18 +349,15 @@ class Handbrake
         command << " --audio-fallback faac"
 
         # subtitles
-        psubtitle = []
-        subtitles.each do |s|
-          psubtitle << s.pos
-        end
-        command << " --subtitle #{psubtitle.join(',')}" if not psubtitle.empty?()
+        psubtitles = subtitles.collect{ |s| s.pos }
+        command << " --subtitle #{psubtitles.join(',')}" if not psubtitles.empty?()
       end
 
       # title (used by default and if preset is selected)
       command << " --title #{title.pos}"
 
-      # the rest...
-      command << " " << extra_arguments if not extra_arguments.nil?() and not extra_arguments.empty?
+      # arguments to delegate...
+      command << " #{options.xtra_args}" if not options.xtra_args.nil?
       if options.verbose
         command << " 2>&1"
       else
@@ -381,7 +381,7 @@ class Handbrake
       end
 
       Tools::CON.info(command)
-      if not options.debug and not options.testdata
+      if not options.debug and options.testdata.nil?
         parentDir = File.dirname(outputFile)
         FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
         system command
