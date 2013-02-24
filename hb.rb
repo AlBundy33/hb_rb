@@ -553,9 +553,9 @@ class ValueMatcher
     stack = []
     allowed().each do |a|
       list.each do |e|
+        next if not matches(e)
         v = value(e)
         next if @onlyFirstPerAllowedValue and stack.include?(v)
-        next if not check(e)
         if (v == a or v.eql? a)
           stack.push v
           filtered.push e
