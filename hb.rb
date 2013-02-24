@@ -223,6 +223,8 @@ class Handbrake
         Tools::CON.info("skipping because source contains it twice")
         next
       end
+      
+      converted.push(title.blocks()) if not title.blocks().nil?
 
       outputFile = File.expand_path(options.output)
       outputFile = outputFile.gsub("#pos#", "%02d" % title.pos)
@@ -363,8 +365,6 @@ class Handbrake
         command << " 2>#{Tools::OS::nullDevice()}"
       end
 
-      converted.push(title.blocks()) if not title.blocks().nil?
-
       Tools::CON::warn "converting title #{title.pos} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
       if not tracks.empty?
         Tools::CON::warn "  audio-tracks"
@@ -379,7 +379,7 @@ class Handbrake
         end
       end
 
-      Tools::CON.info(command)
+      Tools::CON.warn(command)
       if not options.debug and options.testdata.nil?
         parentDir = File.dirname(outputFile)
         FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
@@ -397,6 +397,7 @@ class Handbrake
           Tools::CON.warn("file #{outputFile} not created")
         end
       end
+      Tools::CON.warn("== done ===========================================================")
     end
   end
 end
