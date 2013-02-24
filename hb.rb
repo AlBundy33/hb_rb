@@ -284,8 +284,10 @@ class Handbrake
         command << " --markers"
         
         if not options.preview.nil?
-          command << " --start-at duration:0"
-          command << " --stop-at duration:#{options.preview}"
+          start_at = 60
+          stop_at = options.preview.to_i
+          command << " --start-at duration:#{start_at}"
+          command << " --stop-at duration:#{stop_at}"
         end
 
         # picture settings
