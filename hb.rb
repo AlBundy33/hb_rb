@@ -10,9 +10,7 @@ class Handbrake
 
   HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform()}/HandBrakeCLI")
   raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
-  
-  PREVIEW_DURATION = 60
-  
+
   AUDIO_ENCODERS = %w(ca_aac ca_haac faac ffaac ffac3 lame vorbis ffflac)
   AUDIO_MIXDOWNS = %w(mono stereo dpl1 dpl2 6ch)
 
@@ -285,9 +283,9 @@ class Handbrake
 
         command << " --markers"
         
-        if options.preview
+        if not options.preview.nil?
           command << " --start-at duration:0"
-          command << " --stop-at duration:#{PREVIEW_DURATION}"
+          command << " --stop-at duration:#{options.preview}"
         end
 
         # picture settings
@@ -657,7 +655,7 @@ ARGV.options do |opts|
   opts.on("--audio-encoder-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioEncoderBitrate = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
   opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().collect(){|p,s| p}.join(', ')})") { |arg| options.preset = arg }
-  opts.on("--preview", "convert only a preview of #{Handbrake::PREVIEW_DURATION}s") { |arg| options.preview = true }
+  opts.on("--preview [SECONDS]", "convert only a preview of SECONDS (default: 60s)") { |arg| options.preview = arg || 60 }
 
   opts.separator("")
   opts.separator("filter-options")
