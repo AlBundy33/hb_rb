@@ -219,7 +219,7 @@ class Handbrake
         Tools::CON.info("skipping title because it contains not all wanted audio-tracks (available: #{title.audioTracks})")
         next
       end
-      if options.skipDuplicates and title.blocks() >= 0 and converted.include?(title.blocks())
+      if options.skipDuplicates and not title.blocks().nil? and title.blocks() >= 0 and converted.include?(title.blocks())
         Tools::CON.info("skipping because source contains it twice")
         next
       end
@@ -362,9 +362,9 @@ class Handbrake
         command << " 2>#{Tools::OS::nullDevice()}"
       end
 
-      converted.push(title.blocks())
+      converted.push(title.blocks()) if not title.blocks().nil?
 
-      Tools::CON::warn "converting title #{title.pos} #{title.duration} #{title.size}"
+      Tools::CON::warn "converting title #{title.pos} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
       if not tracks.empty?
         Tools::CON::warn "  audio-tracks"
         tracks.each do |t|
