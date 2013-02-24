@@ -296,7 +296,6 @@ class Handbrake
         command << " --crop 0:0:0:0" if not options.enableAutocrop
         if not options.ipodCompatibility
           command << " --loose-anamorphic"
-          command << " --modulus 16"
         end
         command << " --maxHeight #{options.maxHeight}" if options.maxHeight
 
