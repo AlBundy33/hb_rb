@@ -258,7 +258,7 @@ class Handbrake
       command << " --chapters #{options.chapters}" if not options.chapters.nil?
       command << " --verbose" if options.verbose
       if not options.preset.nil? and not options.preset.empty?
-        command << " --preset \"#{preset}\""
+        command << " --preset \"#{options.preset}\""
       else
         # video
         command << " --encoder x264"
