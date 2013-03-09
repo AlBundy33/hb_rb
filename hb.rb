@@ -323,7 +323,11 @@ class Handbrake
           if options.audioMixdown
             # add mixdown track
             paudio << t.pos
-            paencoder << "faac"
+            if ismp4
+              paencoder << "faac"
+            else
+              paencoder << "lame"
+            end
             parate << "auto"
             pmixdown << "dpl2"
             pab << "160"
@@ -347,7 +351,11 @@ class Handbrake
         command << " --mixdown #{pmixdown.join(',')}"
         command << " --ab #{pab.join(',')}"
         command << " --aname \"#{paname.join('","')}\""
-        command << " --audio-fallback faac"
+        if ismp4
+          command << " --audio-fallback faac"
+        else
+          command << " --audio-fallback lame"
+        end
 
         # subtitles
         psubtitles = subtitles.collect{ |s| s.pos }
