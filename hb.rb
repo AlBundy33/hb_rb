@@ -167,6 +167,16 @@ class Handbrake
     end
     return source
   end
+  
+  def self.getMixdown(track, mappings, default)
+    audio = "#{track.codec} #{track.channels}".strip
+    mixdown = nil
+    mappings.each do |r,m|
+      mixdown = m if audio =~ /#{r}/
+    end
+    mixdown = default if mixdown.nil?
+    return mixdown
+  end
 
   def self.convert(options, titleMatcher, audioMatcher, subtitleMatcher)
     source = Handbrake::readInfo(options)
@@ -308,9 +318,23 @@ class Handbrake
         pmixdown = []
         pab = []
         paname = []
+        
         tracks.each do |t|
+          mixdown_track = options.audioMixdown
+          copy_track = options.audioCopy
+          mixdown = nil  
+  
+          if mixdown_track
+            mixdown = getMixdown(t, options.audioMixdownMappings, "dpl2")
+            if mixdown.eql?("copy")
+              mixdown = nil
+              mixdown_track = false
+              copy_track = true
+            end
+          end
+
           Tools::CON.info("checking audio-track #{t}")
-          if options.audioCopy
+          if copy_track
             # copy original track
             paudio << t.pos
             paencoder << "copy"
@@ -320,7 +344,7 @@ class Handbrake
             paname << "#{t.descr}"
             Tools::CON.info("adding audio-track: #{t}")
           end
-          if options.audioMixdown
+          if mixdown_track
             # add mixdown track
             paudio << t.pos
             if ismp4
@@ -329,7 +353,7 @@ class Handbrake
               paencoder << "lame"
             end
             parate << "auto"
-            pmixdown << "dpl2"
+            pmixdown << mixdown
             pab << "160"
             paname << "#{t.descr} (mixdown)"
             Tools::CON.info("adding mixed down audio-track: #{t}")
@@ -624,6 +648,9 @@ def showUsageAndExit(options, msg = nil)
   puts "convert complete file or DVD with all tracks, languages etc."
   puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Output_#pos#.m4v\""
   puts
+  puts "convert complete file with own mixdowns (copy 5.1 and Dolby Surround, mixdown 2.0 to stereo and 1.0 to mono"
+  puts "#{File.basename($0)} --input ~/test.mkv --output ~/test.m4v --audio-mixdown --audio-mixdown-mappings \"5.1:copy,1.0:mono,2.0:stereo,Dolby Surround:copy\""
+  puts
   if not msg.nil?
     puts msg
     puts
@@ -636,6 +663,7 @@ options = Struct.new(
   :ipodCompatibility, :enableAutocrop,
   :languages, :audioMixdown, :audioCopy,
   :audioEncoder, :audioEncoderMixdown, :audioEncoderBitrate,
+  :audioMixdownMappings,
   :maxHeight, :subtitles, :preset, :mainFeatureOnly, :titles, :chapters,
   :minLength, :maxLength, :skipDuplicates,
   :onlyFirstTrackPerLanguage, :skipCommentaries,
@@ -663,6 +691,7 @@ ARGV.options do |opts|
   opts.on("--audio-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioEncoder = arg }
   opts.on("--audio-encoder-mixdown MIXDOWN", "mixdown encoded audio track (#{Handbrake::AUDIO_MIXDOWNS.join(', ')})") { |arg| options.audioEncoderMixdown = arg }
   opts.on("--audio-encoder-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioEncoderBitrate = arg }
+  opts.on("--audio-mixdown-mappings MAPPINGS", Array, "define your mixdowns (channels:mixdown)") {|arg| options.audioMixdownMappings = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
   opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().collect(){|p,s| p}.join(', ')})") { |arg| options.preset = arg }
   opts.on("--preview [SECONDS]", "convert only a preview of SECONDS (default: 60s)") { |arg| options.preview = arg || 60 }
@@ -737,7 +766,6 @@ options.debug = false if options.debug.nil?
 options.verbose = false if options.verbose.nil?
 options.titles.collect!{ |t| t.to_i } if not options.titles.nil?
 options.audioEncoderBitrate = "160" if options.audioEncoderBitrate.nil?
-options.preview = false if options.preview.nil?
 
 if options.verbose and options.debug
   Tools::CON.level = Logger::DEBUG
@@ -759,6 +787,16 @@ if options.audioEncoderMixdown.nil?
   options.audioEncoderMixdown = "auto"  
 elsif not Handbrake::AUDIO_MIXDOWNS.include?(options.audioEncoderMixdown)
   showUsageAndExit(ARGV.options,"unknown mixdown-option: #{options.audioEncoderMixdown}")
+end
+if not options.audioMixdownMappings.nil?
+  h = {}
+  allowed = ["copy"] + Handbrake::AUDIO_MIXDOWNS
+  options.audioMixdownMappings.each do |m|
+    a = m.split(":", 2)
+    showUsageAndExit(options,"unknon mixdown option #{a.last} (allowed: #{allowed.join(', ')})") if not allowed.include?(a.last)
+    h[a.first] = a.last
+  end
+  options.audioMixdownMappings = h
 end
 
 if options.verbose and options.debug
