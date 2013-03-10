@@ -347,26 +347,18 @@ class Handbrake
           if mixdown_track
             # add mixdown track
             paudio << t.pos
-            if ismp4
+            if not options.audioMixdownEncoder.nil?
+              paencoder << options.audioMixdownEncoder
+            elsif ismp4
               paencoder << "faac"
             else
               paencoder << "lame"
             end
             parate << "auto"
             pmixdown << mixdown
-            pab << "160"
-            paname << "#{t.descr} (mixdown)"
+            pab << options.audioMixdownBitrate
+            paname << "#{t.descr} (#{mixdown})"
             Tools::CON.info("adding mixed down audio-track: #{t}")
-          end
-          if not options.audioEncoder.nil?
-            # add own encoded track
-            paudio << t.pos
-            paencoder << options.audioEncoder
-            parate << "auto"
-            pmixdown << options.audioEncoderMixdown
-            pab << options.audioEncoderBitrate
-            paname << "#{t.descr} (#{options.audioEncoder})"
-            Tools::CON.info("adding #{options.audioEncoder} encoded audio-track: #{t}") 
           end
         end
         command << " --audio #{paudio.join(',')}"
@@ -662,8 +654,7 @@ options = Struct.new(
   :input, :output, :force,
   :ipodCompatibility, :enableAutocrop,
   :languages, :audioMixdown, :audioCopy,
-  :audioEncoder, :audioEncoderMixdown, :audioEncoderBitrate,
-  :audioMixdownMappings,
+  :audioMixdownEncoder, :audioMixdownBitrate, :audioMixdownMappings,
   :maxHeight, :subtitles, :preset, :mainFeatureOnly, :titles, :chapters,
   :minLength, :maxLength, :skipDuplicates,
   :onlyFirstTrackPerLanguage, :skipCommentaries,
@@ -686,12 +677,11 @@ ARGV.options do |opts|
   opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
   opts.on("--max-height HEIGTH", "maximum video height (e.g. 720, 1080)") { |arg| options.maxHeight = arg }
   opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
-  opts.on("--audio-mixdown", "add mixed down track (faac, Dolby ProLogic 2)") { |arg| options.audioMixdown = arg }
   opts.on("--audio-copy", "add original-audio track") { |arg| options.audioCopy = arg }
-  opts.on("--audio-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioEncoder = arg }
-  opts.on("--audio-encoder-mixdown MIXDOWN", "mixdown encoded audio track (#{Handbrake::AUDIO_MIXDOWNS.join(', ')})") { |arg| options.audioEncoderMixdown = arg }
-  opts.on("--audio-encoder-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioEncoderBitrate = arg }
-  opts.on("--audio-mixdown-mappings MAPPINGS", Array, "define your mixdowns (channels:mixdown)") {|arg| options.audioMixdownMappings = arg }
+  opts.on("--audio-mixdown", "add mixed down track") { |arg| options.audioMixdown = arg }
+  opts.on("--audio-mixdown-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioMixdownEncoder = arg }
+  opts.on("--audio-mixdown-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioMixdownBitrate = arg }
+  opts.on("--audio-mixdown-mappings MAPPINGS", Array, "define your mixdowns (default: dpl2)") {|arg| options.audioMixdownMappings = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
   opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().collect(){|p,s| p}.join(', ')})") { |arg| options.preset = arg }
   opts.on("--preview [SECONDS]", "convert only a preview of SECONDS (default: 60s)") { |arg| options.preview = arg || 60 }
@@ -756,7 +746,7 @@ end
 options.force = false if options.force.nil?
 options.ipodCompatibility = false if options.ipodCompatibility.nil?
 options.enableAutocrop = false if options.enableAutocrop.nil?
-options.audioCopy = true if options.audioMixdown.nil? and options.audioCopy.nil? and options.audioEncoder.nil?
+options.audioCopy = true if options.audioMixdown.nil? and options.audioCopy.nil?
 options.mainFeatureOnly = false if options.mainFeatureOnly.nil?
 options.skipDuplicates = false if options.skipDuplicates.nil?
 options.onlyFirstTrackPerLanguage = false if options.onlyFirstTrackPerLanguage.nil?
@@ -765,7 +755,7 @@ options.checkOnly = false if options.checkOnly.nil?
 options.debug = false if options.debug.nil?
 options.verbose = false if options.verbose.nil?
 options.titles.collect!{ |t| t.to_i } if not options.titles.nil?
-options.audioEncoderBitrate = "160" if options.audioEncoderBitrate.nil?
+options.audioMixdownBitrate = "160" if options.audioMixdownBitrate.nil?
 
 if options.verbose and options.debug
   Tools::CON.level = Logger::DEBUG
@@ -782,12 +772,7 @@ showUsageAndExit(ARGV.options, "\"#{options.input}\" does not exist") if not Fil
 showUsageAndExit(ARGV.options,"unknown x264-profile: #{options.x264profile}") if not options.x264profile.nil? and not Handbrake::X264_PROFILES.include?(options.x264profile)
 showUsageAndExit(ARGV.options,"unknown x264-preset: #{options.x264preset}") if not options.x264preset.nil? and not Handbrake::X264_PRESETS.include?(options.x264preset)
 showUsageAndExit(ARGV.options,"unknown x264-tune option: #{options.x264tune}") if not options.x264tune.nil? and not Handbrake::X264_TUNES.include?(options.x264tune)
-showUsageAndExit(ARGV.options,"unknown audio-encoder: #{options.audioEncoder}") if not options.audioEncoder.nil? and not Handbrake::AUDIO_ENCODERS.include?(options.audioEncoder)
-if options.audioEncoderMixdown.nil?
-  options.audioEncoderMixdown = "auto"  
-elsif not Handbrake::AUDIO_MIXDOWNS.include?(options.audioEncoderMixdown)
-  showUsageAndExit(ARGV.options,"unknown mixdown-option: #{options.audioEncoderMixdown}")
-end
+showUsageAndExit(ARGV.options,"unknown audio-encoder: #{options.audioMixdownEncoder}") if not options.audioMixdownEncoder.nil? and not Handbrake::AUDIO_ENCODERS.include?(options.audioMixdownEncoder)
 if not options.audioMixdownMappings.nil?
   h = {}
   allowed = ["copy"] + Handbrake::AUDIO_MIXDOWNS
