@@ -8,8 +8,7 @@ class Handbrake
   require 'lib/tools.rb'
   include Tools
 
-  HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform()}/HandBrakeCLI")
-  raise "#{HANDBRAKE_CLI} does not exist" if not Tools::OS::command2?(HANDBRAKE_CLI)
+  HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform().to_s.downcase}/HandBrakeCLI")
 
   AUDIO_ENCODERS = %w(ca_aac ca_haac faac ffaac ffac3 lame vorbis ffflac)
   AUDIO_MIXDOWNS = %w(mono stereo dpl1 dpl2 6ch)
@@ -756,6 +755,13 @@ options.debug = false if options.debug.nil?
 options.verbose = false if options.verbose.nil?
 options.titles.collect!{ |t| t.to_i } if not options.titles.nil?
 options.audioMixdownBitrate = "160" if options.audioMixdownBitrate.nil?
+
+if not Tools::OS::command2?(Handbrake::HANDBRAKE_CLI)
+   showUsageAndExit(options,"""handbrake not found
+download Handbrake CLI at http://handbrake.fr/downloads2.php for your platform
+and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}
+""")
+end
 
 if options.verbose and options.debug
   Tools::CON.level = Logger::DEBUG
