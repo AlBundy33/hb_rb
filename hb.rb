@@ -168,10 +168,12 @@ class Handbrake
   end
   
   def self.getMixdown(track, mappings, default)
-    audio = "#{track.codec} #{track.channels}".strip
+    audio = "#{track.descr}"
     mixdown = nil
-    mappings.each do |r,m|
-      mixdown = m if audio =~ /#{r}/
+    if not mappings.nil?
+      mappings.each do |r,m|
+        mixdown = m if audio =~ /#{r}/
+      end
     end
     mixdown = default if mixdown.nil?
     return mixdown
@@ -640,7 +642,7 @@ def showUsageAndExit(options, msg = nil)
   puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Output_#pos#.m4v\""
   puts
   puts "convert complete file with own mixdowns (copy 5.1 and Dolby Surround, mixdown 2.0 to stereo and 1.0 to mono"
-  puts "#{File.basename($0)} --input ~/test.mkv --output ~/test.m4v --audio-mixdown --audio-mixdown-mappings \"5.1:copy,1.0:mono,2.0:stereo,Dolby Surround:copy\""
+  puts "#{File.basename($0)} --input ~/test.mkv --output ~/test.m4v --audio-mixdown \"5.1:copy,1.0:mono,2.0:stereo,Dolby Surround:copy\""
   puts
   if not msg.nil?
     puts msg
@@ -677,10 +679,12 @@ ARGV.options do |opts|
   opts.on("--max-height HEIGTH", "maximum video height (e.g. 720, 1080)") { |arg| options.maxHeight = arg }
   opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
   opts.on("--audio-copy", "add original-audio track") { |arg| options.audioCopy = arg }
-  opts.on("--audio-mixdown", "add mixed down track") { |arg| options.audioMixdown = arg }
+  opts.on("--audio-mixdown [MAPPINGS]", Array, "add mixed down track. Use optional MAPPINGS to define the mixdown per track description (default: dpl2, allowed: #{(["copy"] + Handbrake::AUDIO_MIXDOWNS).join(', ')})") { |arg| 
+      options.audioMixdown = true
+      options.audioMixdownMappings = arg 
+  }
   opts.on("--audio-mixdown-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioMixdownEncoder = arg }
   opts.on("--audio-mixdown-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioMixdownBitrate = arg }
-  opts.on("--audio-mixdown-mappings MAPPINGS", Array, "define your mixdowns (default: dpl2)") {|arg| options.audioMixdownMappings = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
   opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().collect(){|p,s| p}.join(', ')})") { |arg| options.preset = arg }
   opts.on("--preview [SECONDS]", "convert only a preview of SECONDS (default: 60s)") { |arg| options.preview = arg || 60 }
