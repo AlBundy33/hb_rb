@@ -18,6 +18,7 @@
 			<exclude name="tools/subler/linux/**/*"/>
 			<include name="lib/**/*" />
 			<include name="*.rb" />
+			<include name="readme.txt" />
 		</fileset>
 	</zip>    
 </target>
@@ -29,6 +30,7 @@
 			<include name="tools/**/*" />
 			<include name="lib/**/*" />
 			<include name="*.rb" />
+			<include name="readme.txt" />
 		</fileset>
 	</zip>    
 </target>
