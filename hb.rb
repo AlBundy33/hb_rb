@@ -164,6 +164,7 @@ class Handbrake
         title.subtitles().push(subtitle)
       end
     end
+    source.titles.first.mainFeature = true if source.titles.size == 1
     return source
   end
   
@@ -515,7 +516,8 @@ class MovieSource
   def name(use_alt = false)
     return @title_alt if usable?(@title_alt) and use_alt
     return @title if usable?(@title)
-    return File.basename(path()) if usable?(File.basename(path()))
+    name = File.basename(path(), ".*")
+    return name if usable?(name)
     return "unknown"
   end
 
