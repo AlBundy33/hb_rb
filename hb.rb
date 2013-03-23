@@ -65,6 +65,7 @@ class Handbrake
 
     in_audio_section = false
     in_subtitle_section = false
+    has_main_feature = false
     output.each_line do |line|
       puts "out> #{line}" if options.debug and options.verbose
 
@@ -98,6 +99,7 @@ class Handbrake
       if line.match(main_feature_pattern)
         puts "> match: main-feature" if options.debug and options.verbose
         title.mainFeature = true
+        has_main_feature = true
       elsif line.match(title_blocks_pattern)
         puts "> match: blocks" if options.debug and options.verbose
         info = line.scan(title_blocks_pattern)[0]
@@ -164,7 +166,19 @@ class Handbrake
         title.subtitles().push(subtitle)
       end
     end
-    source.titles.first.mainFeature = true if source.titles.size == 1
+    if not has_main_feature
+      longest = nil
+      source.titles.each do |t|
+        if longest.nil? 
+          longest = t
+          next
+        end
+        longest_duration = TimeTool::timeToSeconds(longest.duration)
+        title_duration = TimeTool::timeToSeconds(t.duration)
+        longest = t if title_duration > longest_duration
+      end
+      longest.mainFeature = true if not longest.nil?
+    end
     return source
   end
   
