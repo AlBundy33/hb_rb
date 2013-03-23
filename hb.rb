@@ -516,7 +516,12 @@ class MovieSource
   def name(use_alt = false)
     return @title_alt if usable?(@title_alt) and use_alt
     return @title if usable?(@title)
-    name = File.basename(path(), ".*")
+    if File.directory?(path)
+      name = File.basename(path())
+      name = File.basename(File.dirname(path)) if ["VIDEO_TS", "AUDIO_TS"].include?(name)
+    else
+      name = File.basename(path(), ".*")
+    end
     return name if usable?(name)
     return "unknown"
   end
@@ -645,6 +650,12 @@ def showUsageAndExit(options, msg = nil)
   puts
   puts "convert complete file with own mixdowns (copy 5.1 and Dolby Surround, mixdown 2.0 to stereo and 1.0 to mono"
   puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Output_#pos#.m4v\" --audio-mixdown \"5.1:copy,1.0:mono,2.0:stereo,Dolby Surround:copy\""
+  puts
+  puts "convert recursive all local DVDs in a directory"
+  puts "#{File.basename($0)} --input \"~/DVD/**/VIDEO_TS\" --output \"~/Desktop/#title#_#pos#.m4v\""
+  puts
+  puts "convert all MKVs in a directory"
+  puts "#{File.basename($0)} --input \"~/MKV/*.mkv\" --output \"~/Desktop/#title#.m4v\""
   puts
   if not msg.nil?
     puts msg
@@ -810,4 +821,14 @@ subtitleMatcher = LangMatcher.new(options.subtitles)
 subtitleMatcher.onlyFirstPerAllowedValue = options.onlyFirstTrackPerLanguage
 subtitleMatcher.skipCommentaries = options.skipCommentaries
 
-Handbrake::convert(options, titleMatcher, audioMatcher, subtitleMatcher)
+if not ARGV.empty?
+  inputs = ARGV
+else
+  inputs = [options.input]
+end
+
+inputs.each do |input|
+  opts = options.dup
+  opts.input = input
+  Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
+end
