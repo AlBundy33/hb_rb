@@ -1,8 +1,8 @@
 <project name="Handbrake" default="all" basedir=".">
 
-<target name="all" depends="clean,build,build-complete" />
+<target name="all" depends="clean,handbrake,tag_updater,ripper"/>
 
-<target name="build" depends="clean">
+<target name="handbrake" depends="clean">
 	<zip destfile="build/handbrake.zip">
 		<fileset dir=".">
 			<exclude name="**/.svn" />
@@ -16,21 +16,33 @@
 			<exclude name="tools/subler/windows/**/*"/>
 			<exclude name="tools/subler/osx/**/*"/>
 			<exclude name="tools/subler/linux/**/*"/>
-			<include name="lib/**/*" />
-			<include name="*.rb" />
+			<include name="lib/tools.rb" />
+			<include name="hb.rb" />
 			<include name="readme.txt" />
 		</fileset>
 	</zip>    
 </target>
 
-<target name="build-complete" depends="clean">
-	<zip destfile="build/handbrake-complete.zip">
+<target name="tag_updater" depends="clean">
+	<zip destfile="build/tag_updater.zip">
 		<fileset dir=".">
 			<exclude name="**/.svn" />
 			<include name="tools/**/*" />
-			<include name="lib/**/*" />
-			<include name="*.rb" />
-			<include name="readme.txt" />
+			<include name="lib/tools.rb"/>
+			<include name="lib/mp4info.rb"/>
+			<include name="lib/taggers.rb"/>
+			<include name="tag_updater.rb" />
+		</fileset>
+	</zip>    
+</target>
+	
+<target name="ripper" depends="clean">
+	<zip destfile="build/ripper.zip">
+		<fileset dir=".">
+			<exclude name="**/.svn" />
+			<include name="ripper/**/*.conf" />
+			<include name="lib/tools.rb" />
+			<include name="rip.rb" />
 		</fileset>
 	</zip>    
 </target>
