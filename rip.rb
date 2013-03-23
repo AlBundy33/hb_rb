@@ -55,7 +55,8 @@ class Ripper
         path = File.join(d, exec)
         return path if File.exist?(path) and File.executable?(path)
       end
-      return Tools::OS::command2?(exec)
+      return exec if Tools::OS::command2?(exec)
+      return nil
     end
     
     def file_type(input)
