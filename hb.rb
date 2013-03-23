@@ -16,16 +16,16 @@ class Handbrake
   X264_PROFILES = %w(baseline main high high10 high422 high444)
   X264_PRESETS = %w(ultrafast superfast veryfast faster fast medium slow slower veryslow placebo)
   X264_TUNES = %w(film animation grain stillimage psnr ssim fastdecode zerolatency)
-  
+
   def self.getPresets()
     cmd = "\"#{HANDBRAKE_CLI}\" --preset-list 2>&1"
     output = %x[#{cmd}]
     preset_pattern = /\+ (.*?): (.*)/
-    result = []
+    result = {}
     output.each_line do |line|
       next if not line =~ preset_pattern
       info = line.scan(preset_pattern)[0]
-      result << [info[0], info[1]]
+      result[info[0].strip] = info[1].strip
     end
     return result
   end
@@ -269,118 +269,121 @@ class Handbrake
       command << " --output \"#{outputFile}\""
       command << " --chapters #{options.chapters}" if not options.chapters.nil?
       command << " --verbose" if options.verbose
+
+      preset = nil
       if not options.preset.nil? and not options.preset.empty?
-        command << " --preset \"#{options.preset}\""
-      else
-        # video
+        preset_arguments = getPresets()[options.preset]
+        if not preset_arguments.nil?
+          preset = options.preset
+          # set preset arguments now and override some of them later
+          command << " #{preset_arguments}"
+        end
+      end
+
+      if preset.nil?
         command << " --encoder x264"
-        command << " --x264-profile #{options.x264profile}" if not options.x264profile.nil?
-        command << " --x264-preset #{options.x264preset}" if not options.x264preset.nil?
-        command << " --x264-tune #{options.x264tune}" if not options.x264tune.nil?
         command << " --quality 20.0"
-        
-        encopts = []
-
-        # format
-        if ismp4
-          if options.ipodCompatibility
-            command << " --ipod-atom"
-            encopts << "level=30:bframes=0:cabac=0:weightp=0:8x8dct=0"
-          end
-          command << " --format mp4"
-          command << " --optimize"
-        elsif ismkv
-          command << " --format mkv"
-        end
-
-        command << " --encopts #{encopts.join(':')}" if not encopts.empty?
-
-        command << " --markers"
-        
-        if not options.preview.nil?
-          start_at = 60
-          stop_at = options.preview.to_i
-          command << " --start-at duration:#{start_at}"
-          command << " --stop-at duration:#{stop_at}"
-        end
-
-        # picture settings
         command << " --decomb"
         command << " --detelecine"
         command << " --crop 0:0:0:0" if not options.enableAutocrop
         if not options.ipodCompatibility
           command << " --loose-anamorphic"
         end
-        command << " --maxHeight #{options.maxHeight}" if options.maxHeight
-
-        # audio
-        paudio = []
-        paencoder = []
-        parate = []
-        pmixdown = []
-        pab = []
-        paname = []
-        
-        tracks.each do |t|
-          mixdown_track = options.audioMixdown
-          copy_track = options.audioCopy
-          mixdown = nil  
-  
-          if mixdown_track
-            mixdown = getMixdown(t, options.audioMixdownMappings, "dpl2")
-            if mixdown.eql?("copy")
-              mixdown = nil
-              mixdown_track = false
-              copy_track = true
-            end
-          end
-
-          Tools::CON.info("checking audio-track #{t}")
-          if copy_track
-            # copy original track
-            paudio << t.pos
-            paencoder << "copy"
-            parate << "auto"
-            pmixdown << "auto"
-            pab << "auto"
-            paname << "#{t.descr}"
-            Tools::CON.info("adding audio-track: #{t}")
-          end
-          if mixdown_track
-            # add mixdown track
-            paudio << t.pos
-            if not options.audioMixdownEncoder.nil?
-              paencoder << options.audioMixdownEncoder
-            elsif ismp4
-              paencoder << "faac"
-            else
-              paencoder << "lame"
-            end
-            parate << "auto"
-            pmixdown << mixdown
-            pab << options.audioMixdownBitrate
-            paname << "#{t.descr} (#{mixdown})"
-            Tools::CON.info("adding mixed down audio-track: #{t}")
-          end
+        if ismp4 and options.ipodCompatibility
+          command << " --ipod-atom"
+          command << " --encopts level=30:bframes=0:cabac=0:weightp=0:8x8dct=0" if preset.nil?
         end
-        command << " --audio #{paudio.join(',')}"
-        command << " --aencoder #{paencoder.join(',')}"
-        command << " --arate #{parate.join(',')}"
-        command << " --mixdown #{pmixdown.join(',')}"
-        command << " --ab #{pab.join(',')}"
-        command << " --aname \"#{paname.join('","')}\""
-        if ismp4
-          command << " --audio-fallback faac"
-        else
-          command << " --audio-fallback lame"
-        end
+      end
+      
+      command << " --maxHeight #{options.maxHeight}" if options.maxHeight
+      command << " --maxWidth #{options.maxWidth}" if options.maxWidth
+      command << " --x264-profile #{options.x264profile}" if not options.x264profile.nil?
+      command << " --x264-preset #{options.x264preset}" if not options.x264preset.nil?
+      command << " --x264-tune #{options.x264tune}" if not options.x264tune.nil?
 
-        # subtitles
-        psubtitles = subtitles.collect{ |s| s.pos }
-        command << " --subtitle #{psubtitles.join(',')}" if not psubtitles.empty?()
+      # format
+      if ismp4
+        command << " --format mp4"
+        command << " --optimize"
+      elsif ismkv
+        command << " --format mkv"
       end
 
-      # title (used by default and if preset is selected)
+      command << " --markers"
+      
+      if not options.preview.nil?
+        start_at = 60
+        stop_at = options.preview.to_i
+        command << " --start-at duration:#{start_at}"
+        command << " --stop-at duration:#{stop_at}"
+      end
+
+      # audio
+      paudio = []
+      paencoder = []
+      parate = []
+      pmixdown = []
+      pab = []
+      paname = []
+      
+      tracks.each do |t|
+        mixdown_track = options.audioMixdown
+        copy_track = options.audioCopy
+        mixdown = nil  
+
+        if mixdown_track
+          mixdown = getMixdown(t, options.audioMixdownMappings, "dpl2")
+          if mixdown.eql?("copy")
+            mixdown = nil
+            mixdown_track = false
+            copy_track = true
+          end
+        end
+
+        Tools::CON.info("checking audio-track #{t}")
+        if copy_track
+          # copy original track
+          paudio << t.pos
+          paencoder << "copy"
+          parate << "auto"
+          pmixdown << "auto"
+          pab << "auto"
+          paname << "#{t.descr}"
+          Tools::CON.info("adding audio-track: #{t}")
+        end
+        if mixdown_track
+          # add mixdown track
+          paudio << t.pos
+          if not options.audioMixdownEncoder.nil?
+            paencoder << options.audioMixdownEncoder
+          elsif ismp4
+            paencoder << "faac"
+          else
+            paencoder << "lame"
+          end
+          parate << "auto"
+          pmixdown << mixdown
+          pab << options.audioMixdownBitrate
+          paname << "#{t.descr} (#{mixdown})"
+          Tools::CON.info("adding mixed down audio-track: #{t}")
+        end
+      end
+      command << " --audio #{paudio.join(',')}"
+      command << " --aencoder #{paencoder.join(',')}"
+      command << " --arate #{parate.join(',')}"
+      command << " --mixdown #{pmixdown.join(',')}"
+      command << " --ab #{pab.join(',')}"
+      command << " --aname \"#{paname.join('","')}\""
+      if ismp4
+        command << " --audio-fallback faac"
+      else
+        command << " --audio-fallback lame"
+      end
+
+      # subtitles
+      psubtitles = subtitles.collect{ |s| s.pos }
+      command << " --subtitle #{psubtitles.join(',')}" if not psubtitles.empty?()
+
       command << " --title #{title.pos}"
 
       # arguments to delegate...
@@ -669,7 +672,7 @@ options = Struct.new(
   :ipodCompatibility, :enableAutocrop,
   :languages, :audioMixdown, :audioCopy,
   :audioMixdownEncoder, :audioMixdownBitrate, :audioMixdownMappings,
-  :maxHeight, :subtitles, :preset, :mainFeatureOnly, :titles, :chapters,
+  :maxHeight, :maxWidth, :subtitles, :preset, :mainFeatureOnly, :titles, :chapters,
   :minLength, :maxLength, :skipDuplicates,
   :onlyFirstTrackPerLanguage, :skipCommentaries,
   :checkOnly, :xtra_args, :debug, :verbose,
@@ -690,6 +693,7 @@ ARGV.options do |opts|
   opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
   opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
   opts.on("--max-height HEIGTH", "maximum video height (e.g. 720, 1080)") { |arg| options.maxHeight = arg }
+  opts.on("--max-width WIDTH", "maximum video width (e.g. 1920)") { |arg| options.maxWidth = arg }
   opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
   opts.on("--audio-copy", "add original-audio track") { |arg| options.audioCopy = arg }
   opts.on("--audio-mixdown [MAPPINGS]", Array, "add mixed down track. Use optional MAPPINGS to define the mixdown per track description (default: dpl2, allowed: #{(["copy"] + Handbrake::AUDIO_MIXDOWNS).join(', ')})") { |arg| 
@@ -699,7 +703,7 @@ ARGV.options do |opts|
   opts.on("--audio-mixdown-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioMixdownEncoder = arg }
   opts.on("--audio-mixdown-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioMixdownBitrate = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
-  opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().collect(){|p,s| p}.join(', ')})") { |arg| options.preset = arg }
+  opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().keys.join(', ')})") { |arg| options.preset = arg }
   opts.on("--preview [SECONDS]", "convert only a preview of SECONDS (default: 60s)") { |arg| options.preview = arg || 60 }
 
   opts.separator("")
@@ -806,6 +810,7 @@ if not options.audioMixdownMappings.nil?
   end
   options.audioMixdownMappings = h
 end
+showUsageAndExit(options,"unknown preset #{options.preset}") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil? 
 
 if options.verbose and options.debug
   options.each_pair do |k,v|
