@@ -840,11 +840,8 @@ subtitleMatcher = LangMatcher.new(options.subtitles)
 subtitleMatcher.onlyFirstPerAllowedValue = options.onlyFirstTrackPerLanguage
 subtitleMatcher.skipCommentaries = options.skipCommentaries
 
-if not ARGV.empty?
-  inputs = ARGV
-else
-  inputs = [options.input]
-end
+inputs = [options.input]
+inputs += ARGV if not ARGV.empty?
 
 inputs.each do |input|
   opts = options.dup
