@@ -326,8 +326,14 @@ class Handbrake
       command << " --markers"
       
       if not options.preview.nil?
-        start_at = 60
-        stop_at = options.preview.to_i
+        p = options.preview.split("-",2)
+        if p.size == 1
+          start_at = 60
+          stop_at = p.first.to_i
+        else
+          start_at = p.first.to_i
+          stop_at = p.last.to_i - start_at
+        end
         command << " --start-at duration:#{start_at}"
         command << " --stop-at duration:#{stop_at}"
       end
