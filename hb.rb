@@ -183,15 +183,13 @@ class Handbrake
   end
   
   def self.getMixdown(track, mappings, default)
-    audio = "#{track.descr}"
-    mixdown = nil
+    descr = "#{track.descr}"
     if not mappings.nil?
       mappings.each do |r,m|
-        mixdown = m if audio =~ /#{r}/
+        return m if descr =~ /#{r}/
       end
     end
-    mixdown = default if mixdown.nil?
-    return mixdown
+    return default
   end
 
   def self.convert(options, titleMatcher, audioMatcher, subtitleMatcher)
