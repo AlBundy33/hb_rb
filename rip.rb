@@ -21,7 +21,15 @@ class Ripper
     end
     
     def file_output()
-      @settings["fileoutput"]
+      fo = @settings["fileoutput"]
+      return nil if fo.nil?
+      if "true".eql?(fo)
+        return true
+      elsif "false".eql?(fo)
+        return false
+      else
+        return nil
+      end
     end
     
     def directories()
@@ -77,7 +85,7 @@ class Ripper
       args.gsub!(/#output#/, output)
       unless file_output.nil?
         # create target dir
-        dir = file_output ? File.dirname(output) : output
+        dir = File.expand_path(file_output ? File.dirname(output) : output)
         FileUtils.mkdir_p(dir) if not File.exist?(dir)
       end
       cmd = "#{exec} #{args}"
