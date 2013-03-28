@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 
 require 'optparse'
-require 'lib/tools.rb'
+require './lib/tools.rb'
 
 class Ripper
   
