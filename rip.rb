@@ -2,6 +2,7 @@
 
 require 'optparse'
 require './lib/tools.rb'
+require 'fileutils'
 
 class Ripper
   
@@ -77,7 +78,7 @@ class Ripper
       unless file_output.nil?
         # create target dir
         dir = file_output ? File.dirname(output) : output
-        File.makedirs(dir) if not File.exist?(dir)
+        FileUtils.mkdir_p(dir) if not File.exist?(dir)
       end
       cmd = "#{exec} #{args}"
       puts cmd
