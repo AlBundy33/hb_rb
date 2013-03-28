@@ -5,7 +5,7 @@ require 'logger'
 
 class Handbrake
   require 'fileutils'
-  require 'lib/tools.rb'
+  require './lib/tools.rb'
   include Tools
 
   HANDBRAKE_CLI = File.expand_path("tools/handbrake/#{Tools::OS::platform().to_s.downcase}/HandBrakeCLI")

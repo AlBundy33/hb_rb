@@ -2,8 +2,8 @@
 
 require 'optparse'
 require 'csv'
-require 'lib/tools.rb'
-require 'lib/taggers.rb'
+require './lib/tools.rb'
+require './lib/taggers.rb'
 require 'iconv'
 
 class Serienjunkies
