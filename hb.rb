@@ -196,12 +196,12 @@ class Handbrake
     source = Handbrake::readInfo(options)
     if options.checkOnly
       puts source.info
-      return
+      return nil
     end
     
     if source.titles.empty?
       Tools::CON::info("#{source.path} contains no titles")
-      return
+      return nil
     end
 
     converted = []
@@ -239,8 +239,8 @@ class Handbrake
         Tools::CON.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
         next
       end
-      if tracks.empty?() or (!audioMatcher.allowed().nil? and tracks.length < audioMatcher.allowed().length)
-        Tools::CON.info("skipping title because it contains not all wanted audio-tracks (available: #{title.audioTracks})")
+      if tracks.empty?()
+        Tools::CON.info("skipping title because it contains no audio-tracks (available: #{title.audioTracks})")
         next
       end
       if options.skipDuplicates and not title.blocks().nil? and title.blocks() >= 0 and converted.include?(title.blocks())
@@ -251,18 +251,18 @@ class Handbrake
       converted.push(title.blocks()) if not title.blocks().nil?
 
       outputFile = File.expand_path(options.output)
-      outputFile = outputFile.gsub("#pos#", "%02d" % title.pos)
-      outputFile = outputFile.gsub("#size#", title.size || "")
-      outputFile = outputFile.gsub("#fps#", title.fps || "")
-      outputFile = outputFile.gsub("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
-      outputFile = outputFile.gsub("#title#", source.name)
+      outputFile.gsub!("#pos#", "%02d" % title.pos)
+      outputFile.gsub!("#size#", title.size || "")
+      outputFile.gsub!("#fps#", title.fps || "")
+      outputFile.gsub!("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
+      outputFile.gsub!("#title#", source.name)
       if not options.force
         if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
           Tools::CON.info("skipping title because \"#{outputFile}\" already exists")
           next
         end
       end
-      
+
       Tools::CON.info("converting #{title}")
 
       ext = File.extname(outputFile).downcase
@@ -437,11 +437,14 @@ class Handbrake
             Tools::CON.warn("file-size only #{size / 1024} KB - removing file #{File.basename(outputFile)}")
             File.delete(outputFile)
             converted.delete(title.blocks())
+            return nil
           else
             Tools::CON.warn("file #{outputFile} created")
+            return outputFile
           end
         else
           Tools::CON.warn("file #{outputFile} not created")
+          return nil
         end
       end
       Tools::CON.warn("== done ===========================================================")
