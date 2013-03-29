@@ -81,8 +81,8 @@ class Ripper
       return false if ft.nil? or exec.nil?
       args = arguments(ft)
       return false if arguments.nil?
-      args.gsub!(/#input#/, input)
-      args.gsub!(/#output#/, output)
+      args.gsub!(/#input#/, File.expand_path(input))
+      args.gsub!(/#output#/, File.expand_path(output))
       unless file_output.nil?
         # create target dir
         dir = File.expand_path(file_output ? File.dirname(output) : output)
@@ -90,8 +90,7 @@ class Ripper
       end
       cmd = "#{exec} #{args}"
       puts cmd
-      system cmd
-      return true
+      return system(cmd)
     end
     
     def to_s
