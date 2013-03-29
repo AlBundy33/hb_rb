@@ -49,9 +49,7 @@ module HandbrakeCLI
         output = %x[#{cmd}]
       end
       if !testdata.nil? and !File.exists?(testdata)
-        File.open(testdata, 'w') { |f|
-          f.write(output)
-        }
+        File.open(testdata, 'w') { |f| f.write(output) }
       end
   
       dvd_title_pattern = /libdvdnav: DVD Title: (.*)/
