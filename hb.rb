@@ -82,7 +82,7 @@ ARGV.options do |opts|
   opts.on("--min-length DURATION", "the minimum-track-length - format hh:nn:ss") { |arg| options.minLength = arg }
   opts.on("--max-length DURATION", "the maximum-track-length - format hh:nn:ss") { |arg| options.maxLength = arg }
   opts.on("--skip-duplicates", "skip duplicate titles (checks block-size)") { |arg| options.skipDuplicates = arg }
-  opts.on("--only-first-track-per-language", "convert only first audio- or subtitle-track per language") { |arg| options.onlyFirstTrackPerLanguage = arg }
+  opts.on("--only-first-track-per-language", "convert only first audio-track per language") { |arg| options.onlyFirstTrackPerLanguage = arg }
   opts.on("--skip-commentaries", "ignore commentary-audio- and subtitle-tracks") { |arg| options.skipCommentaries = arg }
 
   opts.separator("")
@@ -185,7 +185,6 @@ audioMatcher = LangMatcher.new(options.languages)
 audioMatcher.onlyFirstPerAllowedValue = options.onlyFirstTrackPerLanguage
 audioMatcher.skipCommentaries = options.skipCommentaries
 subtitleMatcher = LangMatcher.new(options.subtitles)
-subtitleMatcher.onlyFirstPerAllowedValue = options.onlyFirstTrackPerLanguage
 subtitleMatcher.skipCommentaries = options.skipCommentaries
 
 inputs = [options.input]
