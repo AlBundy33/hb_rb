@@ -1,6 +1,12 @@
 module Tools
   require 'logger'
   require 'thread'
+  
+  class Common
+    def self.basedir()
+      File.expand_path(File.dirname($0))
+    end
+  end
 
   class OS
     private
