@@ -8,6 +8,7 @@
 			<exclude name="**/.svn" />
 			<include name="tools/handbrake/*"/>
 			<include name="lib/tools.rb" />
+			<include name="lib/hb_lib.rb" />
 			<include name="hb.rb" />
 			<include name="readme.txt" />
 		</fileset>
