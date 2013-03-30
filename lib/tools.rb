@@ -1,6 +1,7 @@
 module Tools
   require 'logger'
   require 'thread'
+  require 'find'
   
   class Common
     def self.basedir()
@@ -206,6 +207,35 @@ module Tools
         return cmdLine
       end
       return nil
+    end
+  end
+  
+  class FileTool
+    def self.humanReadableSize(size)
+      m = %w(B KB MB GB TB)
+      idx = 0
+      s = size
+      while s.abs > 1024 and idx < (m.size-1)
+        idx += 1
+        s = s / 1024.0
+      end
+      return "%.2f %s" % [s, m[idx]]
+    end
+
+    def self.size(path)
+      size = 0
+      p = File.expand_path(path)
+      return nil if not FileTest.exist?(p)
+      if FileTest.directory?(p)
+        Find.find("#{p}/") do |f|
+          if !FileTest.directory?(f) and FileTest.readable?(f)
+            size += (FileTest.size(f) || 0)
+          end
+        end
+      else
+        size += (FileTest.size(p) || 0) if FileTest.readable?(f) 
+      end
+      return size
     end
   end
 

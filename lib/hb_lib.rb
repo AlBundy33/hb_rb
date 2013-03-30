@@ -442,13 +442,13 @@ module HandbrakeCLI
           FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
           system command
           if File.exists?(outputFile)
-            size = File.size(outputFile)
+            size = Tools::FileTool::size(outputFile)
             if size >= 0 and size < (1 * 1024 * 1024)
-              Tools::CON.warn("file-size only #{size / 1024} KB - removing file #{File.basename(outputFile)}")
+              Tools::CON.warn("file-size only #{Tools::FileTool::humanReadableSize(size)} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
             else
-              Tools::CON.warn("file #{outputFile} created")
+              Tools::CON.warn("file #{outputFile} created (#{Tools::FileTool::humanReadableSize(size)})")
               created << outputFile
             end
           else
