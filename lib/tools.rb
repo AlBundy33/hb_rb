@@ -233,7 +233,7 @@ module Tools
           end
         end
       else
-        size += (FileTest.size(p) || 0) if FileTest.readable?(f) 
+        size += (FileTest.size(p) || 0) if FileTest.readable?(p) 
       end
       return size
     end
