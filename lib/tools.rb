@@ -4,6 +4,13 @@ module Tools
   require 'find'
   
   class Common
+    def self.scriptname(without_extension = false)
+      if without_extension
+        File.basename($0, ".*")
+      else
+        File.basename($0)
+      end
+    end
     def self.basedir()
       File.expand_path(File.dirname($0))
     end

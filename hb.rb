@@ -5,6 +5,11 @@ require 'logger'
 require './lib/hb_lib.rb'
 include HandbrakeCLI
 
+Signal.trap("INT") do
+  puts "CTRL-C detected - exiting #{File.basename($0)}"
+  exit(1)
+end
+
 def showUsageAndExit(options, msg = nil)
   puts options.to_s
   puts ""
@@ -72,7 +77,7 @@ ARGV.options do |opts|
   opts.on("--audio-mixdown-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioMixdownBitrate = arg }
   opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
   opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().keys.join(', ')})") { |arg| options.preset = arg }
-  opts.on("--preview [SECONDS]", "convert only a preview of SECONDS (default: 60s)") { |arg| options.preview = arg || "60" }
+  opts.on("--preview [RANGE]", "convert only a preview in RANGE (default: 00:01:00-00:02:00)") { |arg| options.preview = arg || "00:01:00-00:02:00" }
 
   opts.separator("")
   opts.separator("filter-options")

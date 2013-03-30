@@ -42,7 +42,7 @@ module HandbrakeCLI
   
     def self.readInfo(input, debug = false, testdata = nil)
       path = File.expand_path(input)
-      cmd = "\"#{HANDBRAKE_CLI}\" -i \"#{path}\" --scan -t 0 2>&1"
+      cmd = "\"#{HANDBRAKE_CLI}\" -i \"#{path}\" --scan --title 0 2>&1"
       if !testdata.nil? and File.exists?(testdata)
         output = File.read(testdata)
       else
@@ -335,14 +335,14 @@ module HandbrakeCLI
         if not options.preview.nil?
           p = options.preview.split("-",2)
           if p.size == 1
-            start_at = 60
-            stop_at = p.first.to_i
+            start_at = "00:01:00"
+            stop_at = Tools::TimeTool::secondsToTime(Tools::TimeTool::timeToSeconds(start_at) + 60)
           else
-            start_at = p.first.to_i
-            stop_at = p.last.to_i - start_at
+            start_at = p.first
+            stop_at = Tools::TimeTool::secondsToTime(Tools::TimeTool::timeToSeconds(p.last) - Tools::TimeTool::timeToSeconds(start_at))
           end
-          command << " --start-at duration:#{start_at}"
-          command << " --stop-at duration:#{stop_at}"
+          command << " --start-at duration:#{Tools::TimeTool::timeToSeconds(start_at)}"
+          command << " --stop-at duration:#{Tools::TimeTool::timeToSeconds(stop_at)}"
         end
   
         # audio
