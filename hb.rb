@@ -7,7 +7,7 @@ include HandbrakeCLI
 
 Signal.trap("INT") do
   puts "CTRL-C detected - exiting #{File.basename($0)}"
-  exit(1)
+  exit!(1)
 end
 
 def showUsageAndExit(options, msg = nil)
