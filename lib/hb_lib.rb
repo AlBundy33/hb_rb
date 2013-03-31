@@ -441,9 +441,14 @@ module HandbrakeCLI
           parentDir = File.dirname(outputFile)
           FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
           system command
+          return_code = $?
           if File.exists?(outputFile)
             size = Tools::FileTool::size(outputFile)
-            if size >= 0 and size < (1 * 1024 * 1024)
+            if return_code != 0
+              Tools::CON.warn("Handbrake exited with return-code #{return_code} - removing file #{File.basename(outputFile)}")
+              File.delete(outputFile)
+              converted.delete(title.blocks())
+            elsif size >= 0 and size < (1 * 1024 * 1024)
               Tools::CON.warn("file-size only #{Tools::FileTool::humanReadableSize(size)} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
