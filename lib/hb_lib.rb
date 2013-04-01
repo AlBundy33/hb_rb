@@ -22,6 +22,13 @@ module HandbrakeCLI
   
     AUDIO_ENCODERS = %w(ca_aac ca_haac faac ffaac ffac3 lame vorbis ffflac)
     AUDIO_MIXDOWNS = %w(mono stereo dpl1 dpl2 6ch)
+    AUDIO_MIXDOWN_DESCR = {
+      "mono" => "Mono",
+      "stereo" => "Stereo",
+      "dpl1" => "Dolby Surround",
+      "dpl2" => "Dolby Pro Logic II",
+      "6ch" => "5.1"
+    }
   
     X264_PROFILES = %w(baseline main high high10 high422 high444)
     X264_PRESETS = %w(ultrafast superfast veryfast faster fast medium slow slower veryslow placebo)
@@ -291,17 +298,30 @@ module HandbrakeCLI
         command << " --chapters #{options.chapters}" if not options.chapters.nil?
         command << " --verbose" if options.verbose
   
-        preset = nil
-        if not options.preset.nil? and not options.preset.empty?
+        preset_arguments = nil
+        if not options.preset.nil?
           preset_arguments = getPresets()[options.preset]
           if not preset_arguments.nil?
-            preset = options.preset
+            cleaned_preset_arguments = preset_arguments.dup
+            [
+              "-E", "--aencoder",
+              "-a", "--audio",
+              "-R", "--arate",
+              "-f", "--format",
+              "-6", "--mixdown",
+              "-B", "--ab",
+              "-D", "--drc"
+              ].each do |a|
+              cleaned_preset_arguments.gsub!(/#{a} [^ ]+[ ]*/, "")
+            end
+            #puts cleaned_preset_arguments
+            #puts preset_arguments
             # set preset arguments now and override some of them later
-            command << " #{preset_arguments}"
+            command << " #{cleaned_preset_arguments}"
           end
         end
   
-        if preset.nil?
+        if options.preset.nil?
           command << " --encoder x264"
           command << " --quality 20.0"
           command << " --decomb"
@@ -351,12 +371,14 @@ module HandbrakeCLI
         parate = []
         pmixdown = []
         pab = []
+        pdrc = []
         paname = []
         
         tracks.each do |t|
           mixdown_track = options.audioMixdown
           copy_track = options.audioCopy
-          mixdown = nil  
+          use_preset_settings = !options.preset.nil?
+          mixdown = nil
   
           if mixdown_track
             mixdown = getMixdown(t, options.audioMixdownMappings, "dpl2")
@@ -366,8 +388,28 @@ module HandbrakeCLI
               copy_track = true
             end
           end
+          
+          if use_preset_settings
+            mixdown_track = false
+            copy_track = false
+          end
   
           Tools::CON.info("checking audio-track #{t}")
+          if use_preset_settings
+            paudio << t.pos
+            value = preset_arguments.match(/(?:-E|--aencoder) ([^ ]+)/)[1]
+            paencoder << value unless value.nil?
+            value = preset_arguments.match(/(?:-R|--arate) ([^ ]+)/)[1]
+            parate << value unless value.nil?
+            value = preset_arguments.match(/(?:-6|--mixdown) ([^ ]+)/)[1]
+            pmixdown << value unless value.nil?
+            value = preset_arguments.match(/(?:-B|--ab) ([^ ]+)/)[1]
+            pab << value unless value.nil?
+            value = preset_arguments.match(/(?:-D|--drc) ([^ ]+)/)[1]
+            pdrc << value unless value.nil?
+            paname << "#{t.descr(true)}"
+            Tools::CON.info("adding audio-track: #{t}")            
+          end
           if copy_track
             # copy original track
             paudio << t.pos
@@ -375,6 +417,7 @@ module HandbrakeCLI
             parate << "auto"
             pmixdown << "auto"
             pab << "auto"
+            pdrc << "0.0"
             paname << "#{t.descr}"
             Tools::CON.info("adding audio-track: #{t}")
           end
@@ -391,15 +434,17 @@ module HandbrakeCLI
             parate << "auto"
             pmixdown << mixdown
             pab << options.audioMixdownBitrate
-            paname << "#{t.descr} (#{mixdown})"
+            pdrc << "0.0"
+            paname << "#{t.descr(true)} (#{AUDIO_MIXDOWN_DESCR[mixdown] || mixdown})"
             Tools::CON.info("adding mixed down audio-track: #{t}")
           end
         end
         command << " --audio #{paudio.join(',')}"
-        command << " --aencoder #{paencoder.join(',')}"
-        command << " --arate #{parate.join(',')}"
-        command << " --mixdown #{pmixdown.join(',')}"
-        command << " --ab #{pab.join(',')}"
+        command << " --aencoder #{paencoder.join(',')}" unless paencoder.empty?
+        command << " --arate #{parate.join(',')}" unless parate.empty?
+        command << " --mixdown #{pmixdown.join(',')}" unless pmixdown.empty?
+        command << " --ab #{pab.join(',')}" unless pab.empty?
+        command << " --drc #{pdrc.join(',')}" unless pdrc.empty?
         command << " --aname \"#{paname.join('","')}\""
         if ismp4
           command << " --audio-fallback faac"
@@ -510,6 +555,15 @@ module HandbrakeCLI
       @lang = nil
       @rate = nil
       @bitrate = nil
+    end
+    
+    def descr(cleaned = false)
+      return @descr unless cleaned
+      d = @descr.dup
+      d.gsub!(/[(]?#{codec}[)]?/, "")
+      d.gsub!(/[(]?#{channels}[)]?/, "")
+      d.strip!
+      return d
     end
   
     def commentary?()
