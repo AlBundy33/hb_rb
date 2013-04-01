@@ -396,7 +396,9 @@ module HandbrakeCLI
   
           Tools::CON.info("checking audio-track #{t}")
           if use_preset_settings
-            paudio << t.pos
+            value = preset_arguments.match(/(?:-a|--audio) ([^ ]+)/)[1]
+            track_count = value.split(",").size
+            paudio << ([t.pos] * track_count).join(",")
             value = preset_arguments.match(/(?:-E|--aencoder) ([^ ]+)/)[1]
             paencoder << value unless value.nil?
             value = preset_arguments.match(/(?:-R|--arate) ([^ ]+)/)[1]
@@ -407,7 +409,7 @@ module HandbrakeCLI
             pab << value unless value.nil?
             value = preset_arguments.match(/(?:-D|--drc) ([^ ]+)/)[1]
             pdrc << value unless value.nil?
-            paname << "#{t.descr(true)}"
+            paname << (["#{t.descr(true)}"] * track_count).join("\",\"")
             Tools::CON.info("adding audio-track: #{t}")            
           end
           if copy_track
