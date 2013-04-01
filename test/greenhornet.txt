@@ -11,7 +11,7 @@ libdvdread: Using libdvdcss version 1.2.11 for DVD access
 libdvdnav: DVD Title: GREEN_HORNET
 libdvdnav: DVD Serial Number: 3e6b1358
 libdvdnav: DVD Title (Alternative): 
-libdvdnav: Unable to find map file '/Users/mkoch/.dvdnav/GREEN_HORNET.map'
+libdvdnav: Unable to find map file '~/.dvdnav/GREEN_HORNET.map'
 libdvdnav: DVD disk reports itself with Region mask 0x00ed0000. Regions: 2 5
 
 libdvdread: Attempting to retrieve all CSS keys
