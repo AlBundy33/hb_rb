@@ -168,7 +168,7 @@ end
 # check settings
 showUsageAndExit(ARGV.options, "input not set") if options.input.nil?()
 showUsageAndExit(ARGV.options, "output not set") if not options.checkOnly and options.output.nil?()
-showUsageAndExit(ARGV.options, "\"#{options.input}\" does not exist") if not File.exists? options.input
+#showUsageAndExit(ARGV.options, "\"#{options.input}\" does not exist") if not File.exists? options.input
 showUsageAndExit(ARGV.options,"unknown x264-profile: #{options.x264profile}") if not options.x264profile.nil? and not Handbrake::X264_PROFILES.include?(options.x264profile)
 showUsageAndExit(ARGV.options,"unknown x264-preset: #{options.x264preset}") if not options.x264preset.nil? and not Handbrake::X264_PRESETS.include?(options.x264preset)
 showUsageAndExit(ARGV.options,"unknown x264-tune option: #{options.x264tune}") if not options.x264tune.nil? and not Handbrake::X264_TUNES.include?(options.x264tune)
@@ -199,6 +199,10 @@ inout = []
 inputs.each do |input|
   opts = options.dup
   opts.input = input
+  unless Tools::FileTool::waitfor(opts.input, 3)
+    puts "#{opts.input} does not exist"
+    next
+  end
   files = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
   inout << [input, files]
 end

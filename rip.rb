@@ -68,15 +68,8 @@ class Ripper
       return nil
     end
     
-    def file_type(input)
-      return nil if not File.exist?(input)
-      return "dev" if File.stat(input).blockdev? or File.stat(input).chardev?
-      return "dir" if File.directory?(input)
-      return File.extname(outputFile).downcase[1..-1]
-    end
-
     def rip(input, output)
-      ft = file_type(input)
+      ft = Tools::FileTool::file_type(input)
       exec = find_executable()
       return false if ft.nil? or exec.nil?
       args = arguments(ft)

@@ -4,6 +4,10 @@ module Tools
   require 'find'
   
   class Common
+    
+    # returns the name of the started script
+    #
+    # +without_extension+ true to remove the extension
     def self.scriptname(without_extension = false)
       if without_extension
         File.basename($0, ".*")
@@ -11,6 +15,8 @@ module Tools
         File.basename($0)
       end
     end
+    
+    # returns the base-directory of the current script
     def self.basedir()
       File.expand_path(File.dirname($0))
     end
@@ -218,6 +224,53 @@ module Tools
   end
   
   class FileTool
+    def self.waitfor(file, retry_count = -1)
+      found = false
+      last_size = nil
+      last_time = nil
+      loop = retry_count
+      while !found and (loop != 0)
+        loop -= 1
+        ft = file_type(file)
+        if ft.nil?
+          # File does not exist currently
+          # nothing to do for now
+        elsif "dev".eql?(ft)
+          # file is a device
+          found = true
+          break
+        else
+          # file is a file or a directory
+          f_time = nil
+          f_size = 0
+          # find last modification-time and filesize-sum
+          Find.find(file) do |f|
+            tmp = File.mtime(f)
+            f_time = tmp if f_time.nil? or tmp > f_time 
+            f_size += FileTest.size(f)
+          end
+          # check if something has changed since last run
+          if last_time.nil? or last_size.nil? or !last_time.eql?(f_time) or !last_size.eql?(f_size)
+            last_time = f_time
+            last_size = f_size
+          else
+            # nothing has changed - so we are done
+            found = true
+            break
+          end
+        end
+        sleep 1
+      end
+      return found
+    end
+    
+    def self.file_type(input)
+      return nil if not File.exist?(input)
+      return "dev" if File.stat(input).blockdev? or File.stat(input).chardev?
+      return "dir" if File.directory?(input)
+      return File.extname(input).downcase[1..-1]
+    end
+
     def self.humanReadableSize(size)
       m = %w(B KB MB GB TB)
       idx = 0
