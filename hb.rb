@@ -26,22 +26,25 @@ def showUsageAndExit(options, msg = nil)
   puts
   puts "examples:"
   puts "convert main-feature with all original-tracks (audio and subtitle) for languages german and english"
-  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Movie.m4v\" --movie"
+  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Movie.m4v\" --movie"
   puts
   puts "convert all episodes with all original-tracks (audio and subtitle) for languages german and english"
-  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Series_SeasonX_#pos#.m4v\" --episodes"
+  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Series_SeasonX_#pos#.m4v\" --episodes"
   puts
   puts "convert complete file or DVD with all tracks, languages etc."
-  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Output_#pos#.m4v\""
+  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Output_#pos#.m4v\""
   puts
-  puts "convert complete file with own mixdowns (copy 5.1 and Dolby Surround, mixdown 2.0 to stereo and 1.0 to mono"
-  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Desktop/Output_#pos#.m4v\" --audio-mixdown \"5.1:copy,1.0:mono,2.0:stereo,Dolby Surround:copy\""
+  puts "convert complete file with own mixdowns (copy 5.1 and Dolby Surround, mixdown 2.0 to stereo and 1.0 to mono)"
+  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Output_#pos#.m4v\" --audio-mixdown \"5.1:copy,1.0:mono,2.0:stereo,Dolby Surround:copy\""
   puts
-  puts "convert recursive all local DVDs in a directory"
-  puts "#{File.basename($0)} --input \"~/DVD/**/VIDEO_TS\" --output \"~/Desktop/#title#_#pos#.m4v\""
+  puts "convert all local DVDs recursive in a directory"
+  puts "#{File.basename($0)} --input \"~/DVD/**/VIDEO_TS\" --output \"~/#title#_#pos#.m4v\""
   puts
   puts "convert all MKVs in a directory"
-  puts "#{File.basename($0)} --input \"~/MKV/*.mkv\" --output \"~/Desktop/#title#.m4v\""
+  puts "#{File.basename($0)} --input \"~/MKV/*.mkv\" --output \"~/#title#.m4v\""
+  puts
+  puts "convert 10 DVDs, eject disc when done (OSX) and wait for next"
+  puts "#{File.basename($0)} --input /dev/rdisk1 --output ~/#title_#pos#.m4v --movie --preset \"Android Mid\" --loops 10 --input-done-cmd \"drutil tray eject\""
   puts
   if not msg.nil?
     puts msg
@@ -52,12 +55,19 @@ end
 
 options = HandbrakeCLI::HBOptions.new
 
+wait_timeout = -1
+input_done_cmd = nil
+loops = 1
+
 ARGV.options do |opts|
   opts.separator("")
   opts.separator("files")
   opts.on("--input INPUT", "input-source") { |arg| options.input = arg }
   opts.on("--output OUTPUT", "output-file (mp4, m4v and mkv supported)") { |arg| options.output = arg }
   opts.on("--force", "force override of existing files") { |arg| options.force = arg }
+  opts.on("--loops LOOPS", "processes input LOOPS times (default: 1)") { |arg| loops = arg.to_i }
+  opts.on("--input-done-cmd COMMAND", "runs COMMAND after input was processed") { |arg| input_done_cmd = arg }
+  opts.on("--wait-timeout SECONDS", "waits SECONDS seconds until input exists (default: unlimited)") { |arg| wait_timeout = arg.to_i }
   opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
   opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts.to_s) }
 
@@ -196,15 +206,27 @@ inputs = [options.input]
 inputs += ARGV if not ARGV.empty?
 
 inout = []
-inputs.each do |input|
-  opts = options.dup
-  opts.input = input
-  unless Tools::FileTool::waitfor(opts.input, 3)
-    puts "#{opts.input} does not exist"
-    next
+current_loop = loops
+while current_loop != 0
+  inputs.each do |input|
+    opts = options.dup
+    opts.input = input
+    unless Tools::FileTool::waitfor(opts.input, wait_timeout, "waiting for #{opts.input}...")
+      puts "#{opts.input} does not exist"
+      next
+    end
+    puts "processing #{opts.input}..."
+    files = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
+    inout << [input, files]
+    unless input_done_cmd.nil?
+      cmd = input_done_cmd.dup
+      cmd.gsub!("#input#", input)
+      puts cmd
+      system cmd
+      raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
+    end
+    current_loop -= 1
   end
-  files = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
-  inout << [input, files]
 end
 
 puts "overview"
