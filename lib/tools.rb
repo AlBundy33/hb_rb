@@ -243,14 +243,16 @@ module Tools
           # file is a file or a directory
           f_time = nil
           # find last modification-time
+          f_count = 0
           Find.find(file) do |f|
+            f_count += 1
             tmp = File.mtime(f)
             f_time = tmp if f_time.nil? or tmp > f_time 
           end
           # check if something has changed since last run
-          if last_time.nil? or !last_time.eql?(f_time)
+          if last_time.nil? or last_time < f_time
             last_time = f_time
-          else
+          elsif f_count > 0
             # nothing has changed - so we are done
             found = true
             break
@@ -264,10 +266,7 @@ module Tools
     def self.file_type(input)
       return nil if not File.exist?(input)
       return "dev" if File.stat(input).blockdev? or File.stat(input).chardev?
-      if File.directory?(input)
-        return "dev" if OS::windows? and input.size > 1 and input.size <= 3 and input[1] == ?:
-        return "dir"
-      end 
+      return "dir" if File.directory?(input) 
       return File.extname(input).downcase[1..-1]
     end
 

@@ -56,7 +56,6 @@ end
 options = HandbrakeCLI::HBOptions.new
 
 wait_timeout = -1
-input_done_cmd = nil
 loops = 1
 
 ARGV.options do |opts|
@@ -66,7 +65,8 @@ ARGV.options do |opts|
   opts.on("--output OUTPUT", "output-file (mp4, m4v and mkv supported)") { |arg| options.output = arg }
   opts.on("--force", "force override of existing files") { |arg| options.force = arg }
   opts.on("--loops LOOPS", "processes input LOOPS times (default: 1)") { |arg| loops = arg.to_i }
-  opts.on("--input-done-cmd COMMAND", "runs COMMAND after input was processed") { |arg| input_done_cmd = arg }
+  opts.on("--input-done-cmd COMMAND", "runs COMMAND after input was processed (use #input# as placeholder)") { |arg| options.inputDoneCommand = arg }
+  opts.on("--output-done-cmd COMMAND", "runs COMMAND after an output-file was generated (use #output# as placeholder)") { |arg| options.outputDoneCommand = arg }
   opts.on("--wait-timeout SECONDS", "waits SECONDS seconds until input exists (default: unlimited)") { |arg| wait_timeout = arg.to_i }
   opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
   opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts.to_s) }
@@ -218,13 +218,6 @@ while current_loop != 0
     puts "processing #{opts.input}..."
     files = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
     inout << [input, files]
-    unless input_done_cmd.nil?
-      cmd = input_done_cmd.dup
-      cmd.gsub!("#input#", input)
-      puts cmd
-      system cmd
-      raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
-    end
     current_loop -= 1
   end
 end
@@ -232,5 +225,9 @@ end
 puts "overview"
 inout.each do |input,outputs|
   puts "#{input}"
-  outputs.each{|file| puts "  -> #{file}"}
+  if outputs.empty?
+    puts "  -> n/a"
+  else
+    outputs.each{|file| puts "  -> #{file}"}
+  end
 end

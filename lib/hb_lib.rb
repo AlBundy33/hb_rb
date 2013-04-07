@@ -12,7 +12,7 @@ module HandbrakeCLI
                   :onlyFirstTrackPerLanguage, :skipCommentaries,
                   :checkOnly, :xtra_args, :debug, :verbose,
                   :x264profile, :x264preset, :x264tune,
-                  :testdata, :preview
+                  :testdata, :preview, :inputDoneCommand, :outputDoneCommand
   end
 
   class Handbrake
@@ -501,6 +501,16 @@ module HandbrakeCLI
               converted.delete(title.blocks())
             else
               Tools::CON.warn("file #{outputFile} created (#{Tools::FileTool::humanReadableSize(size)})")
+              if size >= 4 * 1024 * 1024 * 1024 and !command =~ /--large-file/
+                Tools::CON.warn("file maybe useless because it's over 4GB and --large-file was not specified")
+              end
+              unless options.outputDoneCommand.nil?
+                cmd = options.outputDoneCommand.dup
+                cmd.gsub!("#output#", outputFile)
+                Tools::CON.info(cmd)
+                system cmd
+                raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
+              end
               created << outputFile
             end
           else
@@ -508,6 +518,13 @@ module HandbrakeCLI
           end
         end
         Tools::CON.warn("== done ===========================================================")
+      end
+      unless options.inputDoneCommand.nil?
+        cmd = options.inputDoneCommand.dup
+        cmd.gsub!("#input#", options.input)
+        Tools::CON.info(cmd)
+        system cmd
+        raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
       end
       return created
     end
