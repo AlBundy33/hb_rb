@@ -12,7 +12,7 @@ end
 
 def showUsageAndExit(options, msg = nil)
   puts options.to_s
-  puts ""
+  puts
   puts "available place-holders for output-file:"
   puts "  #pos#   - title-number on input-source"
   puts "  #size#  - resolution"
@@ -44,7 +44,7 @@ def showUsageAndExit(options, msg = nil)
   puts "#{File.basename($0)} --input \"~/MKV/*.mkv\" --output \"~/#title#.m4v\""
   puts
   puts "convert 10 DVDs, eject disc when done (OSX) and wait for next"
-  puts "#{File.basename($0)} --input /dev/rdisk1 --output ~/#title_#pos#.m4v --movie --preset \"Android Mid\" --loops 10 --input-done-cmd \"drutil tray eject\""
+  puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/#title_#pos#.m4v\" --movie --preset \"Android Mid\" --loops 10 --input-done-cmd \"drutil tray eject\""
   puts
   if not msg.nil?
     puts msg
