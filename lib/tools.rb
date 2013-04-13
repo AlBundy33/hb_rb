@@ -28,12 +28,12 @@ module Tools
     ALPHA_UPPER = ('A'..'Z').to_a.freeze
     ALPHA = (ALPHA_LOWER + ALPHA_UPPER).freeze
     ALPHANUM = (ALPHA + NUM).freeze
-    SPECIAL = ((33..126).collect{|i| i.chr} - NUM - ALPHA_LOWER - ALPHA_UPPER).freeze
+    SPECIAL = ((33..126).collect{|i| i.chr} - ALPHANUM).freeze
     VOWELS = "aeiouAEIOU".split(//).freeze
-    ALL = (ALPHA + NUM + SPECIAL).freeze
+    ALL = (ALPHANUM + SPECIAL).freeze
 
     def self.generate(length, characters = ALL)
-      chars = characters.dup.shuffle
+      chars = characters.shuffle
       pw = ""
       0.upto(length-1){ pw << chars[rand(chars.size)] }
       return pw
