@@ -21,6 +21,24 @@ module Tools
       File.expand_path(File.dirname($0))
     end
   end
+  
+  class PasswortGenerator
+    NUM = ('0'..'9').to_a.freeze
+    ALPHA_LOWER = ('a'..'z').to_a.freeze
+    ALPHA_UPPER = ('A'..'Z').to_a.freeze
+    ALPHA = (ALPHA_LOWER + ALPHA_UPPER).freeze
+    ALPHANUM = (ALPHA + NUM).freeze
+    SPECIAL = ((33..126).collect{|i| i.chr} - NUM - ALPHA_LOWER - ALPHA_UPPER).freeze
+    VOWELS = "aeiouAEIOU".split(//).freeze
+    ALL = (ALPHA + NUM + SPECIAL).freeze
+
+    def self.generate(length, characters = ALL)
+      chars = characters.dup.shuffle
+      pw = ""
+      0.upto(length-1){ pw << chars[rand(chars.size)] }
+      return pw
+    end
+  end
 
   class OS
     private
