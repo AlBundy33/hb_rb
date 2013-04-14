@@ -271,7 +271,7 @@ module HandbrakeCLI
         outputFile.gsub!("#size#", title.size || "")
         outputFile.gsub!("#fps#", title.fps || "")
         outputFile.gsub!("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
-        outputFile.gsub!("#title#", source.name)
+        outputFile.gsub!("#title#", source.name.gsub(/[^0-9a-zA-Z_\- ]/, "_"))
         if not options.force
           if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
             Tools::CON.info("skipping title because \"#{outputFile}\" already exists")
