@@ -218,8 +218,8 @@ while current_loop != 0
     puts "processing #{opts.input}..."
     files = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
     inout << [input, files]
-    current_loop -= 1
   end
+  current_loop -= 1
 end
 
 puts "overview"
