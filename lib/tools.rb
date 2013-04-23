@@ -244,11 +244,8 @@ module Tools
   class FileTool
     def self.waitfor(file, retry_count = -1, msg = nil)
       found = false
-      last_time = nil
       loop = retry_count
       while !found and (loop != 0)
-        puts msg if loop == retry_count and !msg.nil?
-        loop -= 1
         ft = file_type(file)
         if ft.nil?
           # File does not exist currently
@@ -261,22 +258,20 @@ module Tools
           # file is a file or a directory
           f_time = nil
           # find last modification-time
-          f_count = 0
           Find.find(file) do |f|
-            f_count += 1
             tmp = File.mtime(f)
             f_time = tmp if f_time.nil? or tmp > f_time 
           end
           # check if something has changed since last run
-          if last_time.nil? or last_time < f_time
-            last_time = f_time
-          elsif f_count > 0
-            # nothing has changed - so we are done
+          if !f_time.nil? and (Time.new - f_time) > 3
+            # file is at least 3 seconds old
             found = true
             break
           end
         end
+        puts msg if loop == retry_count and !msg.nil?
         sleep 1
+        loop -= 1
       end
       return found
     end
@@ -284,8 +279,9 @@ module Tools
     def self.file_type(input)
       return nil if not File.exist?(input)
       return "dev" if File.stat(input).blockdev? or File.stat(input).chardev?
-      return "dir" if File.directory?(input) 
-      return File.extname(input).downcase[1..-1]
+      return "dir" if File.directory?(input)
+      return "file" 
+      #return File.extname(input).downcase[1..-1]
     end
 
     def self.humanReadableSize(size)

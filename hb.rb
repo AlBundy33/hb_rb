@@ -202,8 +202,26 @@ audioMatcher.skipCommentaries = options.skipCommentaries
 subtitleMatcher = LangMatcher.new(options.subtitles)
 subtitleMatcher.skipCommentaries = options.skipCommentaries
 
-inputs = [options.input]
-inputs += ARGV if not ARGV.empty?
+# collect all inputs
+input_list = [options.input]
+input_list += ARGV if not ARGV.empty?
+
+# check each argument
+inputs = []
+input_list.each do |i|
+  if i.include? "*"
+    # argument contains a wildcard try to get all files
+    files = Dir[i]
+    if files.empty?
+      puts "found no files for pattern #{i}"
+    else
+      inputs += files
+    end
+  else
+    # argument can be used directly
+    inputs << i
+  end
+end
 
 inout = []
 current_loop = loops
