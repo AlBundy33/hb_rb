@@ -69,7 +69,7 @@ class Ripper
     end
     
     def rip(input, output)
-      ft = Tools::FileTool::file_type(input)
+      ft = Tools::FileTool::file_type(input, true)
       exec = find_executable()
       return false if ft.nil? or exec.nil?
       args = arguments(ft)

@@ -276,12 +276,15 @@ module Tools
       return found
     end
     
-    def self.file_type(input)
+    def self.file_type(input, return_extension_for_files = false)
       return nil if not File.exist?(input)
       return "dev" if File.stat(input).blockdev? or File.stat(input).chardev?
       return "dir" if File.directory?(input)
-      return "file" 
-      #return File.extname(input).downcase[1..-1]
+      if return_extension_for_files
+        return File.extname(input).downcase[1..-1]
+      else
+        return "file" 
+      end
     end
 
     def self.humanReadableSize(size)
