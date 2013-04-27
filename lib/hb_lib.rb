@@ -232,6 +232,7 @@ module HandbrakeCLI
         maxLength = TimeTool::timeToSeconds(options.maxLength)
       end
   
+      Tools::CON.warn("#{source}")
       source.titles().each do |title|
         Tools::CON.info("checking #{title}")
         
