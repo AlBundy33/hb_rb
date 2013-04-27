@@ -203,39 +203,34 @@ subtitleMatcher = LangMatcher.new(options.subtitles)
 subtitleMatcher.skipCommentaries = options.skipCommentaries
 
 # collect all inputs
-input_list = [options.input]
-input_list += ARGV if not ARGV.empty?
-
-# check each argument
-inputs = []
-input_list.each do |i|
-  if i.include? "*"
-    # argument contains a wildcard try to get all files
-    files = Dir[i]
-    if files.empty?
-      puts "found no files for pattern #{i}"
-    else
-      inputs += files
-    end
-  else
-    # argument can be used directly
-    inputs << i
-  end
-end
+inputs = [options.input]
+inputs += ARGV if not ARGV.empty?
 
 inout = []
 current_loop = loops
 while current_loop != 0
   inputs.each do |input|
-    opts = options.dup
-    opts.input = input
-    unless Tools::FileTool::waitfor(opts.input, wait_timeout, "waiting for #{opts.input}...")
-      puts "#{opts.input} does not exist"
-      next
+    if input.include?("*")
+      i_list = Dir[input]
+      if i_list.empty?
+        puts "found no files for pattern #{input}"
+        sleep 1
+        next
+      end
+    else
+      i_list = [input]
     end
-    puts "processing #{opts.input}..."
-    files = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
-    inout << [input, files]
+    i_list.each do |i|
+      opts = options.dup
+      opts.input = i
+      unless Tools::FileTool::waitfor(opts.input, wait_timeout, "waiting for #{opts.input}...")
+        puts "#{opts.input} does not exist"
+        next
+      end
+      puts "processing #{opts.input}..."
+      files = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
+      inout << [opts.input, files]
+    end
   end
   current_loop -= 1
 end
