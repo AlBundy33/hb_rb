@@ -14,11 +14,13 @@ def showUsageAndExit(options, msg = nil)
   puts options.to_s
   puts
   puts "available place-holders for output-file:"
-  puts "  #pos#   - title-number on input-source"
-  puts "  #size#  - resolution"
-  puts "  #fps#   - frames per second"
-  puts "  #ts#    - current timestamp"
-  puts "  #title# - source-title (dvd-label, directory-basename, filename)"
+  puts "  #pos#             - title-number on input-source"
+  puts "  #size#            - resolution"
+  puts "  #fps#             - frames per second"
+  puts "  #ts#              - current timestamp"
+  puts "  #title#           - source-title (dvd-label, directory-basename, filename)"
+  puts "  #source#          - name of input"
+  puts "  #source_basename# - name of input without extension"
   puts
   puts "hints:"
   puts "use raw disk devices (e.g. /dev/rdisk1) to ensure that libdvdnav can read the title"

@@ -268,11 +268,14 @@ module HandbrakeCLI
         converted.push(title.blocks()) if not title.blocks().nil?
   
         outputFile = File.expand_path(options.output)
+        source_title = source.name.gsub(/[^0-9a-zA-Z_\- ]/, "_")
         outputFile.gsub!("#pos#", "%02d" % title.pos)
         outputFile.gsub!("#size#", title.size || "")
         outputFile.gsub!("#fps#", title.fps || "")
         outputFile.gsub!("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
-        outputFile.gsub!("#title#", source.name.gsub(/[^0-9a-zA-Z_\- ]/, "_"))
+        outputFile.gsub!("#title#", source_title)
+        outputFile.gsub!("#source#", source.input_name(false) || source_title)
+        outputFile.gsub!("#source_basename#", source.input_name(true) || source_title)
         if not options.force
           if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
             Tools::CON.info("skipping title because \"#{outputFile}\" already exists")
@@ -628,16 +631,26 @@ module HandbrakeCLI
     def name(use_alt = false)
       return @title_alt if usable?(@title_alt) and use_alt
       return @title if usable?(@title)
+      name = input_name(true)
+      return name if usable?(name)
+      return "unknown"
+    end
+    
+    def input_name(without_extension = false)
       if File.directory?(path)
         name = File.basename(path())
         name = File.basename(File.dirname(path)) if ["VIDEO_TS", "AUDIO_TS"].include?(name)
       else
-        name = File.basename(path(), ".*")
+        if without_extension
+          name = File.basename(path(), ".*")
+        else
+          name = File.basename(path())
+        end
       end
-      return name if usable?(name)
-      return "unknown"
+      return nil if name.strip!.empty?
+      return name.strip
     end
-  
+
     def usable?(str)
       return false if str.nil?
       return false if str.strip.empty?
