@@ -647,7 +647,7 @@ module HandbrakeCLI
           name = File.basename(path())
         end
       end
-      return nil if name.strip!.empty?
+      return nil if name.strip.empty?
       return name.strip
     end
 

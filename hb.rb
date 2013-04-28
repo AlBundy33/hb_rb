@@ -212,6 +212,7 @@ inout = []
 current_loop = loops
 while current_loop != 0
   inputs.each do |input|
+    input = File.expand_path(input)
     if input.include?("*")
       i_list = Dir[input]
       if i_list.empty?
@@ -229,7 +230,6 @@ while current_loop != 0
         puts "#{opts.input} does not exist"
         next
       end
-      puts "processing #{opts.input}..."
       files = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
       inout << [opts.input, files]
     end
