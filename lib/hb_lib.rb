@@ -2,6 +2,8 @@ require 'fileutils'
 require './lib/tools.rb'
 
 module HandbrakeCLI
+  L = Tools::Loggers::createLogger()
+
   class HBOptions
     attr_accessor :input, :output, :force,
                   :ipodCompatibility, :enableAutocrop,
@@ -216,7 +218,7 @@ module HandbrakeCLI
       end
       
       if source.titles.empty?
-        Tools::CON::info("#{source.path} contains no titles")
+        HandbrakeCLI::L.info("#{source.path} contains no titles")
         return created
       end
   
@@ -232,15 +234,15 @@ module HandbrakeCLI
         maxLength = TimeTool::timeToSeconds(options.maxLength)
       end
   
-      Tools::CON.warn("#{source}")
+      HandbrakeCLI::L.warn("#{source}")
       source.titles().each do |title|
-        Tools::CON.info("checking #{title}")
+        HandbrakeCLI::L.info("checking #{title}")
         
         if options.mainFeatureOnly and not title.mainFeature
-          Tools::CON.info("skipping title because it's not the main-feature")
+          HandbrakeCLI::L.info("skipping title because it's not the main-feature")
           next
         elsif not titleMatcher.matches(title)
-          Tools::CON.info("skipping unwanted title")
+          HandbrakeCLI::L.info("skipping unwanted title")
           next
         end
   
@@ -249,19 +251,19 @@ module HandbrakeCLI
   
         duration = TimeTool::timeToSeconds(title.duration)
         if minLength >= 0 and duration < minLength
-          Tools::CON.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+          HandbrakeCLI::L.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
           next
         end
         if maxLength >= 0 and duration > maxLength
-          Tools::CON.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+          HandbrakeCLI::L.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
           next
         end
         if tracks.empty?()
-          Tools::CON.info("skipping title because it contains no audio-tracks (available: #{title.audioTracks})")
+          HandbrakeCLI::L.info("skipping title because it contains no audio-tracks (available: #{title.audioTracks})")
           next
         end
         if options.skipDuplicates and not title.blocks().nil? and title.blocks() >= 0 and converted.include?(title.blocks())
-          Tools::CON.info("skipping because source contains it twice")
+          HandbrakeCLI::L.info("skipping because source contains it twice")
           next
         end
         
@@ -278,12 +280,12 @@ module HandbrakeCLI
         outputFile.gsub!("#source_basename#", source.input_name(true) || source_title)
         if not options.force
           if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
-            Tools::CON.info("skipping title because \"#{outputFile}\" already exists")
+            HandbrakeCLI::L.info("skipping title because \"#{outputFile}\" already exists")
             next
           end
         end
   
-        Tools::CON.info("converting #{title}")
+        HandbrakeCLI::L.info("converting #{title}")
   
         ext = File.extname(outputFile).downcase
         ismp4 = false
@@ -398,7 +400,7 @@ module HandbrakeCLI
             copy_track = false
           end
   
-          Tools::CON.info("checking audio-track #{t}")
+          HandbrakeCLI::L.info("checking audio-track #{t}")
           if use_preset_settings
             value = preset_arguments.match(/(?:-a|--audio) ([^ ]+)/)[1]
             track_count = value.split(",").size
@@ -414,7 +416,7 @@ module HandbrakeCLI
             value = preset_arguments.match(/(?:-D|--drc) ([^ ]+)/)[1]
             pdrc << value unless value.nil?
             paname << (["#{t.descr(true)}"] * track_count).join("\",\"")
-            Tools::CON.info("adding audio-track: #{t}")            
+            HandbrakeCLI::L.info("adding audio-track: #{t}")            
           end
           if copy_track
             # copy original track
@@ -425,7 +427,7 @@ module HandbrakeCLI
             pab << "auto"
             pdrc << "0.0"
             paname << "#{t.descr}"
-            Tools::CON.info("adding audio-track: #{t}")
+            HandbrakeCLI::L.info("adding audio-track: #{t}")
           end
           if mixdown_track
             # add mixdown track
@@ -442,7 +444,7 @@ module HandbrakeCLI
             pab << options.audioMixdownBitrate
             pdrc << "0.0"
             paname << "#{t.descr(true)} (#{AUDIO_MIXDOWN_DESCR[mixdown] || mixdown})"
-            Tools::CON.info("adding mixed down audio-track: #{t}")
+            HandbrakeCLI::L.info("adding mixed down audio-track: #{t}")
           end
         end
         command << " --audio #{paudio.join(',')}"
@@ -473,60 +475,61 @@ module HandbrakeCLI
           command << " 2>#{Tools::OS::nullDevice()}"
         end
   
-        Tools::CON::warn "converting title #{title.pos} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
+        HandbrakeCLI::L.warn "converting title #{title.pos} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
         if not tracks.empty?
-          Tools::CON::warn "  audio-tracks"
+          HandbrakeCLI::L.warn "  audio-tracks"
           tracks.each do |t|
-            Tools::CON::warn "    - track #{t.pos}: #{t.descr}"
+            HandbrakeCLI::L.warn "    - track #{t.pos}: #{t.descr}"
           end
         end
         if not subtitles.empty?
-          Tools::CON::warn "  subtitles"
+          HandbrakeCLI::L.warn "  subtitles"
           subtitles.each do |s|
-            Tools::CON::warn "    - track #{s.pos}: #{s.descr}"
+            HandbrakeCLI::L.warn "    - track #{s.pos}: #{s.descr}"
           end
         end
   
-        Tools::CON.warn(command)
+        HandbrakeCLI::L.warn(command)
         if not options.debug and options.testdata.nil?
           parentDir = File.dirname(outputFile)
           FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
-          system command
+          #system command
+          Tools::Loggers::tee(command,HandbrakeCLI::L)
           return_code = $?
           if File.exists?(outputFile)
             size = Tools::FileTool::size(outputFile)
             if return_code != 0
-              Tools::CON.warn("Handbrake exited with return-code #{return_code} - removing file #{File.basename(outputFile)}")
+              HandbrakeCLI::L.warn("Handbrake exited with return-code #{return_code} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
             elsif size >= 0 and size < (1 * 1024 * 1024)
-              Tools::CON.warn("file-size only #{Tools::FileTool::humanReadableSize(size)} - removing file #{File.basename(outputFile)}")
+              HandbrakeCLI::L.warn("file-size only #{Tools::FileTool::humanReadableSize(size)} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
             else
-              Tools::CON.warn("file #{outputFile} created (#{Tools::FileTool::humanReadableSize(size)})")
+              HandbrakeCLI::L.warn("file #{outputFile} created (#{Tools::FileTool::humanReadableSize(size)})")
               if size >= 4 * 1024 * 1024 * 1024 and !command =~ /--large-file/
-                Tools::CON.warn("file maybe useless because it's over 4GB and --large-file was not specified")
+                HandbrakeCLI::L.warn("file maybe useless because it's over 4GB and --large-file was not specified")
               end
               unless options.outputDoneCommand.nil?
                 cmd = options.outputDoneCommand.dup
                 cmd.gsub!("#output#", outputFile)
-                Tools::CON.info(cmd)
+                HandbrakeCLI::L.info(cmd)
                 system cmd
                 raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
               end
               created << outputFile
             end
           else
-            Tools::CON.warn("file #{outputFile} not created")
+            HandbrakeCLI::L.warn("file #{outputFile} not created")
           end
         end
-        Tools::CON.warn("== done ===========================================================")
+        HandbrakeCLI::L.warn("== done ===========================================================")
       end
       unless options.inputDoneCommand.nil?
         cmd = options.inputDoneCommand.dup
         cmd.gsub!("#input#", options.input)
-        Tools::CON.info(cmd)
+        HandbrakeCLI::L.info(cmd)
         system cmd
         raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
       end
@@ -701,7 +704,7 @@ module HandbrakeCLI
     def matches(obj)
       m = (allowed().nil? or allowed().include?(value(obj)))
       m = false if not check(obj)
-      Tools::CON.debug("#{self.class().name()}: #{value(obj).inspect} is allowed (#{allowed.inspect()})? -> #{m}")
+      HandbrakeCLI::L.debug("#{self.class().name()}: #{value(obj).inspect} is allowed (#{allowed.inspect()})? -> #{m}")
       return m
     end
   

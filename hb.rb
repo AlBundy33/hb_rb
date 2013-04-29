@@ -170,11 +170,11 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}
 end
 
 if options.verbose and options.debug
-  Tools::CON.level = Logger::DEBUG
+  HandbrakeCLI::L.level = Logger::DEBUG
 elsif options.verbose or options.debug
-  Tools::CON.level = Logger::INFO
+  HandbrakeCLI::L.level = Logger::INFO
 else
-  Tools::CON.level = Logger::WARN
+  HandbrakeCLI::L.level = Logger::WARN
 end
 
 # check settings
