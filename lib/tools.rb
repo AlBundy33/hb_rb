@@ -172,6 +172,7 @@ module Tools
   end
 
   class Tee
+
     # redirects output to file (uses no tee-command!)
     #
     # +logfile+ the file to write to
@@ -384,54 +385,83 @@ module Tools
   end
 
   class Loggers
+    class DefaultLogDev
+      def initialize(*logdevices)
+        @logdevices = logdevices
+      end
+      def write(*args)
+        @logdevices.each { |d|
+          d.write(args)
+          d.flush
+        }
+      end
+      def close
+        @logdevices.each { |d|
+          d.close
+        }
+      end
+    end
+    
+    class JavaLogFormatter
+      Format = "[%s] %5s -- %s: %s\n"
+    
+      attr_accessor :datetime_format
+    
+      def initialize
+        @datetime_format = nil
+      end
+    
+      def call(severity, time, progname, msg)
+        Format % [format_datetime(time), severity, progname,
+          msg2str(msg)]
+      end
+    
+    private
+    
+      def format_datetime(time)
+        if @datetime_format.nil?
+          time.strftime("%Y-%m-%dT%H:%M:%S.") << "%06d " % time.usec
+        else
+          time.strftime(@datetime_format)
+        end
+      end
+    
+      def msg2str(msg)
+        case msg
+        when ::String
+          msg
+        when ::Exception
+          "#{ msg.message } (#{ msg.class })\n" <<
+            (msg.backtrace || []).join("\n")
+        else
+          msg.inspect
+        end
+      end
+    end
+
     def self.console
       return @consoleLogger if @consoleLogger
       return @consoleLogger = createLogger
     end
+    
+    def self.tee(command, logger)
+      IO.popen(command) { |pipe|
+        while buf = pipe.readpartial(4096) rescue nil
+          logger << buf
+        end
+      }
+    end
 
     def self.createLogger(progname = nil, output = STDOUT)
-      l = Logger.new(output)
+      if output.kind_of?(DefaultLogDev)
+        l = Logger.new(output)
+      else
+        l = Logger.new(DefaultLogDev.new(output))
+      end
       l.progname = progname || File.basename($0)
       l.formatter = JavaLogFormatter.new
       l.formatter.datetime_format = "%Y-%m-%d, %H:%M:%S"
       return l
-    end
-  end
-  
-  class JavaLogFormatter
-    Format = "[%s] %5s -- %s: %s\n"
-  
-    attr_accessor :datetime_format
-  
-    def initialize
-      @datetime_format = nil
-    end
-  
-    def call(severity, time, progname, msg)
-      Format % [format_datetime(time), severity, progname,
-        msg2str(msg)]
-    end
-  
-  private
-  
-    def format_datetime(time)
-      if @datetime_format.nil?
-        time.strftime("%Y-%m-%dT%H:%M:%S.") << "%06d " % time.usec
-      else
-        time.strftime(@datetime_format)
-      end
-    end
-  
-    def msg2str(msg)
-      case msg
-      when ::String
-        msg
-      when ::Exception
-        "#{ msg.message } (#{ msg.class })\n" <<
-          (msg.backtrace || []).join("\n")
-      else
-        msg.inspect
-      end
     end
   end
 

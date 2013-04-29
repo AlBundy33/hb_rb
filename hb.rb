@@ -5,8 +5,17 @@ require 'logger'
 require './lib/hb_lib.rb'
 include HandbrakeCLI
 
+def cleanup()
+  HandbrakeCLI::logger.close()
+end
+
+at_exit do
+
+end
+
 Signal.trap("INT") do
   puts "CTRL-C detected - exiting #{File.basename($0)}"
+  cleanup()
   exit!(1)
 end
 
@@ -104,6 +113,7 @@ ARGV.options do |opts|
 
   opts.separator("")
   opts.separator("expert-options")
+  opts.on("--log [LOGFILE]", "write all output to LOGFILE") { |arg| options.logfile = arg || "hb.log" }
   opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
   opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
   opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
@@ -169,14 +179,6 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}
 """)
 end
 
-if options.verbose and options.debug
-  HandbrakeCLI::L.level = Logger::DEBUG
-elsif options.verbose or options.debug
-  HandbrakeCLI::L.level = Logger::INFO
-else
-  HandbrakeCLI::L.level = Logger::WARN
-end
-
 # check settings
 showUsageAndExit(ARGV.options, "input not set") if options.input.nil?()
 showUsageAndExit(ARGV.options, "output not set") if not options.checkOnly and options.output.nil?()
@@ -195,7 +197,21 @@ if not options.audioMixdownMappings.nil?
   end
   options.audioMixdownMappings = h
 end
-showUsageAndExit(options,"unknown preset #{options.preset}") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil? 
+showUsageAndExit(options,"unknown preset #{options.preset}") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil?
+
+# initialize logger
+if options.logfile.nil?
+  HandbrakeCLI::logger = Tools::Loggers.createLogger(nil, STDOUT)
+else
+  HandbrakeCLI::logger = Tools::Loggers.createLogger(nil, Tools::Loggers::DefaultLogDev.new(STDOUT, File.open(options.logfile, "a+")))
+end
+if options.verbose and options.debug
+  HandbrakeCLI::logger.level = Logger::DEBUG
+elsif options.verbose or options.debug
+  HandbrakeCLI::logger.level = Logger::INFO
+else
+  HandbrakeCLI::logger.level = Logger::WARN
+end 
 
 titleMatcher = PosMatcher.new(options.titles)
 audioMatcher = LangMatcher.new(options.languages)
@@ -237,12 +253,12 @@ while current_loop != 0
   current_loop -= 1
 end
 
-puts "overview"
+HandbrakeCLI::logger.warn("overview")
 inout.each do |input,outputs|
-  puts "#{input}"
+  HandbrakeCLI::logger.warn("#{input}")
   if outputs.empty?
-    puts "  -> n/a"
+    HandbrakeCLI::logger.warn("  -> n/a")
   else
-    outputs.each{|file| puts "  -> #{file}"}
+    outputs.each{|file| HandbrakeCLI::logger.warn("  -> #{file}") }
   end
 end
