@@ -392,7 +392,8 @@ module Tools
       def write(*args)
         @logdevices.each { |d|
           d.write(args)
-          d.flush
+          # flush only console-output
+          d.flush if d == STDOUT or d == STDERR
         }
       end
       def close
