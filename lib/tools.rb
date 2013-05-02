@@ -389,7 +389,7 @@ module Tools
       def initialize(*logdevices)
         @logdevices = logdevices
       end
-      def write(*args)
+      def write(args)
         @logdevices.each { |d|
           d.write(args)
           # flush only console-output
