@@ -271,6 +271,7 @@ module Tools
           end
         end
         puts msg if loop == retry_count and !msg.nil?
+        #puts "#{msg} (#{loop})" if !msg.nil?
         sleep 1
         loop -= 1
       end
