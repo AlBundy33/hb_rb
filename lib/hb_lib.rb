@@ -12,7 +12,8 @@ module HandbrakeCLI
                   :onlyFirstTrackPerLanguage, :skipCommentaries,
                   :checkOnly, :xtra_args, :debug, :verbose,
                   :x264profile, :x264preset, :x264tune,
-                  :testdata, :preview, :inputDoneCommand, :outputDoneCommand, :logfile
+                  :testdata, :preview, :inputDoneCommand, :outputDoneCommand,
+                  :logfile, :logOverride, :logOverview
   end
 
   class Handbrake
@@ -243,7 +244,6 @@ module HandbrakeCLI
           HandbrakeCLI::logger.info("skipping unwanted title")
           next
         end
-  
         tracks = audioMatcher.filter(title.audioTracks)
         subtitles = subtitleMatcher.filter(title.subtitles)
   
@@ -686,7 +686,7 @@ module HandbrakeCLI
   class ValueMatcher
     attr_accessor :allowed, :onlyFirstPerAllowedValue
     def initialize(allowed)
-      @allowed = allowed
+      @allowed = allowed || ["*"]
       @onlyFirstPerAllowedValue = false
     end
     
@@ -699,7 +699,7 @@ module HandbrakeCLI
     end
   
     def matches(obj)
-      m = (allowed().nil? or allowed().include?(value(obj)))
+      m = (allowed().nil? or allowed().include?("*") or allowed().include?(value(obj)))
       m = false if not check(obj)
       HandbrakeCLI::logger.debug("#{self.class().name()}: #{value(obj).inspect} is allowed (#{allowed.inspect()})? -> #{m}")
       return m
@@ -707,15 +707,18 @@ module HandbrakeCLI
   
     def filter(list)
       return list if allowed().nil?
-  
+
       filtered = []
       stack = []
       allowed().each do |a|
         list.each do |e|
+          # element does not match
           next if not matches(e)
           v = value(e)
+          # element already included
           next if @onlyFirstPerAllowedValue and stack.include?(v)
-          if (v == a or v.eql? a)
+          if v == a or v.eql? a or a.eql? "*"
+            # element matches
             stack.push v
             filtered.push e
           end
@@ -743,7 +746,7 @@ module HandbrakeCLI
       obj.lang
     end
   
-    def check(obj)
+    def check(obj) 
       return false if @skipCommentaries and obj.commentary?
       return true
     end

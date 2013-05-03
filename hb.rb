@@ -110,10 +110,15 @@ ARGV.options do |opts|
   opts.on("--skip-duplicates", "skip duplicate titles (checks block-size)") { |arg| options.skipDuplicates = arg }
   opts.on("--only-first-track-per-language", "convert only first audio-track per language") { |arg| options.onlyFirstTrackPerLanguage = arg }
   opts.on("--skip-commentaries", "ignore commentary-audio- and subtitle-tracks") { |arg| options.skipCommentaries = arg }
+    
+  opts.separator("")
+  opts.separator("logging")
+  opts.on("--log [LOGFILE]", "write all output to LOGFILE") { |arg| options.logfile = arg || "hb.log" }
+  opts.on("--log-override", "always override logfile") { |arg| options.logOverride = arg }
+  opts.on("--log-overview LOGFILE", "write additional overview-file") { |arg| options.logOverview = arg }
 
   opts.separator("")
   opts.separator("expert-options")
-  opts.on("--log [LOGFILE]", "write all output to LOGFILE") { |arg| options.logfile = arg || "hb.log" }
   opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
   opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
   opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
@@ -200,11 +205,13 @@ end
 showUsageAndExit(options,"unknown preset #{options.preset}") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil?
 
 # initialize logger
+log_device = nil
 if options.logfile.nil?
-  HandbrakeCLI::logger = Tools::Loggers.createLogger(nil, STDOUT)
+  log_device = Tools::Loggers::DefaultLogDev.new(STDOUT)
 else
-  HandbrakeCLI::logger = Tools::Loggers.createLogger(nil, Tools::Loggers::DefaultLogDev.new(STDOUT, File.open(options.logfile, "a+")))
+  log_device = Tools::Loggers::DefaultLogDev.new(STDOUT, File.open(options.logfile, options.logOverride ? "w" : "a"))
 end
+HandbrakeCLI::logger = Tools::Loggers.createLogger(nil, log_device)
 if options.verbose and options.debug
   HandbrakeCLI::logger.level = Logger::DEBUG
 elsif options.verbose or options.debug
@@ -253,6 +260,7 @@ while current_loop != 0
   current_loop -= 1
 end
 
+# default overview
 HandbrakeCLI::logger.warn("overview")
 inout.each do |input,outputs|
   HandbrakeCLI::logger.warn("#{input}")
@@ -261,4 +269,19 @@ inout.each do |input,outputs|
   else
     outputs.each{|file| HandbrakeCLI::logger.warn("  -> #{file}") }
   end
+end
+
+# additional overview-file
+unless options.logOverview.nil?
+  File.open(options.logOverview, options.logOverride ? "w" : "a"){ |file|
+    file.puts "overview"
+    inout.each do |input, outputs|
+      file.puts input
+      if outputs.empty?
+        file.puts "  --> n/a"
+      else
+        outputs.each {|o| file.puts "  --> #{o}" }
+      end
+    end
+  }
 end
