@@ -64,6 +64,14 @@ module HandbrakeCLI
       end
       exit
     end
+    
+    def self.setdefaults(options)
+      options.languages = ["deu", "eng"]
+      options.subtitles = ["deu", "eng"]
+      options.onlyFirstTrackPerLanguage = true
+      options.audioCopy = true
+      options.skipCommentaries = true
+    end
 
     def self.parseArgs(arguments)
       options = HBOptions.new
@@ -124,14 +132,6 @@ module HandbrakeCLI
         opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
         opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
         opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
-          
-        def setdefaults(options)
-          options.languages = ["deu", "eng"]
-          options.subtitles = ["deu", "eng"]
-          options.onlyFirstTrackPerLanguage = true
-          options.audioCopy = true
-          options.skipCommentaries = true
-        end
       
         opts.separator("")
         opts.separator("shorts")
@@ -437,7 +437,7 @@ module HandbrakeCLI
         end
         tracks = audioMatcher.filter(title.audioTracks)
         subtitles = subtitleMatcher.filter(title.subtitles)
-  
+        
         duration = TimeTool::timeToSeconds(title.duration)
         if minLength >= 0 and duration < minLength
           HandbrakeCLI::logger.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
@@ -457,10 +457,12 @@ module HandbrakeCLI
         end
         
         converted.push(title.blocks()) if not title.blocks().nil?
-        
+
         result = HBConvertResult.new
         result.source = source
         result.title = title
+        result.audiotitles = tracks
+        result.subtitles = subtitles
   
         outputFile = File.expand_path(options.output)
         source_title = source.name.gsub(/[^0-9a-zA-Z_\- ]/, "_")
@@ -473,7 +475,7 @@ module HandbrakeCLI
         outputFile.gsub!("#source_basename#", source.input_name(true) || source_title)
         if not options.force
           if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
-            HandbrakeCLI::logger.info("skipping title because \"#{outputFile}\" already exists")
+            HandbrakeCLI::logger.warn("skipping title because \"#{outputFile}\" already exists")
             next
           end
         end
@@ -572,7 +574,6 @@ module HandbrakeCLI
         pab = []
         pdrc = []
         paname = []
-        result.audiotitles = []
         
         tracks.each do |t|
           mixdown_track = options.audioMixdown
@@ -622,7 +623,6 @@ module HandbrakeCLI
             pdrc << "0.0"
             paname << "#{t.descr}"
             HandbrakeCLI::logger.info("adding audio-track: #{t}")
-            result.audiotitles << t
           end
           if mixdown_track
             # add mixdown track
@@ -640,7 +640,6 @@ module HandbrakeCLI
             pdrc << "0.0"
             paname << "#{t.descr(true)} (#{AUDIO_MIXDOWN_DESCR[mixdown] || mixdown})"
             HandbrakeCLI::logger.info("adding mixed down audio-track: #{t}")
-            result.audiotitles << t
           end
         end
         command << " --audio #{paudio.join(',')}"
@@ -659,7 +658,6 @@ module HandbrakeCLI
         # subtitles
         psubtitles = subtitles.collect{ |s| s.pos }
         command << " --subtitle #{psubtitles.join(',')}" if not psubtitles.empty?()
-        result.subtitles = subtitles
   
         command << " --title #{title.pos}"
   
@@ -672,7 +670,7 @@ module HandbrakeCLI
           command << " 2>#{Tools::OS::nullDevice()}"
         end
   
-        HandbrakeCLI::logger.warn "converting title #{title.pos} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
+        HandbrakeCLI::logger.warn "converting title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
         if not tracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
           tracks.each do |t|
