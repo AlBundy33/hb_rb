@@ -17,8 +17,9 @@ module HandbrakeCLI
                   :checkOnly, :xtra_args, :debug, :verbose,
                   :x264profile, :x264preset, :x264tune,
                   :testdata, :preview, :inputDoneCommand, :outputDoneCommand,
-                  :waitTimeout, :loops,
-                  :logfile, :logOverride, :logOverview
+                  :inputWaitLoops, :loops,
+                  :logfile, :logOverride, :logOverview,
+                  :ejectCommand
 
     def self.showUsageAndExit(options, msg = nil)
       puts options.to_s
@@ -77,16 +78,27 @@ module HandbrakeCLI
       options = HBOptions.new
       optparse = OptionParser.new do |opts|
         opts.separator("")
-        opts.separator("files")
+        opts.separator("common")
         opts.on("--input INPUT", "input-source") { |arg| options.input = arg }
         opts.on("--output OUTPUT", "output-file (mp4, m4v and mkv supported)") { |arg| options.output = arg }
         opts.on("--force", "force override of existing files") { |arg| options.force = arg }
         opts.on("--loops LOOPS", "processes input LOOPS times (default: 1)") { |arg| options.loops = arg.to_i }
         opts.on("--input-done-cmd COMMAND", "runs COMMAND after input was processed (use #input# as placeholder)") { |arg| options.inputDoneCommand = arg }
         opts.on("--output-done-cmd COMMAND", "runs COMMAND after an output-file was generated (use #output# as placeholder)") { |arg| options.outputDoneCommand = arg }
-        opts.on("--wait-timeout SECONDS", "waits SECONDS seconds until input exists (default: unlimited)") { |arg| options.waitTimeout = arg.to_i }
+        opts.on("--wait LOOPS", "retries LOOPS times to wait for input (default: unlimited)") { |arg| options.inputWaitLoops = arg.to_i }
         opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
         opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts) }
+        if Tools::OS::osx? or Tools::OS::platform?(Tools::OS::LINUX)
+          opts.on("--eject", "eject tray after input was processed (only OSX and Linux)") {|arg|
+            if Tools::OS::osx? 
+              options.ejectCommand = "drutil tray eject"
+            elsif Tools::OS::platform?(Tools::OS::LINUX)
+              options.ejectCommand = "eject #input#"
+            else
+              raise "should not happen..."
+            end
+          }
+        end
       
         opts.separator("")
         opts.separator("output-options")
@@ -161,7 +173,7 @@ module HandbrakeCLI
       end
       
       # set default values
-      options.waitTimeout = -1 if options.waitTimeout.nil?
+      options.inputWaitLoops= -1 if options.inputWaitLoops.nil?
       options.loops = 1 if options.loops.nil?
       options.force = false if options.force.nil?
       options.ipodCompatibility = false if options.ipodCompatibility.nil?
@@ -726,11 +738,19 @@ module HandbrakeCLI
         end
         HandbrakeCLI::logger.warn("== done ===========================================================")
       end
+      # execute userdefined command
       unless options.inputDoneCommand.nil?
         cmd = options.inputDoneCommand.dup
         cmd.gsub!("#input#", options.input)
         HandbrakeCLI::logger.info(cmd)
         Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
+        raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
+      end
+      # eject disc (built-in-command)
+      unless options.ejectCommand.nil?
+        cmd = options.ejectCommand
+        cmd.gsub!("#input#", options.input)
+        system cmd
         raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
       end
       return created
