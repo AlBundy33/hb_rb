@@ -243,7 +243,7 @@ module Tools
   end
   
   class FileTool
-    def self.waitfor(file, retry_count = -1, msg = nil)
+    def self.wait_for(file, retry_count = -1, sleep_time = 1)
       found = false
       loop = retry_count
       while !found and (loop != 0)
@@ -270,9 +270,8 @@ module Tools
             break
           end
         end
-        puts msg if loop == retry_count and !msg.nil?
-        #puts "#{msg} (#{loop})" if !msg.nil?
-        sleep 1
+        yield(loop, retry_count) if block_given?
+        sleep sleep_time
         loop -= 1
       end
       return found

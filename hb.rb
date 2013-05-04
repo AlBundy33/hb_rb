@@ -65,7 +65,7 @@ while current_loop != 0
     i_list.each do |i|
       opts = options.dup
       opts.input = i
-      unless Tools::FileTool::waitfor(opts.input, options.waitTimeout, "waiting for #{opts.input}...")
+      unless Tools::FileTool::wait_for(opts.input, options.waitTimeout) {|loop, max| puts "waiting for #{opts.input} (#{loop.abs})..." }
         puts "#{opts.input} does not exist"
         next
       end
