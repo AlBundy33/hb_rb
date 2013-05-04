@@ -81,7 +81,7 @@ module HandbrakeCLI
         opts.on("--input INPUT", "input-source") { |arg| options.input = arg }
         opts.on("--output OUTPUT", "output-file (mp4, m4v and mkv supported)") { |arg| options.output = arg }
         opts.on("--force", "force override of existing files") { |arg| options.force = arg }
-        opts.on("--loops LOOPS", "processes input LOOPS times (default: 1)") { |arg| loops = arg.to_i }
+        opts.on("--loops LOOPS", "processes input LOOPS times (default: 1)") { |arg| options.loops = arg.to_i }
         opts.on("--input-done-cmd COMMAND", "runs COMMAND after input was processed (use #input# as placeholder)") { |arg| options.inputDoneCommand = arg }
         opts.on("--output-done-cmd COMMAND", "runs COMMAND after an output-file was generated (use #output# as placeholder)") { |arg| options.outputDoneCommand = arg }
         opts.on("--wait-timeout SECONDS", "waits SECONDS seconds until input exists (default: unlimited)") { |arg| options.waitTimeout = arg.to_i }
