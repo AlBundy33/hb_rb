@@ -575,6 +575,8 @@ module HandbrakeCLI
           command << " --start-at duration:#{Tools::TimeTool::timeToSeconds(start_at)}"
           command << " --stop-at duration:#{Tools::TimeTool::timeToSeconds(stop_at)}"
         end
+        
+        command << " --title #{title.pos}"
   
         # audio
         paudio = []
@@ -668,8 +670,6 @@ module HandbrakeCLI
         # subtitles
         psubtitles = subtitles.collect{ |s| s.pos }
         command << " --subtitle #{psubtitles.join(',')}" if not psubtitles.empty?()
-  
-        command << " --title #{title.pos}"
   
         # arguments to delegate...
         command << " #{options.xtra_args}" if not options.xtra_args.nil?
