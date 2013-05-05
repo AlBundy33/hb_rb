@@ -91,12 +91,10 @@ module HandbrakeCLI
         opts.on("--output-done-cmd COMMAND", "runs COMMAND after an output-file was generated (use #output# as placeholder)") { |arg| options.outputDoneCommand = arg }
         opts.on("--wait LOOPS", "retries LOOPS times to wait for input (default: unlimited)") { |arg| options.inputWaitLoops = arg.to_i }
         opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
-        opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts) }
         if eject_commands.has_key?(Tools::OS::platform())
-          opts.on("--eject", "eject tray after input was processed") {|arg|
-              options.ejectProc = eject_commands[Tools::OS::platform()]
-          }
+          opts.on("--eject", "eject tray after input was processed") {|arg| options.ejectProc = eject_commands[Tools::OS::platform()] }
         end
+        opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts) }
       
         opts.separator("")
         opts.separator("output-options")
@@ -171,7 +169,7 @@ module HandbrakeCLI
       end
       
       # set default values
-      options.inputWaitLoops= -1 if options.inputWaitLoops.nil?
+      options.inputWaitLoops = -1 if options.inputWaitLoops.nil?
       options.loops = 1 if options.loops.nil?
       options.force = false if options.force.nil?
       options.ipodCompatibility = false if options.ipodCompatibility.nil?
@@ -503,7 +501,7 @@ module HandbrakeCLI
           raise "error unsupported extension #{ext}"
         end
   
-        command="\"#{HANDBRAKE_CLI}\""
+        command = "\"#{HANDBRAKE_CLI}\""
         command << " --input \"#{source.path()}\""
         command << " --output \"#{outputFile}\""
         command << " --chapters #{options.chapters}" if not options.chapters.nil?
