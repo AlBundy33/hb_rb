@@ -19,7 +19,7 @@ module HandbrakeCLI
                   :testdata, :preview, :inputDoneCommand, :outputDoneCommand,
                   :inputWaitLoops, :loops,
                   :logfile, :logOverride, :logOverview,
-                  :ejectCommand
+                  :ejectProc
 
     def self.showUsageAndExit(options, msg = nil)
       puts options.to_s
@@ -75,6 +75,10 @@ module HandbrakeCLI
     end
 
     def self.parseArgs(arguments)
+      eject_commands = {}
+      eject_commands[Tools::OS::OSX] = lambda{|input| "drutil tray eject" }
+      eject_commands[Tools::OS::LINUX] = lambda{|input| "eject #{input}" }
+
       options = HBOptions.new
       optparse = OptionParser.new do |opts|
         opts.separator("")
@@ -88,15 +92,9 @@ module HandbrakeCLI
         opts.on("--wait LOOPS", "retries LOOPS times to wait for input (default: unlimited)") { |arg| options.inputWaitLoops = arg.to_i }
         opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
         opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts) }
-        if Tools::OS::osx? or Tools::OS::platform?(Tools::OS::LINUX)
-          opts.on("--eject", "eject tray after input was processed (only OSX and Linux)") {|arg|
-            if Tools::OS::osx? 
-              options.ejectCommand = "drutil tray eject"
-            elsif Tools::OS::platform?(Tools::OS::LINUX)
-              options.ejectCommand = "eject #input#"
-            else
-              raise "should not happen..."
-            end
+        if eject_commands.has_key?(Tools::OS::platform())
+          opts.on("--eject", "eject tray after input was processed") {|arg|
+              options.ejectProc = eject_commands[Tools::OS::platform()]
           }
         end
       
@@ -747,9 +745,8 @@ module HandbrakeCLI
         raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
       end
       # eject disc (built-in-command)
-      unless options.ejectCommand.nil?
-        cmd = options.ejectCommand
-        cmd.gsub!("#input#", options.input)
+      unless options.ejectProc.nil?
+        cmd = options.ejectProc.call(options.input)
         system cmd
         raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
       end
