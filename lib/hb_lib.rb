@@ -678,6 +678,7 @@ module HandbrakeCLI
           command << " 2>#{Tools::OS::nullDevice()}"
         end
   
+        start_time = Time.now
         HandbrakeCLI::logger.warn "converting title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
         if not tracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
@@ -732,7 +733,9 @@ module HandbrakeCLI
             HandbrakeCLI::logger.warn("file #{outputFile} not created")
           end
         end
-        HandbrakeCLI::logger.warn("== done ===========================================================")
+        end_time = Time.now
+        required_time = Tools::TimeTool::secondsToTime((end_time - start_time).round)
+        HandbrakeCLI::logger.warn("== done (required time: #{required_time}) =================================")
       end
       # execute userdefined command
       unless options.inputDoneCommand.nil?
