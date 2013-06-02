@@ -4,7 +4,7 @@ require './lib/tools.rb'
 
 module HandbrakeCLI
   class HBConvertResult
-    attr_accessor :command, :file, :source, :title, :audiotitles, :subtitles
+    attr_accessor :command, :file, :source, :title, :audiotitles, :subtitles, :output
   end
   class HBOptions
     attr_accessor :input, :output, :force,
@@ -679,7 +679,20 @@ module HandbrakeCLI
         end
   
         start_time = Time.now
-        HandbrakeCLI::logger.warn "converting title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
+        HandbrakeCLI::logger.warn "input title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
+        unless title.audioTracks.empty?
+          HandbrakeCLI::logger.warn "  audio-tracks"
+          title.audioTracks.each do |t|
+            HandbrakeCLI::logger.warn "    - track #{t.pos}: #{t.descr}"
+          end
+        end
+        unless title.subtitles.empty?
+          HandbrakeCLI::logger.warn "  subtitles"
+          title.subtitles.each do |s|
+            HandbrakeCLI::logger.warn "    - track #{s.pos}: #{s.descr}"
+          end
+        end
+        HandbrakeCLI::logger.warn "  == converting to ==" 
         if not tracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
           tracks.each do |t|
@@ -727,6 +740,7 @@ module HandbrakeCLI
               end
               result.file = outputFile
               result.command = command
+              result.output = readInfo(outputFile, false, nil)
               created << result
             end
           else

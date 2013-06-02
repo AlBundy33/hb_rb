@@ -70,34 +70,53 @@ while current_loop != 0
         next
       end
       results = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
-      inout << [opts.input, results.collect{|r| r.file}]
+      inout << [opts.input, results]
     end
   end
   current_loop -= 1
 end
 
 # default overview
-HandbrakeCLI::logger.warn("overview")
-inout.each do |input,outputs|
-  HandbrakeCLI::logger.warn("#{input}")
-  if outputs.empty?
-    HandbrakeCLI::logger.warn("  -> n/a")
-  else
-    outputs.each{|file| HandbrakeCLI::logger.warn("  -> #{file}") }
-  end
+if options.logOverview.nil?
+  overview = nil
+else
+  overview = File.open(options.logOverview, options.logOverride ? "w" : "a")
 end
 
-# additional overview-file
-unless options.logOverview.nil?
-  File.open(options.logOverview, options.logOverride ? "w" : "a"){ |file|
-    file.puts "overview"
-    inout.each do |input, outputs|
-      file.puts input
-      if outputs.empty?
-        file.puts "  --> n/a"
-      else
-        outputs.each {|o| file.puts "  --> #{o}" }
+write_overview = lambda{|msg|
+  HandbrakeCLI::logger.warn("#{msg}")
+  overview.puts("#{msg}") unless overview.nil?  
+}
+
+begin
+  write_overview.call("overview")
+  inout.each do |input,results|
+    write_overview.call("input: #{input}")
+    if results.empty?
+      write_overview.call("  no outputs")
+    else
+      results.each do |result|
+        write_overview.call("  #{result.file} (#{Tools::FileTool::humanReadableSize(Tools::FileTool::size(result.file))})")
+        unless result.output.nil?
+          result.output.titles.each do |title|
+            write_overview.call("    title #{title.pos} #{title.duration}, #{title.size}, #{title.fps}fps")
+            unless title.audioTracks.empty?
+              write_overview.call("      audio-tracks:")
+              title.audioTracks.each do |t|
+                write_overview.call("        track #{t.pos}. #{t.descr} (#{t.lang})")  
+              end
+            end
+            unless title.subtitles.empty?
+              write_overview.call("      subtitles:")
+              title.subtitles.each do |t|
+                write_overview.call("        track #{t.pos}. #{t.descr} (#{t.lang})")  
+              end
+            end
+          end
+        end
       end
     end
-  }
+  end
+ensure
+  overview.close unless overview.nil?
 end
