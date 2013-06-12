@@ -81,7 +81,7 @@ class SublerCLITagger < Tagger
       tags << "{#{escape(tag)}:#{escape(value)}}"
     end
     return nil if tags.length == 0
-    return "\"#{SUBLER_CLI}\" -i \"#{file}\" -t \"#{tags}\""
+    return "\"#{@command}\" -i \"#{file}\" -t \"#{tags}\""
   end
 
   def escape(tag)
@@ -95,9 +95,9 @@ end
 
 class TaggerFactory
   @@TAGGERS = [
-    SublerCLITagger.new(Tools::OS::OSX, SublerCLITagger::OSX_COMMAND),
     AtomicParsley.new(Tools::OS::OSX, AtomicParsley::OSX_COMMAND),
-    AtomicParsley.new(Tools::OS::WINDOWS, AtomicParsley::WIN_COMMAND)
+    AtomicParsley.new(Tools::OS::WINDOWS, AtomicParsley::WIN_COMMAND),
+    SublerCLITagger.new(Tools::OS::OSX, SublerCLITagger::OSX_COMMAND)
   ]
 
   def self.newTagger()
