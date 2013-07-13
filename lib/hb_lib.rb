@@ -19,7 +19,7 @@ module HandbrakeCLI
                   :testdata, :preview, :inputDoneCommand, :outputDoneCommand,
                   :inputWaitLoops, :loops,
                   :logfile, :logOverride, :logOverview,
-                  :ejectProc
+                  :ejectProc, :bluray
 
     def self.showUsageAndExit(options, msg = nil)
       puts options.to_s
@@ -99,6 +99,7 @@ module HandbrakeCLI
         opts.separator("")
         opts.separator("output-options")
         opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
+        opts.on("--bluray", "disables decomb and enables support for mp4-files over 4GB") { |arg| options.bluray = arg }
         opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
         opts.on("--max-height HEIGTH", "maximum video height (e.g. 720, 1080)") { |arg| options.maxHeight = arg }
         opts.on("--max-width WIDTH", "maximum video width (e.g. 1920)") { |arg| options.maxWidth = arg }
@@ -111,6 +112,10 @@ module HandbrakeCLI
         opts.on("--audio-mixdown-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioMixdownEncoder = arg }
         opts.on("--audio-mixdown-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioMixdownBitrate = arg }
         opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
+        opts.on("--lang LANGUAGES", Array, "set subtitle and audio languges") { |arg|
+          options.languages = arg
+          options.subtitles = arg
+        }
         opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().keys.join(', ')})") { |arg| options.preset = arg }
         opts.on("--preview [RANGE]", "convert only a preview in RANGE (default: 00:01:00-00:02:00)") { |arg| options.preview = arg || "00:01:00-00:02:00" }
       
@@ -533,7 +538,7 @@ module HandbrakeCLI
         if options.preset.nil?
           command << " --encoder x264"
           command << " --quality 20.0"
-          command << " --decomb"
+          command << " --decomb" if not options.bluray
           command << " --detelecine"
           command << " --crop 0:0:0:0" if not options.enableAutocrop
           if not options.ipodCompatibility
@@ -555,6 +560,7 @@ module HandbrakeCLI
         if ismp4
           command << " --format mp4"
           command << " --optimize"
+          command << " --large-file" if options.bluray
         elsif ismkv
           command << " --format mkv"
         end
