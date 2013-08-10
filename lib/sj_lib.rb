@@ -2,6 +2,7 @@ class Serienjunkies
   require 'rubygems'
   require 'hpricot'
   require 'open-uri'
+  require 'iconv'
 
   URL = 'http://www.serienjunkies.de'
   
@@ -50,11 +51,11 @@ class Serienjunkies
     if Tools::OS::windows?
       begin
         v = Iconv.iconv('iso-8859-15', 'utf-8', value).first
-      rescue
+      rescue => e
         v = value
       end
       value = v
-    end 
+    end
     return value.strip
   end
 
