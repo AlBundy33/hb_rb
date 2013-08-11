@@ -2,29 +2,7 @@
 require 'optparse'
 require './lib/tools.rb'
 require './lib/taggers.rb'
-require './lib/sj_lib.rb'
-
-class TagData
-  attr_accessor :name, :season, :episode, :title_de, :title_en, :descr, :sj_url
-  def initialize(name, season, episode)
-    @name = name
-    @season = season
-    @episode = episode
-  end
-
-  def to_s
-    "%s - %02dx%02d - %s (%s)\n%s" % [@name, @season, @episode, @title_de, @title_en, @descr]
-  end
-  
-  def to_map
-    {
-      "season" => "#{season}",
-      "episode" => "#{episode}",
-      "name" => "#{name}",
-      "title" => "#{title_de}"
-    }
-  end
-end
+require './lib/provider_lib.rb'
 
 def showUsageAndExit(options, msg = nil)
   puts options
@@ -36,13 +14,18 @@ def showUsageAndExit(options, msg = nil)
   exit
 end
 
-options = Struct.new(:sjid, :name, :season, :episode, :rename, :tag, :file).new
+providers = {}
+providers["sj"] = Serienjunkies.new
+
+options = Struct.new(:identifier, :name, :season, :episode, :rename, :tag, :test, :append_old_name, :pattern, :provider).new
+options.pattern = "#name# - #season#x#episode# - #title# (#title_en#).#filename#"
+options.provider = "sj"
 ARGV.options do |opts|
-  opts.on("--file FILE", "the file") do |arg|
-      options.file = arg
-    end
-  opts.on("--id SJID", "serienjunkies-id") do |arg|
-    options.sjid = arg
+  opts.on("--provider PROVIDER", "tag-provider (available: #{providers.keys().join(', ')})") do |arg|
+    options.provider = arg
+  end
+  opts.on("--id ID", "series ID (depending on provider)") do |arg|
+    options.identifier = arg
   end
   opts.on("--season NUM", "season number") do |arg|
     options.season = arg.to_i
@@ -53,11 +36,17 @@ ARGV.options do |opts|
   opts.on("--name NAME", "series name") do |arg|
     options.name = arg
   end
-  opts.on("--rename", "rename file") do |arg|
-    options.rename = arg
+  opts.on("--test", "test-only") do |arg|
+    options.test = arg
   end
   opts.on("--tag", "tag file") do |arg|
     options.tag = arg
+  end
+  opts.on("--rename", "rename file") do |arg|
+    options.rename = arg
+  end
+  opts.on("--pattern PATTERN", "pattern for the new name (default: #{options.pattern})") do |arg|
+    options.pattern = arg
   end
   opts.on("--help", "Display this screen") do
     showUsageAndExit(opts.to_s)
@@ -65,36 +54,51 @@ ARGV.options do |opts|
 end
 
 ARGV.parse!
-showUsageAndExit(ARGV.options, "no file set") if options.file.nil?
-showUsageAndExit(ARGV.options, "no id set") if options.sjid.nil?
+showUsageAndExit(ARGV.options, "no file set") if ARGV.empty?
+showUsageAndExit(ARGV.options, "no id set") if options.identifier.nil?
 showUsageAndExit(ARGV.options, "no season set") if options.season.nil?
 showUsageAndExit(ARGV.options, "no episode set") if options.episode.nil?
-showUsageAndExit(ARGV.options, "choose rename and/or tag") if options.rename.nil? and options.tag.nil? 
+showUsageAndExit(ARGV.options, "choose rename and/or tag") if options.rename.nil? and options.tag.nil? and !options.test
+showUsageAndExit(ARGV.options, "unknown provider #{options.provider}") if providers[options.provider].nil? 
 
-info = Serienjunkies::load(options.sjid, options.season, options.episode)
-info.name = options.name unless options.name.nil?
-
-if options.tag
-  tagger = TaggerFactory::newTagger()
-  cmd = tagger.createCommand(options.file, info.to_map)
-  if cmd.nil?
-    Tools::CON.warn("found no command to tag file")
-  else
-    Tools::CON.info("tagging file: #{cmd}")
-    system(cmd)
+season = options.season
+episode = options.episode
+ARGV.each do |f|
+  info = providers[options.provider].load(options.identifier, season, episode)
+  info.name = options.name unless options.name.nil?
+  if options.test
+    puts f
+    puts info
   end
-end
 
-if options.rename
-  new_name = "%s - %02dx%02d - %s (%s)" % [info.name, info.season, info.episode, info.title_de, info.title_en]
-  new_name = new_name + File.extname(options.file)
-  new_name = File.expand_path(File.join(File.dirname(options.file), new_name))
-  if not File.expand_path(options.file).eql?(new_name)
-    if File.exist(new_file)
-      Tools::CON.warn("cannot rename #{options.file} to #{new_name} because target already exist")
-    else 
-      Tools::CON.info("renaming #{options.file} to #{new_name}")
-      File.rename(options.file, new_name)
+  if options.tag
+    tagger = TaggerFactory::newTagger()
+    cmd = tagger.createCommand(f, info.to_map)
+    if cmd.nil?
+      Tools::CON.warn("found no command to tag file")
+    else
+      Tools::CON.info("tagging file: #{cmd}")
+      system(cmd) unless options.test
     end
-  end  
+  end
+  
+  if options.rename
+    new_name = options.pattern.dup
+    info.to_map.each do |k,v|
+      new_name.gsub!(/##{k}#/, v)
+    end
+    new_name.gsub!(/#filename#/, File.basename(f, ".*"))
+    new_name = new_name + File.extname(f)
+    new_name = File.expand_path(File.join(File.dirname(f), new_name))
+    if not File.expand_path(f).eql?(new_name)
+      if File.exist?(new_name)
+        Tools::CON.warn("cannot rename #{f} to #{new_name} because target already exist")
+      else 
+        Tools::CON.info("renaming\n\tfile: #{f}\n\t  to: #{new_name}")
+        File.rename(f, new_name) unless options.test
+      end
+    end  
+  end
+
+  episode += 1
 end
