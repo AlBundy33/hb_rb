@@ -1,5 +1,11 @@
+require 'rubygems'
+require 'hpricot'
+require 'open-uri'
+require 'iconv'
+require 'imdb'
+
 class TagData
-  attr_accessor :name, :season, :episode, :title_de, :title_en, :descr, :sj_url
+  attr_accessor :name, :season, :episode, :title_de, :title_en, :descr, :url
   def initialize(name, season, episode)
     @name = name
     @season = season
@@ -23,10 +29,6 @@ class TagData
 end
 
 class AbstractInfoProvider
-  require 'rubygems'
-  require 'hpricot'
-  require 'open-uri'
-  require 'iconv'
 
   #USER_AGENT = 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2'
   if Tools::OS::windows?()
@@ -64,13 +66,26 @@ class AbstractInfoProvider
   end
 end
 
-class Serienjunkies < AbstractInfoProvider
+class ImdbProvider < AbstractInfoProvider
+  def load(identifier, season, episode)
+    imdb_search = Imdb::Search.new(identifier)
+    imdb_serie = Imdb::Serie.new(imdb_search.movies.first.id)
+    imdb_episode = imdb_serie.season(season).episode(episode)
+    raise "found no info for #{identifier} season #{season} episode #{episode} at imdb" if imdb_search.movies.nil? or imdb_search.movies.empty?
+    info = TagData.new(imdb_serie.title, season, episode)
+    info.title_en = imdb_episode.title
+    info.url = imdb_episode.url
+    return info
+  end
+end
+
+class SerienjunkiesProvider < AbstractInfoProvider
 
   URL = 'http://www.serienjunkies.de'
   
-  def load(serienjunkies_id, season, episode)
+  def load(identifier, season, episode)
     e = "%dx%02d" % [season, episode]
-    url = URL + '/' + serienjunkies_id + '/alle-serien-staffeln.html'
+    url = URL + '/' + identifier + '/alle-serien-staffeln.html'
     doc = loadUrl(url)
 
     name = doc.search("//*[@id='.C3.9Cbersicht']/a").innerHTML
@@ -78,7 +93,7 @@ class Serienjunkies < AbstractInfoProvider
     table = doc.search("table[@class=eplist]")
     elements = table.search("td[text()='#{e}']")
   
-    raise "found no info for #{serienjunkies_id} episode #{e} at #{url}" if elements.nil? or elements.empty?
+    raise "found no info for #{identifier} episode #{e} at #{url}" if elements.nil? or elements.empty?
 
     elements.each do |td|
       tr = td.parent
@@ -92,7 +107,7 @@ class Serienjunkies < AbstractInfoProvider
       
       if not links.empty?
         descr_link = links[0].get_attribute("href") 
-        info.sj_url = str(URL + descr_link)
+        info.url = str(URL + descr_link)
         info.descr = descr(URL + descr_link)
       end
     end

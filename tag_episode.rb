@@ -15,7 +15,8 @@ def showUsageAndExit(options, msg = nil)
 end
 
 providers = {}
-providers["sj"] = Serienjunkies.new
+providers["sj"] = SerienjunkiesProvider.new
+providers["imdb"] = ImdbProvider.new
 
 options = Struct.new(:identifier, :name, :season, :episode, :rename, :tag, :test, :append_old_name, :pattern, :provider).new
 options.pattern = "#name# - #season#x#episode# - #title# (#title_en#).#filename#"
@@ -68,7 +69,7 @@ ARGV.each do |f|
   info.name = options.name unless options.name.nil?
   if options.test
     puts f
-    puts info
+    info.to_map.each {|k,v| puts "\t#{k} = #{v}" }
   end
 
   if options.tag
