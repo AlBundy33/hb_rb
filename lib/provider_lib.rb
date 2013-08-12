@@ -5,7 +5,7 @@ require 'iconv'
 require 'imdb'
 
 class TagData
-  attr_accessor :name, :season, :episode, :title_de, :title_en, :descr, :url
+  attr_accessor :name, :season, :episode, :title, :title_org, :descr, :url
   def initialize(name, season, episode)
     @name = name
     @season = season
@@ -13,7 +13,7 @@ class TagData
   end
 
   def to_s
-    "%s - %02dx%02d - %s (%s)\n%s" % [@name, @season, @episode, @title_de, @title_en, @descr]
+    "%s - %02dx%02d - %s (%s)\n%s" % [@name, @season, @episode, @title, @title_org, @descr]
   end
   
   def to_map
@@ -21,8 +21,8 @@ class TagData
       "name" => "#{name}",
       "season" => "%02d" % season,
       "episode" => "%02d" % episode,
-      "title" => "#{title_de}",
-      "title_en" => "#{title_en}",
+      "title" => "#{title}",
+      "title_org" => "#{title_org}",
       "descr" => "#{descr}"
     }
   end
@@ -39,6 +39,10 @@ class AbstractInfoProvider
   
   def load(identifier, season, episode)
     raise "unimplemented yet"
+  end
+  
+  def name
+    self.class.to_s
   end
   
   def loadUrl(url)
@@ -67,13 +71,17 @@ class AbstractInfoProvider
 end
 
 class ImdbProvider < AbstractInfoProvider
+  def name()
+    "get informations from imdb.com (en) - ID = Name of the series"
+  end
   def load(identifier, season, episode)
     imdb_search = Imdb::Search.new(identifier)
     imdb_serie = Imdb::Serie.new(imdb_search.movies.first.id)
     imdb_episode = imdb_serie.season(season).episode(episode)
     raise "found no info for #{identifier} season #{season} episode #{episode} at imdb" if imdb_search.movies.nil? or imdb_search.movies.empty?
     info = TagData.new(imdb_serie.title, season, episode)
-    info.title_en = imdb_episode.title
+    info.title_org = imdb_episode.title
+    info.title = info.title_org
     info.url = imdb_episode.url
     return info
   end
@@ -82,6 +90,10 @@ end
 class SerienjunkiesProvider < AbstractInfoProvider
 
   URL = 'http://www.serienjunkies.de'
+  
+  def name
+    "get informations from serienjunkies.de (de) - ID = part of the series-url"
+  end
   
   def load(identifier, season, episode)
     e = "%dx%02d" % [season, episode]
@@ -100,10 +112,10 @@ class SerienjunkiesProvider < AbstractInfoProvider
       data = tr.search("td")
       raise "found not info for #{e} at #{url}" if data.size() < 4
       links = data[2].search("a")
-      info.title_en = str(links[0].innerText()) unless links.empty? 
+      info.title_org = str(links[0].innerText()) unless links.empty? 
 
       links = data[3].search("a")
-      info.title_de = str(links[0].innerText()) unless links.empty?
+      info.title = str(links[0].innerText()) unless links.empty?
       
       if not links.empty?
         descr_link = links[0].get_attribute("href") 

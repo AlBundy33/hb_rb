@@ -19,10 +19,12 @@ providers["sj"] = SerienjunkiesProvider.new
 providers["imdb"] = ImdbProvider.new
 
 options = Struct.new(:identifier, :name, :season, :episode, :rename, :tag, :test, :append_old_name, :pattern, :provider).new
-options.pattern = "#name# - #season#x#episode# - #title# (#title_en#).#filename#"
+options.pattern = "#name# - #season#x#episode# - #title# (#title_org#).#filename#"
 options.provider = "sj"
+provider_list = ""
+providers.each{|k,v| provider_list << "\n\t\t#{k}: #{v.name}"}
 ARGV.options do |opts|
-  opts.on("--provider PROVIDER", "tag-provider (available: #{providers.keys().join(', ')})") do |arg|
+  opts.on("--provider PROVIDER", "tag-provider#{provider_list}") do |arg|
     options.provider = arg
   end
   opts.on("--id ID", "series ID (depending on provider)") do |arg|
@@ -34,7 +36,7 @@ ARGV.options do |opts|
   opts.on("--episode NUM", "episode number") do |arg|
     options.episode = arg.to_i
   end
-  opts.on("--name NAME", "series name") do |arg|
+  opts.on("--name NAME", "series name (overrides name from provider)") do |arg|
     options.name = arg
   end
   opts.on("--test", "test-only") do |arg|
