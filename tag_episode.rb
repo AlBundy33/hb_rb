@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 require 'optparse'
 require './lib/tools.rb'
 require './lib/taggers.rb'
