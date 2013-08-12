@@ -7,8 +7,13 @@
 		<fileset dir=".">
 			<exclude name="**/.svn" />
 			<include name="tools/handbrake/*"/>
+			<include name="tools/atomicparsley/*"/>
+			<include name="tools/subler/*"/>
 			<include name="lib/tools.rb" />
 			<include name="lib/hb_lib.rb" />
+			<include name="lib/taggers.rb"/>
+			<include name="lib/provider_lib.rb"/>
+			<include name="tag_episode.rb" />
 			<include name="hb.rb" />
 			<include name="readme.txt" />
 		</fileset>
