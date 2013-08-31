@@ -52,6 +52,12 @@ class AbstractInfoProvider
     content.gsub!(/&auml;/, "ä")
     content.gsub!(/&uuml;/, "ü")
     content.gsub!(/&szlig;/, "ß")
+    content.gsub!("\374", "ü")
+    content.gsub!("\334", "Ü")
+    content.gsub!("\344", "ä")
+    content.gsub!("\304", "Ä")
+    content.gsub!("\366", "ö")
+    content.gsub!("\326", "Ö")
     doc = Hpricot(content)
     return doc
   end
@@ -112,11 +118,11 @@ class SerienjunkiesProvider < AbstractInfoProvider
       data = tr.search("td")
       raise "found not info for #{e} at #{url}" if data.size() < 4
       links = data[2].search("a")
-      info.title_org = str(links[0].innerText()) unless links.empty? 
-
+      info.title_org = str(links[0].innerText()) unless links.empty?
+        
       links = data[3].search("a")
       info.title = str(links[0].innerText()) unless links.empty?
-      
+
       if not links.empty?
         descr_link = links[0].get_attribute("href") 
         info.url = str(URL + descr_link)
