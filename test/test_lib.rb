@@ -1,5 +1,5 @@
-require './lib/tools.rb'
-require './lib/hb_lib.rb'
+require File.join(File.dirname(__FILE__), "..", "lib", "tools.rb")
+require File.join(File.dirname(__FILE__), "..", "lib", "hb_lib.rb")
 
 class AbstractTestCase < Test::Unit::TestCase
   def get_results(dvd, *args)

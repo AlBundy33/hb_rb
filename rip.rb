@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'optparse'
-require './lib/tools.rb'
+require File.join(File.dirname(__FILE__), "lib", "tools.rb")
 require 'fileutils'
 
 class Ripper

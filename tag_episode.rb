@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 require 'optparse'
-require './lib/tools.rb'
-require './lib/taggers.rb'
-require './lib/provider_lib.rb'
+require File.join(File.dirname(__FILE__), "lib", "tools.rb")
+require File.join(File.dirname(__FILE__), "lib", "taggers.rb")
+require File.join(File.dirname(__FILE__), "lib", "provider_lib.rb") 
 
 def showUsageAndExit(options, msg = nil)
   puts options
@@ -15,6 +15,7 @@ def showUsageAndExit(options, msg = nil)
 end
 
 providers = {}
+#providers["thetvdb"] = TheTvDbProvider.new
 providers["sj"] = SerienjunkiesProvider.new
 providers["imdb"] = ImdbProvider.new
 
@@ -22,12 +23,12 @@ options = Struct.new(:identifier, :name, :season, :episode, :rename, :tag, :test
 options.pattern = "#name# - #season#x#episode# - #title# (#title_org#).#filename#"
 options.provider = "sj"
 provider_list = ""
-providers.each{|k,v| provider_list << "\n\t\t#{k}: #{v.name}"}
+providers.each{|k,v| provider_list << "\n\t\t#{k}: #{v.name} (#{v.languages.join(', ')})"}
 ARGV.options do |opts|
   opts.on("--provider PROVIDER", "tag-provider#{provider_list}") do |arg|
     options.provider = arg
   end
-  opts.on("--id ID", "series ID (depending on provider)") do |arg|
+  opts.on("--query QUERY", "series QUERY (depending on provider)") do |arg|
     options.identifier = arg
   end
   opts.on("--season NUM", "season number") do |arg|

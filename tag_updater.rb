@@ -2,9 +2,9 @@
 
 require 'optparse'
 require 'csv'
-require './lib/tools.rb'
-require './lib/taggers.rb'
 require 'iconv'
+require File.join(File.dirname(__FILE__), "lib", "tools.rb")
+require File.join(File.dirname(__FILE__), "lib", "taggers.rb")
 
 class Serienjunkies
   require 'rubygems'

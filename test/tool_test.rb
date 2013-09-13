@@ -1,5 +1,5 @@
 require 'test/unit'
-require './lib/tools.rb'
+require File.join(File.dirname(__FILE__), "..", "lib", "tools.rb")
 
 class ToolTest < Test::Unit::TestCase
   def testTimeToSeconds

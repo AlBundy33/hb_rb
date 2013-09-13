@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'logger'
-require './lib/hb_lib.rb'
+require File.join(File.dirname(__FILE__), "lib", "hb_lib.rb")
 include HandbrakeCLI
 
 def cleanup()

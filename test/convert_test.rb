@@ -1,8 +1,8 @@
 require 'test/unit'
 require 'logger'
-require './lib/tools.rb'
-require './lib/hb_lib.rb'
-require "#{File.dirname(__FILE__)}/test_lib.rb"
+require File.join(File.dirname(__FILE__), "test_lib.rb")
+require File.join(File.dirname(__FILE__), "..", "lib", "tools.rb")
+require File.join(File.dirname(__FILE__), "..", "lib", "hb_lib.rb")
 include HandbrakeCLI
 
 class ToolTest < AbstractTestCase

@@ -3,6 +3,8 @@ require 'hpricot'
 require 'open-uri'
 require 'iconv'
 require 'imdb'
+require 'cgi'
+require 'rexml/document'
 
 class TagData
   attr_accessor :name, :season, :episode, :title, :title_org, :descr, :url
@@ -29,6 +31,8 @@ class TagData
 end
 
 class AbstractInfoProvider
+  
+  attr_accessor :name, :languages
 
   #USER_AGENT = 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2'
   if Tools::OS::windows?()
@@ -37,15 +41,16 @@ class AbstractInfoProvider
     USER_AGENT = 'Mozilla/5.0 (X11; U; Linux i686; de-DE; rv:1.7.3) Gecko/20040924 Epiphany/1.4.4 (Ubuntu)'
   end
   
-  def load(identifier, season, episode)
+  def initialize(name, languages)
+    @name = name
+    @languages = languages
+  end
+  
+  def load(query, season, episode)
     raise "unimplemented yet"
   end
   
-  def name
-    self.class.to_s
-  end
-  
-  def loadUrl(url)
+  def loadUrl(url, xml = false)
     content = open(url, 'User-Agent' => USER_AGENT).read
     content.gsub!(/&Ouml;/, "Ö")
     content.gsub!(/&ouml;/, "ö")
@@ -58,8 +63,12 @@ class AbstractInfoProvider
     content.gsub!("\304", "Ä")
     content.gsub!("\366", "ö")
     content.gsub!("\326", "Ö")
-    doc = Hpricot(content)
-    return doc
+    if xml
+      return REXML::Document.new(content)
+    else
+      doc = Hpricot(content)
+      return doc
+    end
   end
   
   def str(value)
@@ -77,14 +86,14 @@ class AbstractInfoProvider
 end
 
 class ImdbProvider < AbstractInfoProvider
-  def name()
-    "get informations from imdb.com (en) - ID = Name of the series"
+  def initialize()
+    super("imdb.com", ["en"])
   end
-  def load(identifier, season, episode)
-    imdb_search = Imdb::Search.new(identifier)
+  def load(query, season, episode)
+    imdb_search = Imdb::Search.new(query)
     imdb_serie = Imdb::Serie.new(imdb_search.movies.first.id)
     imdb_episode = imdb_serie.season(season).episode(episode)
-    raise "found no info for #{identifier} season #{season} episode #{episode} at imdb" if imdb_search.movies.nil? or imdb_search.movies.empty?
+    raise "found no info for #{query} season #{season} episode #{episode} at imdb" if imdb_search.movies.nil? or imdb_search.movies.empty?
     info = TagData.new(imdb_serie.title, season, episode)
     info.title_org = imdb_episode.title
     info.title = info.title_org
@@ -93,17 +102,38 @@ class ImdbProvider < AbstractInfoProvider
   end
 end
 
+class TheTvDbProvider < AbstractInfoProvider
+  API_KEY = "B89CE93890E9419B"
+  URL = "http://thetvdb.com"
+  def initialize()
+    super("thetvdb.com", ["de", "en"])
+  end
+  
+  def load(query, season, episode)
+    # https://github.com/SamSaffron/tvdb-scraper/blob/master/tvdb_scraper.rb
+    data = loadUrl(URL + "/api/GetSeries.php?seriesname=" + CGI::escape(query), true)
+    series = data.elements().to_a("//Series")
+    raise "found #{series.size} entries for #{query} season #{season} episode #{episode} at thetvdb.com" if series.size != 1
+    tvdb_serie = series.first
+    info = TagData.new(tvdb_serie.elements["SeriesName"].text, season, episode)
+    #info.title_org = imdb_episode.title
+    #info.title = info.title_org
+    #info.url = imdb_episode.url
+    return info
+  end
+end
+
 class SerienjunkiesProvider < AbstractInfoProvider
 
   URL = 'http://www.serienjunkies.de'
   
-  def name
-    "get informations from serienjunkies.de (de) - ID = part of the series-url"
+  def initialize()
+    super("serienjunkies.de", ["de"])
   end
   
-  def load(identifier, season, episode)
+  def load(query, season, episode)
     e = "%dx%02d" % [season, episode]
-    url = URL + '/' + identifier + '/alle-serien-staffeln.html'
+    url = URL + '/' + query + '/alle-serien-staffeln.html'
     doc = loadUrl(url)
 
     name = doc.search("//*[@id='.C3.9Cbersicht']/a").innerHTML
@@ -111,7 +141,7 @@ class SerienjunkiesProvider < AbstractInfoProvider
     table = doc.search("table[@class=eplist]")
     elements = table.search("td[text()='#{e}']")
   
-    raise "found no info for #{identifier} episode #{e} at #{url}" if elements.nil? or elements.empty?
+    raise "found no info for #{query} episode #{e} at #{url}" if elements.nil? or elements.empty?
 
     elements.each do |td|
       tr = td.parent

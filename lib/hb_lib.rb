@@ -1,6 +1,6 @@
 require 'fileutils'
 require 'optparse'
-require './lib/tools.rb'
+require File.join(File.dirname(__FILE__), "tools.rb")
 
 module HandbrakeCLI
   class HBConvertResult
