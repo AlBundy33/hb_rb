@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'optparse'
 require File.join(File.dirname(__FILE__), "tools.rb")
+require File.join(File.dirname(__FILE__), "buildin_commands.rb")
 
 module HandbrakeCLI
   class HBConvertResult
@@ -19,7 +20,7 @@ module HandbrakeCLI
                   :testdata, :preview, :inputDoneCommand, :outputDoneCommand,
                   :inputWaitLoops, :loops,
                   :logfile, :logOverride, :logOverview,
-                  :ejectProc, :bluray
+                  :buildinInputDoneCmd, :buildinOutputDoneCmd, :bluray
 
     def self.showUsageAndExit(options, msg = nil)
       puts options.to_s
@@ -75,10 +76,6 @@ module HandbrakeCLI
     end
 
     def self.parseArgs(arguments)
-      eject_commands = {}
-      eject_commands[Tools::OS::OSX] = lambda{|input| "drutil tray eject" }
-      eject_commands[Tools::OS::LINUX] = lambda{|input| "eject #{input}" }
-
       options = HBOptions.new
       optparse = OptionParser.new do |opts|
         opts.separator("")
@@ -86,16 +83,9 @@ module HandbrakeCLI
         opts.on("--input INPUT", "input-source") { |arg| options.input = arg }
         opts.on("--output OUTPUT", "output-file (mp4, m4v and mkv supported)") { |arg| options.output = arg }
         opts.on("--force", "force override of existing files") { |arg| options.force = arg }
-        opts.on("--loops LOOPS", "processes input LOOPS times (default: 1)") { |arg| options.loops = arg.to_i }
-        opts.on("--input-done-cmd COMMAND", "runs COMMAND after input was processed (use #input# as placeholder)") { |arg| options.inputDoneCommand = arg }
-        opts.on("--output-done-cmd COMMAND", "runs COMMAND after an output-file was generated (use #output# as placeholder)") { |arg| options.outputDoneCommand = arg }
-        opts.on("--wait LOOPS", "retries LOOPS times to wait for input (default: unlimited)") { |arg| options.inputWaitLoops = arg.to_i }
         opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
-        if eject_commands.has_key?(Tools::OS::platform())
-          opts.on("--eject", "eject tray after input was processed") {|arg| options.ejectProc = eject_commands[Tools::OS::platform()] }
-        end
         opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts) }
-      
+
         opts.separator("")
         opts.separator("output-options")
         opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
@@ -112,10 +102,6 @@ module HandbrakeCLI
         opts.on("--audio-mixdown-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioMixdownEncoder = arg }
         opts.on("--audio-mixdown-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioMixdownBitrate = arg }
         opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
-        opts.on("--lang LANGUAGES", Array, "set subtitle and audio languges") { |arg|
-          options.languages = arg
-          options.subtitles = arg
-        }
         opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().keys.join(', ')})") { |arg| options.preset = arg }
         opts.on("--preview [RANGE]", "convert only a preview in RANGE (default: 00:01:00-00:02:00)") { |arg| options.preview = arg || "00:01:00-00:02:00" }
       
@@ -138,6 +124,10 @@ module HandbrakeCLI
       
         opts.separator("")
         opts.separator("expert-options")
+        opts.on("--input-done-cmd COMMAND", "runs COMMAND after input was processed (use #input# as placeholder)") { |arg| options.inputDoneCommand = arg }
+        opts.on("--output-done-cmd COMMAND", "runs COMMAND after an output-file was generated (use #output# as placeholder)") { |arg| options.outputDoneCommand = arg }
+        opts.on("--loops LOOPS", "processes input LOOPS times (default: 1)") { |arg| options.loops = arg.to_i }
+        opts.on("--wait LOOPS", "retries LOOPS times to wait for input (default: unlimited)") { |arg| options.inputWaitLoops = arg.to_i }
         opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
         opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
         opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
@@ -145,6 +135,34 @@ module HandbrakeCLI
         opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
         opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
         opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
+
+        builtin = InputDoneCommands::create()
+        unless builtin.empty?
+          opts.separator("")
+          opts.separator("builtin commands to run after input was processed")          
+          builtin.each do |c|
+            param = "--input-#{c.id}"
+            param << " #{c.arg_descr}" if c.needs_argument?
+            opts.on(param, c.descr) {|arg|
+              c.arg = arg 
+              options.buildinInputDoneCmd = c
+            }
+          end
+        end
+
+        builtin = OutputDoneCommands::create()
+        unless builtin.empty?
+          opts.separator("")
+          opts.separator("builtin commands to run after output was created")          
+          builtin.each do |c|
+            param = "--output-#{c.id}"
+            param << " #{c.arg_descr}" if c.needs_argument?
+            opts.on(param, c.descr) {|arg|
+              c.arg = arg 
+              options.buildinOutputDoneCmd = c
+            }
+          end
+        end
       
         opts.separator("")
         opts.separator("shorts")
@@ -160,6 +178,10 @@ module HandbrakeCLI
           options.minLength = "00:10:00"
           options.maxLength = "00:50:00"
           options.skipDuplicates = true
+        end
+        opts.on("--lang LANGUAGES", Array, "set subtitle and audio languges") do |arg|
+          options.languages = arg
+          options.subtitles = arg
         end
       end
       
@@ -744,6 +766,12 @@ module HandbrakeCLI
                 Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
                 raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
               end
+              unless options.buildinOutputDoneCmd.nil?
+                cmd = options.buildinOutputDoneCmd.create_command(outputFile)
+                HandbrakeCLI::logger.info(cmd)
+                Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
+                raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
+              end
               result.file = outputFile
               result.command = command
               result.output = readInfo(outputFile, false, nil)
@@ -765,10 +793,10 @@ module HandbrakeCLI
         Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
         raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
       end
-      # eject disc (built-in-command)
-      unless options.ejectProc.nil?
-        cmd = options.ejectProc.call(options.input)
-        system cmd
+      unless options.buildinInputDoneCmd.nil? or created.empty?
+        cmd = options.buildinInputDoneCmd.create_command(options.input)
+        HandbrakeCLI::logger.info(cmd)
+        Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
         raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
       end
       return created

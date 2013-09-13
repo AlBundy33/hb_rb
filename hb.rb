@@ -96,7 +96,7 @@ begin
       write_overview.call("  no outputs")
     else
       results.each do |result|
-        write_overview.call("  #{result.file} (#{Tools::FileTool::humanReadableSize(Tools::FileTool::size(result.file))})")
+        write_overview.call("  #{result.file} (#{Tools::FileTool::humanReadableSize(Tools::FileTool::size(result.file) || 0)})")
         unless result.output.nil?
           result.output.titles.each do |title|
             write_overview.call("    title #{title.pos} #{title.duration}, #{title.size}, #{title.fps}fps")
