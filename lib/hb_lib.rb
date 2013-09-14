@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'optparse'
 require File.join(File.dirname(__FILE__), "tools.rb")
-require File.join(File.dirname(__FILE__), "buildin_commands.rb")
+require File.join(File.dirname(__FILE__), "commands.rb")
 
 module HandbrakeCLI
   class HBConvertResult
@@ -17,10 +17,9 @@ module HandbrakeCLI
                   :onlyFirstTrackPerLanguage, :skipCommentaries,
                   :checkOnly, :xtra_args, :debug, :verbose,
                   :x264profile, :x264preset, :x264tune,
-                  :testdata, :preview, :inputDoneCommand, :outputDoneCommand,
-                  :inputWaitLoops, :loops,
+                  :testdata, :preview, :inputWaitLoops, :loops,
                   :logfile, :logOverride, :logOverview,
-                  :buildinInputDoneCmd, :buildinOutputDoneCmd, :bluray
+                  :inputDoneCommands, :outputDoneCommands, :bluray
 
     def self.showUsageAndExit(options, msg = nil)
       puts options.to_s
@@ -77,6 +76,8 @@ module HandbrakeCLI
 
     def self.parseArgs(arguments)
       options = HBOptions.new
+      options.inputDoneCommands = []
+      options.outputDoneCommands= []
       optparse = OptionParser.new do |opts|
         opts.separator("")
         opts.separator("common")
@@ -124,8 +125,6 @@ module HandbrakeCLI
       
         opts.separator("")
         opts.separator("expert-options")
-        opts.on("--input-done-cmd COMMAND", "runs COMMAND after input was processed (use #input# as placeholder)") { |arg| options.inputDoneCommand = arg }
-        opts.on("--output-done-cmd COMMAND", "runs COMMAND after an output-file was generated (use #output# as placeholder)") { |arg| options.outputDoneCommand = arg }
         opts.on("--loops LOOPS", "processes input LOOPS times (default: 1)") { |arg| options.loops = arg.to_i }
         opts.on("--wait LOOPS", "retries LOOPS times to wait for input (default: unlimited)") { |arg| options.inputWaitLoops = arg.to_i }
         opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
@@ -136,30 +135,30 @@ module HandbrakeCLI
         opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
         opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
 
-        builtin = InputDoneCommands::create()
-        unless builtin.empty?
+        commands = InputDoneCommands::create()
+        unless commands.empty?
           opts.separator("")
-          opts.separator("builtin commands to run after input was processed")          
-          builtin.each do |c|
+          opts.separator("commands to run after input was processed")          
+          commands.each do |c|
             param = "--input-#{c.id}"
             param << " #{c.arg_descr}" if c.needs_argument?
             opts.on(param, c.descr) {|arg|
-              c.arg = arg 
-              options.buildinInputDoneCmd = c
+              c.arg = arg
+              options.inputDoneCommands << c
             }
           end
         end
 
-        builtin = OutputDoneCommands::create()
-        unless builtin.empty?
+        commands = OutputDoneCommands::create()
+        unless commands.empty?
           opts.separator("")
-          opts.separator("builtin commands to run after output was created")          
-          builtin.each do |c|
+          opts.separator("commands to run after output was created")          
+          commands.each do |c|
             param = "--output-#{c.id}"
             param << " #{c.arg_descr}" if c.needs_argument?
             opts.on(param, c.descr) {|arg|
               c.arg = arg 
-              options.buildinOutputDoneCmd = c
+              options.outputDoneCommands << c
             }
           end
         end
@@ -593,7 +592,7 @@ module HandbrakeCLI
           p = options.preview.split("-",2)
           if p.size == 1
             start_at = "00:01:00"
-            stop_at = Tools::TimeTool::secondsToTime(Tools::TimeTool::timeToSeconds(start_at) + 60)
+            stop_at = Tools::TimeTool::secondsToTime(Tools::TimeTool::timeToSeconds(start_at) + Tools::TimeTool::timeToSeconds(p.first))
           else
             start_at = p.first
             stop_at = Tools::TimeTool::secondsToTime(Tools::TimeTool::timeToSeconds(p.last) - Tools::TimeTool::timeToSeconds(start_at))
@@ -759,22 +758,20 @@ module HandbrakeCLI
               if size >= 4 * 1024 * 1024 * 1024 and !command =~ /--large-file/
                 HandbrakeCLI::logger.warn("file maybe useless because it's over 4GB and --large-file was not specified")
               end
-              unless options.outputDoneCommand.nil?
-                cmd = options.outputDoneCommand.dup
-                cmd.gsub!("#output#", outputFile)
-                HandbrakeCLI::logger.info(cmd)
-                Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
-                raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
-              end
-              unless options.buildinOutputDoneCmd.nil?
-                cmd = options.buildinOutputDoneCmd.create_command(outputFile)
-                HandbrakeCLI::logger.info(cmd)
-                Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
-                raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
-              end
               result.file = outputFile
               result.command = command
               result.output = readInfo(outputFile, false, nil)
+              options.outputDoneCommands.each do |command|
+                cmd = command.create_command(outputFile)
+                if cmd.nil?
+                  HandbrakeCLI::logger.info("[#{command}] #{outputFile} (#{command.arg})")
+                  command.run(outputFile)
+                else
+                  HandbrakeCLI::logger.info("[#{command}] #{cmd}")
+                  Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
+                end
+                raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
+              end
               created << result
             end
           else
@@ -785,19 +782,18 @@ module HandbrakeCLI
         required_time = Tools::TimeTool::secondsToTime((end_time - start_time).round)
         HandbrakeCLI::logger.warn("== done (required time: #{required_time}) =================================")
       end
-      # execute userdefined command
-      unless options.inputDoneCommand.nil?
-        cmd = options.inputDoneCommand.dup
-        cmd.gsub!("#input#", options.input)
-        HandbrakeCLI::logger.info(cmd)
-        Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
-        raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
-      end
-      unless options.buildinInputDoneCmd.nil? or created.empty?
-        cmd = options.buildinInputDoneCmd.create_command(options.input)
-        HandbrakeCLI::logger.info(cmd)
-        Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
-        raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
+      unless created.empty?
+        options.inputDoneCommands.each do |command|
+          cmd = command.create_command(options.input)
+          if cmd.nil?
+            HandbrakeCLI::logger.info("[#{command}] #{options.input} (#{command.arg})")
+            command.run(options.input)
+          else
+            HandbrakeCLI::logger.info("[#{command}] #{cmd}")
+            Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
+          end
+          raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
+        end
       end
       return created
     end
