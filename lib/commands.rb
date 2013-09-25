@@ -1,4 +1,4 @@
-require 'ftools'
+#require 'ftools'
 
 class BuiltInCommand
 
@@ -60,7 +60,7 @@ class EjectCommand < BuiltInCommand
     super("eject", "eject tray", command, commandline)
   end
 end
-
+=begin
 class MoveCommand < ScriptCommand
   def initialize()
     super("move", "moves file to TARGETDIR", "TARGETDIR")
@@ -90,6 +90,7 @@ class CopyCommand < ScriptCommand
     File.copy(file, @arg, false)
   end
 end
+=end
 
 class UserDefinedCommand < BuiltInCommand
   def initialize()
@@ -110,9 +111,9 @@ class InputDoneCommands
   def self.create
     l = []
     l << UserDefinedCommand.new
-    l << MoveCommand.new()
-    l << DeleteCommand.new()
-    l << CopyCommand.new()
+    #l << MoveCommand.new()
+    #l << DeleteCommand.new()
+    #l << CopyCommand.new()
     if Tools::OS::osx?()
       l << EjectCommand.new("drutil", '#cmd# tray eject')
     end
@@ -128,8 +129,8 @@ class OutputDoneCommands
   def self.create
     l = []
     l << UserDefinedCommand.new
-    l << MoveCommand.new()
-    l << CopyCommand.new()
+    #l << MoveCommand.new()
+    #l << CopyCommand.new()
     l.reject!{|c| not c.available? }
     return l
   end 
