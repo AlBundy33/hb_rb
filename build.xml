@@ -9,6 +9,7 @@
 			<include name="tools/handbrake/*"/>
 			<include name="tools/atomicparsley/*"/>
 			<include name="tools/subler/*"/>
+			<include name="tools/eject/**"/>
 			<include name="lib/tools.rb" />
 			<include name="lib/hb_lib.rb" />
 			<include name="lib/taggers.rb"/>
@@ -19,7 +20,7 @@
 			<include name="readme.txt" />
 			<include name="LICENSE.txt" />
 		</fileset>
-	</zip>    
+	</zip>
 </target>
 
 <target name="tag_updater" depends="clean">

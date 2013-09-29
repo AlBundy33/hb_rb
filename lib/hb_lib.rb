@@ -275,6 +275,7 @@ module HandbrakeCLI
   
     def self.readInfo(input, debug = false, testdata = nil)
       path = File.expand_path(input)
+
       cmd = "\"#{HANDBRAKE_CLI}\" -i \"#{path}\" --scan --title 0 2>&1"
       if !testdata.nil? and File.exists?(testdata)
         output = File.read(testdata)
@@ -420,7 +421,28 @@ module HandbrakeCLI
         end
         longest.mainFeature = true if not longest.nil?
       end
+      
+      source.title = getTitle(path) if source.title.nil?()
+      
       return source
+    end
+    
+    def self.getTitle(path)
+      if Tools::OS::platform?(Tools::OS::WINDOWS)
+        if path.length < 4 and path[1] == ?:
+          output = %x[vol #{path[0..1]}]
+          idx = -1
+          label = ""
+          output.lines.first().split.each do |t|
+            idx += 1 if t.upcase.eql?(path[0..1]) or idx >= 0
+            label << t if idx > 1
+          end
+          return label
+        else
+          return File.basename(path)
+        end
+      end
+      return nil
     end
     
     def self.getMixdown(track, mappings, default)
@@ -903,8 +925,12 @@ module HandbrakeCLI
     
     def input_name(without_extension = false)
       if File.directory?(path)
-        name = File.basename(path())
-        name = File.basename(File.dirname(path)) if ["VIDEO_TS", "AUDIO_TS"].include?(name)
+        if path.length < 4 and path[1] == ?:
+          name = path[0].chr
+        else
+          name = File.basename(path())
+          name = File.basename(File.dirname(path)) if ["VIDEO_TS", "AUDIO_TS"].include?(name)
+        end
       else
         if without_extension
           name = File.basename(path(), ".*")

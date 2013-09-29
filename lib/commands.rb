@@ -1,4 +1,8 @@
-#require 'ftools'
+if RUBY_VERSION.start_with?("1.8")
+  require 'ftools'
+else
+  require 'fileutils'
+end
 
 class BuiltInCommand
 
@@ -60,7 +64,7 @@ class EjectCommand < BuiltInCommand
     super("eject", "eject tray", command, commandline)
   end
 end
-=begin
+
 class MoveCommand < ScriptCommand
   def initialize()
     super("move", "moves file to TARGETDIR", "TARGETDIR")
@@ -90,7 +94,6 @@ class CopyCommand < ScriptCommand
     File.copy(file, @arg, false)
   end
 end
-=end
 
 class UserDefinedCommand < BuiltInCommand
   def initialize()
@@ -111,14 +114,19 @@ class InputDoneCommands
   def self.create
     l = []
     l << UserDefinedCommand.new
-    #l << MoveCommand.new()
-    #l << DeleteCommand.new()
-    #l << CopyCommand.new()
+    l << MoveCommand.new()
+    l << DeleteCommand.new()
+    l << CopyCommand.new()
     if Tools::OS::osx?()
       l << EjectCommand.new("drutil", '#cmd# tray eject')
     end
     if Tools::OS::platform?(Tools::OS::LINUX)
       l << EjectCommand.new("eject", '#cmd# "#file#"')
+    end
+    if Tools::OS::platform?(Tools::OS::WINDOWS)
+      l << EjectCommand.new(
+        File.expand_path("#{File.dirname(__FILE__)}/../tools/eject/#{Tools::OS::platform().to_s.downcase}/eject.exe"),
+        "#cmd# #file#")
     end
     l.reject!{|c| not c.available? }
     return l
@@ -129,8 +137,8 @@ class OutputDoneCommands
   def self.create
     l = []
     l << UserDefinedCommand.new
-    #l << MoveCommand.new()
-    #l << CopyCommand.new()
+    l << MoveCommand.new()
+    l << CopyCommand.new()
     l.reject!{|c| not c.available? }
     return l
   end 

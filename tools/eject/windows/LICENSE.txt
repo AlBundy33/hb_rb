@@ -1,0 +1,12 @@
+http://thewalter.net/stef/license.html
+Licensing and Support Info
+
+Licensing
+
+Certain packages are in the public domain, others are licensed under a BSD style license. For details see the sofware in question.
+
+Support
+
+In exchange for the free use of this software I ask that you send bug reports. They are especially appreciated when accompanied by patches or fixes to the source.
+
+Other than the above this software is unsupported. Due to time constraints, email other than relevant bugs will be probably be ignored.

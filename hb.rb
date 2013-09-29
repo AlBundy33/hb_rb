@@ -18,7 +18,7 @@ Signal.trap("INT") do
   exit!(1)
 end
 
-puts "#{File.basename($0)}  Copyright (C) 2013  AlBundy
+puts "#{File.basename($0)} Copyright (C) 2013 AlBundy
 This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt.
 This is free software, and you are welcome to redistribute it under certain conditions.
 
