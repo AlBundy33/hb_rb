@@ -432,12 +432,12 @@ module HandbrakeCLI
         if path.length < 4 and path[1] == ?:
           output = %x[vol #{path[0..1]}]
           idx = -1
-          label = ""
+          tokens = []
           output.lines.first().split.each do |t|
             idx += 1 if t.upcase.eql?(path[0].chr.upcase) or t.upcase.eql?(path[0..1].upcase) or idx >= 0
-            label << t if idx > 1
+            tokens << t if idx > 1
           end
-          return label
+          return tokens.join(" ")
         else
           return File.basename(path)
         end
