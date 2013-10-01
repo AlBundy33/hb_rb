@@ -434,7 +434,7 @@ module HandbrakeCLI
           idx = -1
           label = ""
           output.lines.first().split.each do |t|
-            idx += 1 if t.upcase.eql?(path[0..1]) or idx >= 0
+            idx += 1 if t.upcase.eql?(path[0].chr.upcase) or t.upcase.eql?(path[0..1].upcase) or idx >= 0
             label << t if idx > 1
           end
           return label
