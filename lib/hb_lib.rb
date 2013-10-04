@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'optparse'
+require 'rexml/document'
 require File.join(File.dirname(__FILE__), "tools.rb")
 require File.join(File.dirname(__FILE__), "commands.rb")
 
@@ -103,7 +104,7 @@ module HandbrakeCLI
         opts.on("--audio-mixdown-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioMixdownEncoder = arg }
         opts.on("--audio-mixdown-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioMixdownBitrate = arg }
         opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
-        opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().keys.join(', ')})") { |arg| options.preset = arg }
+        opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().keys.sort.join(', ')})") { |arg| options.preset = arg }
         opts.on("--preview [RANGE]", "convert only a preview in RANGE (default: 00:01:00-00:02:00)") { |arg| options.preview = arg || "00:01:00-00:02:00" }
       
         opts.separator("")
@@ -261,6 +262,45 @@ module HandbrakeCLI
     X264_TUNES = %w(film animation grain stillimage psnr ssim fastdecode zerolatency)
   
     def self.getPresets()
+      result = {}
+      result = result.merge(loadBuiltInPresets())
+      result = result.merge(loadPresets())
+      return result
+    end
+    
+    def self.loadPresets()
+      result = {}
+      if Tools::OS::windows?
+        [File.join(ENV["APPDATA"], "Handbrake")].each do |dir|
+          ["user_presets.xml"].each do |xml|
+            result = result.merge(loadPresetsFromXml(File.join(dir, xml)))
+          end
+        end
+      end
+      result = result.merge(loadPresetsFromXml(File.join(File.dirname(__FILE__), "..", "presets.xml")))
+      return result
+    end
+    
+    def self.loadPresetsFromXml(path)
+      result = {}
+      if File.exists?(path)
+        begin
+          doc = REXML::Document.new(File.new(path))
+          doc.root.each_element("//Preset") do |p|
+            name = p.elements["Name"].text.strip
+            query = p.elements["Query"].text.strip
+            #version = p.elements["Version"].text
+            #picture_settings = p.elements["PictureSettings"].text
+            result[name] = query
+          end
+        rescue => e
+          p e.backtrace
+        end
+      end
+      return result
+    end
+    
+    def self.loadBuiltInPresets()
       cmd = "\"#{HANDBRAKE_CLI}\" --preset-list 2>&1"
       output = %x[#{cmd}]
       preset_pattern = /\+ (.*?): (.*)/
