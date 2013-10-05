@@ -1,6 +1,6 @@
 require 'fileutils'
 require 'optparse'
-require 'rexml/document'
+require File.join(File.dirname(__FILE__), "manicure.rb")
 require File.join(File.dirname(__FILE__), "tools.rb")
 require File.join(File.dirname(__FILE__), "commands.rb")
 
@@ -263,39 +263,48 @@ module HandbrakeCLI
   
     def self.getPresets()
       result = {}
-      result = result.merge(loadBuiltInPresets())
-      result = result.merge(loadPresets())
-      return result
-    end
-    
-    def self.loadPresets()
-      result = {}
-      if Tools::OS::windows?
-        [File.join(ENV["APPDATA"], "Handbrake")].each do |dir|
-          ["user_presets.xml"].each do |xml|
-            result = result.merge(loadPresetsFromXml(File.join(dir, xml)))
-          end
-        end
+      mergeHash(result, loadBuiltInPresets())
+      Dir.glob(File.join(File.dirname($0), "*.plist")) do |f|
+        mergeHash(result, loadPlist(File.expand_path(f)))
       end
-      result = result.merge(loadPresetsFromXml(File.join(File.dirname(__FILE__), "..", "presets.xml")))
       return result
     end
     
-    def self.loadPresetsFromXml(path)
+    def self.mergeHash(h, n)
+      return if n.nil?
+      n.each do |k,v|
+        #puts "overriding #{k} with #{v}" if h.include?(k)
+        h[k] = v
+      end
+    end
+    
+    class DisplayToString < Display
+      def initialize(h,o)
+        @lines = []
+        super(h,o)
+      end
+
+      def puts(msg)
+        @lines << msg
+      end
+      
+      def output
+        @lines.join("\n")
+      end
+    end
+    
+    def self.loadPlist(path)
+      p = File.expand_path(path)
       result = {}
-      if File.exists?(path)
-        begin
-          doc = REXML::Document.new(File.new(path))
-          doc.root.each_element("//Preset") do |p|
-            name = p.elements["Name"].text.strip
-            query = p.elements["Query"].text.strip
-            #version = p.elements["Version"].text
-            #picture_settings = p.elements["PictureSettings"].text
-            result[name] = query
-          end
-        rescue => e
-          p e.backtrace
-        end
+      if File.exists?(p)
+        options = OpenStruct.new
+        options.cliraw = false
+        options.cliparse = true
+        options.api = false
+        options.apilist = false
+        options.header = false
+        plist = Plist::parse_xml( p )
+        mergeHash(result, parsePresets(DisplayToString.new(plist, options).output))
       end
       return result
     end
@@ -303,6 +312,10 @@ module HandbrakeCLI
     def self.loadBuiltInPresets()
       cmd = "\"#{HANDBRAKE_CLI}\" --preset-list 2>&1"
       output = %x[#{cmd}]
+      return parsePresets(output)
+    end
+    
+    def self.parsePresets(output)
       preset_pattern = /\+ (.*?): (.*)/
       result = {}
       output.each_line do |line|
