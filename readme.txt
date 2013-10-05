@@ -10,10 +10,12 @@ installation
 3. download Handbrake CLI for your platform from http://handbrake.fr/downloads2.php  
 4. extract/install Hanbrake CLI to the appropriate folder in hb.rb-installation-folder under tools/handbrake (e.g. HandbrakeCLI.exe to tools/handbrake/windows)
 5. repeat step 4 for AtomicParsley and/or Subler if you want to tag your files with tag_epsiodes.rb
-6. if you want to use tag_episodes.rb you have to install some gems with following commands
+6. if you want to work with presets in plist-files you have to install this gem
+   gem install plist
+7. if you want to use tag_episodes.rb you have to install some gems with following commands
    gem install hpricot
    gem install imdb
-7. if you use a ruby-version < 1.9.0 you'll get an error-message when loading imdb - in that case simply open series.rb (path is in stacktrace) and add a \ at the end of line 18
+8. if you use a ruby-version < 1.9.0 you'll get an error-message when loading imdb - in that case simply open series.rb (path is in stacktrace) and add a \ at the end of line 18
    
 run
 ===

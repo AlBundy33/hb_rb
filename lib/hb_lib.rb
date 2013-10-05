@@ -1,6 +1,11 @@
 require 'fileutils'
 require 'optparse'
-require File.join(File.dirname(__FILE__), "manicure.rb")
+begin
+  require File.join(File.dirname(__FILE__), "manicure.rb")
+  CAN_LOAD_PLIST = true
+rescue LoadError
+  CAN_LOAD_PLIST = false
+end
 require File.join(File.dirname(__FILE__), "tools.rb")
 require File.join(File.dirname(__FILE__), "commands.rb")
 
@@ -278,24 +283,27 @@ module HandbrakeCLI
       end
     end
     
-    class DisplayToString < Display
-      def initialize(h,o)
-        @lines = []
-        super(h,o)
-      end
-
-      def puts(msg)
-        @lines << msg
-      end
-      
-      def output
-        @lines.join("\n")
+    if CAN_LOAD_PLIST
+      class DisplayToString < Display
+        def initialize(h,o)
+          @lines = []
+          super(h,o)
+        end
+  
+        def puts(msg)
+          @lines << msg
+        end
+        
+        def output
+          @lines.join("\n")
+        end
       end
     end
     
     def self.loadPlist(path)
       p = File.expand_path(path)
       result = {}
+      return result unless CAN_LOAD_PLIST
       if File.exists?(p)
         options = OpenStruct.new
         options.cliraw = false
