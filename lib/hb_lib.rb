@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'optparse'
 begin
+  #https://trac.handbrake.fr/browser/trunk/scripts/manicure.rb
   require File.join(File.dirname(__FILE__), "manicure.rb")
   CAN_LOAD_PLIST = true
 rescue LoadError
