@@ -57,7 +57,11 @@ ARGV.options do |opts|
   end
 end
 
-ARGV.parse!
+begin
+  ARGV.parse!
+rescue => e
+  showUsageAndExit(ARGV.options, e.message)
+end
 showUsageAndExit(ARGV.options, "no file set") if ARGV.empty?
 showUsageAndExit(ARGV.options, "no id set") if options.identifier.nil?
 showUsageAndExit(ARGV.options, "no season set") if options.season.nil?
