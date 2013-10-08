@@ -109,7 +109,7 @@ if __FILE__ == $0
     if options.rename
       new_name = options.pattern.dup
       info.to_map.each do |k,v|
-        new_name.gsub!(/##{k}#/, fix_filename(v))
+        new_name.gsub!(/##{k}#/, fix_filename(v) || "")
       end
       new_name.gsub!(/#filename#/, File.basename(f, ".*"))
       new_name = new_name + File.extname(f)
