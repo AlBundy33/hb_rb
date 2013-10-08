@@ -66,12 +66,12 @@ end
 
 if __FILE__ == $0
   puts "#{File.basename($0)} Copyright (C) 2013 AlBundy
-  This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt.
-  This is free software, and you are welcome to redistribute it under certain conditions.
-  
-  For questions, feature-requests etc. visit: https://forum.handbrake.fr/viewtopic.php?f=10&t=26163
-  
-  "
+This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt.
+This is free software, and you are welcome to redistribute it under certain conditions.
+
+For questions, feature-requests etc. visit: https://forum.handbrake.fr/viewtopic.php?f=10&t=26163
+
+"
   
   begin
     ARGV.parse!
