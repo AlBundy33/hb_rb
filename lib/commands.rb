@@ -1,3 +1,4 @@
+# encoding: UTF-8
 if RUBY_VERSION.start_with?("1.8")
   require 'ftools'
 else
