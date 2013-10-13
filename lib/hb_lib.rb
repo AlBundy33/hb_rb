@@ -1,5 +1,6 @@
 # encoding: UTF-8
 require 'fileutils'
+require 'iconv'
 require 'optparse'
 begin
   #https://trac.handbrake.fr/browser/trunk/scripts/manicure.rb
@@ -335,6 +336,30 @@ module HandbrakeCLI
       end
       return result
     end
+    
+    def self.fix_str(str)
+      begin
+        return Iconv.iconv('utf-8', 'utf-8', str).first
+      rescue => e
+        HandbrakeCLI::logger.warn("error reading line: #{str} (#{e})")
+        begin
+          return Iconv.iconv('utf-8//IGNORE', 'utf-8', str).first
+        rescue => e2
+          HandbrakeCLI::logger.warn("error reading line: #{str} (#{e2})")
+          begin
+            return Iconv.iconv('utf-8', 'utf-8//IGNORE', str).first
+          rescue => e3
+            HandbrakeCLI::logger.warn("error reading line: #{str} (#{e3})")
+            begin
+              return Iconv.iconv('utf-8//IGNORE', 'utf-8//IGNORE', str).first
+            rescue
+              # ignore
+            end
+          end
+        end
+      end
+      str
+    end
   
     def self.readInfo(input, debug = false, testdata = nil)
       path = File.expand_path(input)
@@ -371,8 +396,9 @@ module HandbrakeCLI
       in_audio_section = false
       in_subtitle_section = false
       has_main_feature = false
-      output.each_line do |line|
-        puts "out> #{line}" if debug
+      output.each_line do |orig_line|
+        puts "out> #{orig_line}" if debug
+        line = fix_str(orig_line)
   
         if line.match(dvd_title_pattern)
           puts "> match: dvd-title" if debug
