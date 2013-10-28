@@ -1,6 +1,5 @@
 # encoding: UTF-8
 require 'fileutils'
-require 'iconv'
 require 'optparse'
 begin
   #https://trac.handbrake.fr/browser/trunk/scripts/manicure.rb
@@ -339,23 +338,13 @@ module HandbrakeCLI
     
     def self.fix_str(str)
       begin
-        return Iconv.iconv('utf-8', 'utf-8', str).first
+        return Tools::StringTool::encode(str, 'utf-8', 'utf-8')
       rescue => e
         HandbrakeCLI::logger.warn("error reading line: #{str} (#{e})")
         begin
-          return Iconv.iconv('utf-8//IGNORE', 'utf-8', str).first
+          return Tools::StringTool::encode(str, 'utf-8', 'utf-8', true)
         rescue => e2
-          HandbrakeCLI::logger.warn("error reading line: #{str} (#{e2})")
-          begin
-            return Iconv.iconv('utf-8', 'utf-8//IGNORE', str).first
-          rescue => e3
-            HandbrakeCLI::logger.warn("error reading line: #{str} (#{e3})")
-            begin
-              return Iconv.iconv('utf-8//IGNORE', 'utf-8//IGNORE', str).first
-            rescue
-              # ignore
-            end
-          end
+          # ignore
         end
       end
       str

@@ -1,6 +1,6 @@
 <project name="Handbrake" default="all" basedir=".">
 
-<target name="all" depends="clean,handbrake,tag_updater,ripper"/>
+<target name="all" depends="clean,handbrake,ripper"/>
 
 <target name="handbrake" depends="clean">
 	<zip destfile="build/handbrake.zip">
@@ -21,20 +21,6 @@
 			<include name="LICENSE.txt" />
 		</fileset>
 	</zip>
-</target>
-
-<target name="tag_updater" depends="clean">
-	<zip destfile="build/tag_updater.zip">
-		<fileset dir=".">
-			<exclude name="**/.svn" />
-			<include name="tools/atomicparsley/*"/>
-			<include name="tools/subler/*"/>
-			<include name="lib/tools.rb"/>
-			<include name="lib/mp4info.rb"/>
-			<include name="lib/taggers.rb"/>
-			<include name="tag_updater.rb" />
-		</fileset>
-	</zip>    
 </target>
 	
 <target name="ripper" depends="clean">

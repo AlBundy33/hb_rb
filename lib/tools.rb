@@ -243,6 +243,28 @@ module Tools
     end
   end
   
+  class StringTool
+    begin
+      require 'iconv'
+      ICONV = true
+    rescue LoadError
+      ICONV = false
+    end
+
+    def self.encode(str, from, to, ignore_invalid_chars = false)
+      begin
+        if ICONV
+          return Iconv.iconv(ignore_invalid_chars ? "#{from}//IGNORE" : from, ignore_invalid_chars ? "#{to}//IGNORE" : to, str).first
+        else
+          return str.encode(to, from, :invalid => :replace, :undef => :replace, :replace => ignore_invalid_chars ? "" : "?")
+        end
+      rescue => e
+        raise if not ignore_invalid_chars
+      end
+      return str
+    end
+  end
+  
   class FileTool
     def self.wait_for(file, retry_count = -1, sleep_time = 1)
       found = false

@@ -2,7 +2,6 @@
 require 'rubygems'
 require 'hpricot'
 require 'open-uri'
-require 'iconv'
 require 'imdb'
 require 'cgi'
 require 'rexml/document'
@@ -76,7 +75,7 @@ class AbstractInfoProvider
     return nil if value.nil? or value.strip.empty?
     if Tools::OS::windows?
       begin
-        v = Iconv.iconv('iso-8859-15', 'utf-8', value).first
+        v = Tools::StringTool::encode(value, 'iso-8859-15', 'utf-8')
       rescue => e
         v = value
       end
