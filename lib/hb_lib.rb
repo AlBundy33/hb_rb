@@ -164,7 +164,7 @@ module HandbrakeCLI
         opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
         opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
         opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
-        opts.on("--test [FILE]", "read info from/write info to file") { |arg| options.testdata = arg || Tools::OS::nullDevice()}
+        opts.on("--testdata FILE", "read info from/write info to file") { |arg| options.testdata = arg }
         opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
         opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
         opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
