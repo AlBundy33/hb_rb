@@ -16,7 +16,7 @@ module HandbrakeCLI
     attr_accessor :command, :file, :source, :title, :audiotitles, :subtitles, :output
   end
   class HBOptions
-    attr_accessor :input, :output, :force,
+    attr_accessor :argv, :input, :output, :force,
                   :ipodCompatibility, :enableAutocrop,
                   :languages, :audioMixdown, :audioCopy,
                   :audioMixdownEncoder, :audioMixdownBitrate, :audioMixdownMappings,
@@ -40,6 +40,7 @@ module HandbrakeCLI
       puts "  #title#           - source-title (dvd-label, directory-basename, filename)"
       puts "  #source#          - name of input"
       puts "  #source_basename# - name of input without extension"
+      puts "  #source_dirname#  - path to the input-file"
       puts
       puts "hints:"
       puts "use raw disk devices (e.g. /dev/rdisk1) to ensure that libdvdnav can read the title"
@@ -82,7 +83,28 @@ module HandbrakeCLI
       options.skipCommentaries = true
     end
 
-    def self.parseArgs(arguments)
+    def self.parseArgs(argv)
+      hbpresets = Handbrake::getHbPresets()
+      unless hbpresets.empty?
+        arguments = []
+        preset_name = false
+        argv.each do |a|
+          if a.eql? "--hbpreset"
+            preset_name = true
+            next 
+          end
+          raise "unknown preset #{a}" if preset_name and not hbpresets.keys.include?(a)
+          if preset_name
+            preset_name = false
+            preset = hbpresets[a]
+            arguments += preset
+          else
+            arguments << a
+          end
+        end
+      else
+        arguments = argv
+      end
       options = HBOptions.new
       options.inputDoneCommands = []
       options.outputDoneCommands= []
@@ -94,6 +116,10 @@ module HandbrakeCLI
         opts.on("--force", "force override of existing files") { |arg| options.force = arg }
         opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
         opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts) }
+        presets = Handbrake::getHbPresets()
+        unless presets.empty?
+          opts.on("--hbpreset PRESET", "user defined presets (#{presets.keys.sort.join(', ')})")
+        end 
 
         opts.separator("")
         opts.separator("output-options")
@@ -138,7 +164,7 @@ module HandbrakeCLI
         opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
         opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
         opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
-        opts.on("--testdata FILE", "read info from/write info to file") { |arg| options.testdata = arg }
+        opts.on("--test [FILE]", "read info from/write info to file") { |arg| options.testdata = arg || Tools::OS::nullDevice()}
         opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
         opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
         opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
@@ -245,6 +271,7 @@ module HandbrakeCLI
         options.audioMixdownMappings = h
       end
       showUsageAndExit(options,"unknown preset #{options.preset}") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil?
+      options.argv = arguments
       return options
     end
   end
@@ -273,6 +300,25 @@ module HandbrakeCLI
       mergeHash(result, loadBuiltInPresets())
       Dir.glob(File.join(File.dirname($0), "*.plist")) do |f|
         mergeHash(result, loadPlist(File.expand_path(f)))
+      end
+      return result
+    end
+    
+    def self.getHbPresets()
+      result = {}
+      fname = "hb.presets"
+      if File.exist?(File.join(File.dirname($0), fname))
+        pname = nil
+        File.open(fname).each do |line|
+          l = line.strip
+          next if l.empty?
+          if l.start_with?("[") and l.end_with?("]")
+            pname = l[1..-2]
+            result[pname] = [] unless pname.nil? or pname.strip.empty?
+            next
+          end
+          result[pname] << line.chop unless pname.nil? or pname.strip.empty?
+        end
       end
       return result
     end
@@ -607,6 +653,7 @@ module HandbrakeCLI
         outputFile.gsub!("#title#", source_title)
         outputFile.gsub!("#source#", source.input_name(false) || source_title)
         outputFile.gsub!("#source_basename#", source.input_name(true) || source_title)
+        outputFile.gsub!("#source_dirname#", File.dirname(source.path) || File.expand_path("."))
         if not options.force
           if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
             HandbrakeCLI::logger.warn("skipping title because \"#{outputFile}\" already exists")

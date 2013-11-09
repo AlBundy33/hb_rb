@@ -52,7 +52,7 @@ subtitleMatcher.skipCommentaries = options.skipCommentaries
 
 # collect all inputs
 inputs = [options.input]
-inputs += ARGV if not ARGV.empty?
+inputs += options.argv if not options.argv.empty?
 
 inout = []
 current_loop = options.loops
