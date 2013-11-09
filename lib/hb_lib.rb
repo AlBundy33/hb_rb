@@ -282,13 +282,19 @@ module HandbrakeCLI
     HANDBRAKE_CLI = File.expand_path("#{File.dirname(__FILE__)}/../tools/handbrake/#{Tools::OS::platform().to_s.downcase}/HandBrakeCLI")
   
     AUDIO_ENCODERS = %w(ca_aac ca_haac faac ffaac ffac3 lame vorbis ffflac)
-    AUDIO_MIXDOWNS = %w(mono stereo dpl1 dpl2 6ch)
+    AUDIO_MIXDOWNS = %w(mono left_only right_only stereo dpl1 dpl2 5point1 6point1 7point1 5_2_lfe)
+    
     AUDIO_MIXDOWN_DESCR = {
       "mono" => "Mono",
+      "left_only" => "left channel",
+      "right_only" => "right channel",
       "stereo" => "Stereo",
       "dpl1" => "Dolby Surround",
       "dpl2" => "Dolby Pro Logic II",
-      "6ch" => "5.1"
+      "5point1" => "5.1",
+      "6point1" => "6.1",
+      "7point1" => "7.1",
+      "5_2_lfe" => "7.1 (5F/2R/LFE)"
     }
   
     X264_PROFILES = %w(baseline main high high10 high422 high444)
@@ -573,10 +579,11 @@ module HandbrakeCLI
       descr = "#{track.descr}"
       if not mappings.nil?
         mappings.each do |r,m|
+          next if r.eql?".*" or r.eql?"*"
           return m if descr =~ /#{r}/
         end
       end
-      return default
+      return mappings[".*"] || mappings["*"] || default
     end
   
     def self.convert(options, titleMatcher, audioMatcher, subtitleMatcher)
@@ -814,9 +821,9 @@ module HandbrakeCLI
             if not options.audioMixdownEncoder.nil?
               paencoder << options.audioMixdownEncoder
             elsif ismp4
-              paencoder << "faac"
+              paencoder << "ca_aac"
             else
-              paencoder << "lame"
+              paencoder << "ca_aac"
             end
             parate << "auto"
             pmixdown << mixdown
