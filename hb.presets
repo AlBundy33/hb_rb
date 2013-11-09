@@ -21,3 +21,16 @@ deu,eng
 --skip-duplicates
 --output
 #source_dirname#/#title#_#pos#.m4v
+
+[bluray]
+--lang
+deu,eng
+--audio-mixdown
+*:copy,DTS:5point1
+--audio-mixdown-bitrate
+256
+--skip-commentaries
+--only-first-track-per-language
+--main
+--output
+#source_dirname#/#title#_#pos#.mkv
