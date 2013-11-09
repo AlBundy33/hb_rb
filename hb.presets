@@ -1,0 +1,6 @@
+[movie]
+--movie
+--output
+#source_dirname#/#title#.m4v
+--lang
+deu,eng
