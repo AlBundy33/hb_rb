@@ -692,9 +692,13 @@ module HandbrakeCLI
   
         if options.preset.nil?
           command << " --encoder x264"
-          command << " --quality 20.0"
-          command << " --decomb" if not options.bluray
-          command << " --detelecine"
+          if options.bluray
+            command << " --quality 23.0"
+          else
+            command << " --quality 20.0"
+            command << " --decomb"
+            command << " --detelecine"
+          end
           command << " --crop 0:0:0:0" if not options.enableAutocrop
           if not options.ipodCompatibility
             command << " --loose-anamorphic"
@@ -711,7 +715,6 @@ module HandbrakeCLI
         command << " --x264-preset #{options.x264preset}" if not options.x264preset.nil?
         command << " --x264-tune #{options.x264tune}" if not options.x264tune.nil?
   
-        # format
         if ismp4
           command << " --format mp4"
           command << " --optimize"
