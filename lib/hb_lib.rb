@@ -552,27 +552,7 @@ module HandbrakeCLI
         longest.mainFeature = true if not longest.nil?
       end
       
-      source.title = getTitle(path) if source.title.nil?()
-      
       return source
-    end
-    
-    def self.getTitle(path)
-      if Tools::OS::platform?(Tools::OS::WINDOWS)
-        if path.length < 4 and path[1] == ?:
-          output = %x[vol #{path[0..1]}]
-          idx = -1
-          tokens = []
-          output.lines.first().split.each do |t|
-            idx += 1 if t.upcase.eql?(path[0].chr.upcase) or t.upcase.eql?(path[0..1].upcase) or idx >= 0
-            tokens << t if idx > 1
-          end
-          return tokens.join(" ")
-        else
-          return File.basename(path)
-        end
-      end
-      return nil
     end
     
     def self.getMixdown(track, mappings, default)
@@ -652,7 +632,7 @@ module HandbrakeCLI
         result.subtitles = subtitles
   
         outputFile = File.expand_path(options.output)
-        source_title = source.name.gsub(/[^0-9a-zA-Z_\- ]/, "_")
+        source_title = source.name.gsub(/[^0-9a-zA-Z_\- .]/, "_")
         outputFile.gsub!("#pos#", "%02d" % title.pos)
         outputFile.gsub!("#size#", title.size || "")
         outputFile.gsub!("#fps#", title.fps || "")
@@ -876,8 +856,8 @@ module HandbrakeCLI
         HandbrakeCLI::logger.warn "  == converting to ==" 
         if not tracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
-          tracks.each do |t|
-            HandbrakeCLI::logger.warn "    - track #{t.pos}: #{t.descr}"
+          paudio.each_with_index do |t,i|
+            HandbrakeCLI::logger.warn "    - track #{t}: #{paname[i] rescue nil || t.descr}"
           end
         end
         if not subtitles.empty?
@@ -1046,7 +1026,7 @@ module HandbrakeCLI
       @title_alt = nil
       @serial = nil
     end
-  
+    
     def name(use_alt = false)
       return @title_alt if usable?(@title_alt) and use_alt
       return @title if usable?(@title)
@@ -1058,7 +1038,18 @@ module HandbrakeCLI
     def input_name(without_extension = false)
       if File.directory?(path)
         if path.length < 4 and path[1] == ?:
-          name = path[0].chr
+          if Tools::OS::platform?(Tools::OS::WINDOWS)
+            output = %x[vol #{path[0..1]}]
+            idx = -1
+            tokens = []
+            output.lines.first().split.each do |t|
+              idx += 1 if t.upcase.eql?(path[0].chr.upcase) or t.upcase.eql?(path[0..1].upcase) or idx >= 0
+              tokens << t if idx > 1
+            end
+            name = tokens.join(" ")
+          else
+            name = path[0].chr
+          end
         else
           name = File.basename(path())
           name = File.basename(File.dirname(path)) if ["VIDEO_TS", "AUDIO_TS"].include?(name)
