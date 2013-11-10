@@ -28,7 +28,7 @@ deu,eng
 --audio-mixdown-encoder
 ffac3
 --audio-mixdown
-*:copy,DTS:5point1
+*:copy,DTS:auto
 --audio-mixdown-bitrate
 256
 --skip-commentaries

@@ -130,7 +130,7 @@ module HandbrakeCLI
         opts.on("--max-height HEIGTH", "maximum video height (e.g. 1080, 720, 576)") { |arg| options.maxHeight = arg }
         opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
         opts.on("--audio-copy", "add original-audio track") { |arg| options.audioCopy = arg }
-        opts.on("--audio-mixdown [MAPPINGS]", Array, "add mixed down track. Use optional MAPPINGS to define the mixdown per track description (default: dpl2, allowed: #{(["copy"] + Handbrake::getAudioMixdowns()).join(', ')})") { |arg| 
+        opts.on("--audio-mixdown [MAPPINGS]", Array, "add mixed down track. Use optional MAPPINGS to define the mixdown per track description (default: dpl2, allowed: #{(["copy", "auto"] + Handbrake::getAudioMixdowns()).join(', ')})") { |arg| 
             options.audioMixdown = true
             options.audioMixdownMappings = arg 
         }
@@ -262,7 +262,7 @@ module HandbrakeCLI
       showUsageAndExit(optparse,"unknown audio-encoder: #{options.audioMixdownEncoder}") if not options.audioMixdownEncoder.nil? and not Handbrake::getAudioEncoders().include?(options.audioMixdownEncoder)
       if not options.audioMixdownMappings.nil?
         h = {}
-        allowed = ["copy"] + Handbrake::getAudioMixdowns()
+        allowed = ["copy", "auto"] + Handbrake::getAudioMixdowns()
         options.audioMixdownMappings.each do |m|
           a = m.split(":", 2)
           showUsageAndExit(options,"unknon mixdown option #{a.last} (allowed: #{allowed.join(', ')})") if not allowed.include?(a.last)
@@ -832,7 +832,7 @@ module HandbrakeCLI
             pab << value unless value.nil?
             value = preset_arguments.match(/(?:-D|--drc) ([^ ]+)/)[1]
             pdrc << value unless value.nil?
-            paname << (["#{t.descr(true)}"] * track_count).join("\",\"")
+            paname << (["#{t.descr(true, true)}"] * track_count).join("\",\"")
             HandbrakeCLI::logger.info("adding audio-track: #{t}")            
           end
           if copy_track
@@ -860,7 +860,11 @@ module HandbrakeCLI
             pmixdown << mixdown
             pab << options.audioMixdownBitrate
             pdrc << "0.0"
-            paname << "#{t.descr(true)} (#{AUDIO_MIXDOWN_DESCR[mixdown] || mixdown})"
+            if mixdown.eql?"auto"
+              paname << "#{t.descr(true, false)}"
+            else
+              paname << "#{t.descr(true, true)} (#{AUDIO_MIXDOWN_DESCR[mixdown] || mixdown})"
+            end
             HandbrakeCLI::logger.info("adding mixed down audio-track: #{t}")
           end
         end
@@ -1030,11 +1034,10 @@ module HandbrakeCLI
       @bitrate = nil
     end
     
-    def descr(cleaned = false)
-      return @descr unless cleaned
+    def descr(remove_codec = false, remove_channels = false)
       d = @descr.dup
-      d.gsub!(/[(]?#{codec}[)]?/, "")
-      d.gsub!(/[(]?#{channels}[)]?/, "")
+      d.gsub!(/\s*[(]?#{codec}[)]?/, "") if remove_codec
+      d.gsub!(/\s*[(]?#{channels}[)]?/, "") if remove_channels
       d.strip!
       return d
     end
