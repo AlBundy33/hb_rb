@@ -25,6 +25,8 @@ deu,eng
 [bluray]
 --lang
 deu,eng
+--audio-mixdown-encoder
+ffac3
 --audio-mixdown
 *:copy,DTS:5point1
 --audio-mixdown-bitrate
@@ -32,5 +34,6 @@ deu,eng
 --skip-commentaries
 --only-first-track-per-language
 --main
+--bluray
 --output
 ~/Desktop/#title#_#pos#.mkv
