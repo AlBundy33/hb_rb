@@ -1,24 +1,10 @@
 [movie]
---lang
-deu,eng
---audio-copy
---skip-commentaries
---only-first-track-per-language
---main
+--movie
 --output
 ~/Desktop/#title#.m4v
 
 [episodes]
---lang
-deu,eng
---audio-copy
---skip-commentaries
---only-first-track-per-language
---min-length
-00:10:00
---max-length
-00:50:00
---skip-duplicates
+--episodes
 --output
 ~/Desktop/#title#_#pos#.m4v
 
@@ -36,4 +22,4 @@ ffac3
 --main
 --bluray
 --output
-~/Desktop/#title#_#pos#.mkv
+~/Desktop/#title#.mkv
