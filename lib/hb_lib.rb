@@ -293,6 +293,20 @@ module HandbrakeCLI
       "7point1" => "7.1",
       "5_2_lfe" => "7.1 (5F/2R/LFE)"
     }
+    
+    # http://handbrake.fr/doxy/documentation/libhb/html/common_8c.html
+    AUDIO_ENCODER_DESCR = {
+      "ca_aac" => "AAC (CoreAudio)",
+      "ca_haac" => "HE-AAC (CoreAudio)",
+      "faac" => "AAC (faac)",
+      "ffaac" => "AAC (ffmpeg)",
+      "ffac3" => "AC3 (ffmpeg)",
+      "lame" => "MP3 (lame)",
+      "vorbis" => "Vorbis (vorbis)",
+      "ffflac" => "FLAC (ffmpeg)",
+      "ffflac24" => "FLAC (24-bit)",
+      "copy" => "original"
+    }
   
     X264_PROFILES = %w(baseline main high high10 high422 high444)
     X264_PRESETS = %w(ultrafast superfast veryfast faster fast medium slow slower veryslow placebo)
@@ -894,7 +908,7 @@ module HandbrakeCLI
         if not tracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
           paudio.each_with_index do |t,i|
-            HandbrakeCLI::logger.warn "    - track #{t}: #{paname[i] rescue nil || t.descr}"
+            HandbrakeCLI::logger.warn "    - track #{t}: #{paname[i] rescue nil || t.descr} - #{AUDIO_ENCODER_DESCR[paencoder[i]] rescue nil || paencoder[i]}"
           end
         end
         if not subtitles.empty?
