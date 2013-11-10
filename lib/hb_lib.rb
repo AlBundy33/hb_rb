@@ -124,17 +124,17 @@ module HandbrakeCLI
         opts.separator("")
         opts.separator("output-options")
         opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
-        opts.on("--bluray", "disables decomb and enables support for mp4-files over 4GB") { |arg| options.bluray = arg }
+        opts.on("--bluray", "sets quality to 23, disables decomb and detelecine, enables support for mp4-files over 4GB") { |arg| options.bluray = arg }
         opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
-        opts.on("--max-height HEIGTH", "maximum video height (e.g. 720, 1080)") { |arg| options.maxHeight = arg }
-        opts.on("--max-width WIDTH", "maximum video width (e.g. 1920)") { |arg| options.maxWidth = arg }
+        opts.on("--max-width WIDTH", "maximum video width (e.g. 1920, 1280, 720)") { |arg| options.maxWidth = arg }
+        opts.on("--max-height HEIGTH", "maximum video height (e.g. 1080, 720, 576)") { |arg| options.maxHeight = arg }
         opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
         opts.on("--audio-copy", "add original-audio track") { |arg| options.audioCopy = arg }
-        opts.on("--audio-mixdown [MAPPINGS]", Array, "add mixed down track. Use optional MAPPINGS to define the mixdown per track description (default: dpl2, allowed: #{(["copy"] + Handbrake::AUDIO_MIXDOWNS).join(', ')})") { |arg| 
+        opts.on("--audio-mixdown [MAPPINGS]", Array, "add mixed down track. Use optional MAPPINGS to define the mixdown per track description (default: dpl2, allowed: #{(["copy"] + Handbrake::getAudioMixdowns()).join(', ')})") { |arg| 
             options.audioMixdown = true
             options.audioMixdownMappings = arg 
         }
-        opts.on("--audio-mixdown-encoder ENCODER", "add encoded audio track (#{Handbrake::AUDIO_ENCODERS.join(', ')})") { |arg| options.audioMixdownEncoder = arg }
+        opts.on("--audio-mixdown-encoder ENCODER", "add encoded audio track (#{Handbrake::getAudioEncoders().join(', ')})") { |arg| options.audioMixdownEncoder = arg }
         opts.on("--audio-mixdown-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioMixdownBitrate = arg }
         opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
         opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().keys.sort.join(', ')})") { |arg| options.preset = arg }
@@ -259,10 +259,10 @@ module HandbrakeCLI
       showUsageAndExit(optparse,"unknown x264-profile: #{options.x264profile}") if not options.x264profile.nil? and not Handbrake::X264_PROFILES.include?(options.x264profile)
       showUsageAndExit(optparse,"unknown x264-preset: #{options.x264preset}") if not options.x264preset.nil? and not Handbrake::X264_PRESETS.include?(options.x264preset)
       showUsageAndExit(optparse,"unknown x264-tune option: #{options.x264tune}") if not options.x264tune.nil? and not Handbrake::X264_TUNES.include?(options.x264tune)
-      showUsageAndExit(optparse,"unknown audio-encoder: #{options.audioMixdownEncoder}") if not options.audioMixdownEncoder.nil? and not Handbrake::AUDIO_ENCODERS.include?(options.audioMixdownEncoder)
+      showUsageAndExit(optparse,"unknown audio-encoder: #{options.audioMixdownEncoder}") if not options.audioMixdownEncoder.nil? and not Handbrake::getAudioEncoders().include?(options.audioMixdownEncoder)
       if not options.audioMixdownMappings.nil?
         h = {}
-        allowed = ["copy"] + Handbrake::AUDIO_MIXDOWNS
+        allowed = ["copy"] + Handbrake::getAudioMixdowns()
         options.audioMixdownMappings.each do |m|
           a = m.split(":", 2)
           showUsageAndExit(options,"unknon mixdown option #{a.last} (allowed: #{allowed.join(', ')})") if not allowed.include?(a.last)
@@ -280,9 +280,6 @@ module HandbrakeCLI
     include Tools
 
     HANDBRAKE_CLI = File.expand_path("#{File.dirname(__FILE__)}/../tools/handbrake/#{Tools::OS::platform().to_s.downcase}/HandBrakeCLI")
-  
-    AUDIO_ENCODERS = %w(ca_aac ca_haac faac ffaac ffac3 lame vorbis ffflac)
-    AUDIO_MIXDOWNS = %w(mono left_only right_only stereo dpl1 dpl2 5point1 6point1 7point1 5_2_lfe)
     
     AUDIO_MIXDOWN_DESCR = {
       "mono" => "Mono",
@@ -300,7 +297,44 @@ module HandbrakeCLI
     X264_PROFILES = %w(baseline main high high10 high422 high444)
     X264_PRESETS = %w(ultrafast superfast veryfast faster fast medium slow slower veryslow placebo)
     X264_TUNES = %w(film animation grain stillimage psnr ssim fastdecode zerolatency)
-  
+    
+    def self.getAudioEncoders()
+      cmd = "\"#{HANDBRAKE_CLI}\" --help 2>&1"
+      output = %x[#{cmd}]
+      result = []
+      add = false
+      output.each_line do |line|
+        l = line.strip
+        if l.start_with?("-E, --aencoder")
+          add = true
+          next
+        end
+        next unless add
+        break if l.start_with?("copy:* will passthrough")
+        next if l.start_with?("copy")
+        result << l
+      end
+      return result
+    end
+    
+    def self.getAudioMixdowns()
+      cmd = "\"#{HANDBRAKE_CLI}\" --help 2>&1"
+      output = %x[#{cmd}]
+      result = []
+      add = false
+      output.each_line do |line|
+        l = line.strip
+        if l.start_with?("-6, --mixdown")
+          add = true
+          next
+        end
+        next unless add
+        break if l.include?(" ")
+        result << l
+      end
+      return result
+    end
+
     def self.getPresets()
       result = {}
       mergeHash(result, loadBuiltInPresets())
