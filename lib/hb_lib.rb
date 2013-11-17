@@ -17,9 +17,7 @@ module HandbrakeCLI
   end
   class HBOptions
     attr_accessor :argv, :input, :output, :force,
-                  :ipodCompatibility, :enableAutocrop,
-                  :languages, :audioMixdown, :audioCopy,
-                  :audioMixdownEncoder, :audioMixdownBitrate, :audioMixdownMappings,
+                  :ipodCompatibility, :enableAutocrop, :languages, :audioSettings,
                   :maxHeight, :maxWidth, :subtitles, :preset, :mainFeatureOnly, :titles, :chapters,
                   :minLength, :maxLength, :skipDuplicates,
                   :onlyFirstTrackPerLanguage, :skipCommentaries,
@@ -31,16 +29,6 @@ module HandbrakeCLI
 
     def self.showUsageAndExit(options, msg = nil)
       puts options.to_s
-      puts
-      puts "available place-holders for output-file:"
-      puts "  #pos#             - title-number on input-source"
-      puts "  #size#            - resolution"
-      puts "  #fps#             - frames per second"
-      puts "  #ts#              - current timestamp"
-      puts "  #title#           - source-title (dvd-label, directory-basename, filename)"
-      puts "  #source#          - name of input"
-      puts "  #source_basename# - name of input without extension"
-      puts "  #source_dirname#  - path to the input-file"
       puts
       puts "hints:"
       puts "use raw disk devices (e.g. /dev/rdisk1) to ensure that libdvdnav can read the title"
@@ -56,8 +44,8 @@ module HandbrakeCLI
       puts "convert complete file or DVD with all tracks, languages etc."
       puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Output_#pos#.m4v\""
       puts
-      puts "convert complete file with own mixdowns (copy 5.1 and Dolby Surround, mixdown 2.0 to stereo and 1.0 to mono)"
-      puts "#{File.basename($0)} --input /dev/rdisk1 --output \"~/Output_#pos#.m4v\" --audio-mixdown \"5.1:copy,1.0:mono,2.0:stereo,Dolby Surround:copy\""
+      puts "convert MKV, add at first the english mixed down track and after that the copied english and german track"
+      puts "#{File.basename($0)} --input ~/mymovie.mkv --output \"~/Output_#pos#.m4v\" --audio-track encoder=ca_aac,mixdown=dpl2,language=eng --audio-copy"
       puts
       puts "convert all local DVDs recursive in a directory"
       puts "#{File.basename($0)} --input \"~/DVD/**/VIDEO_TS\" --output \"~/#title#_#pos#.m4v\""
@@ -75,15 +63,19 @@ module HandbrakeCLI
       exit
     end
     
-    def self.setdefaults(options)
-      options.languages = ["deu", "eng"]
-      options.subtitles = ["deu", "eng"]
-      options.onlyFirstTrackPerLanguage = true
-      options.audioCopy = true
-      options.skipCommentaries = true
+    def self.replace_argument(args, old, new)
+      new_args = []
+      args.each do |a|
+        if a.eql?(old)
+          new_args += [*new]
+        else
+          new_args << a
+        end
+      end
+      return new_args
     end
-
-    def self.parseArgs(argv)
+    
+    def self.replace_presets(argv)
       hbpresets = Handbrake::getHbPresets()
       unless hbpresets.empty?
         arguments = []
@@ -105,6 +97,59 @@ module HandbrakeCLI
       else
         arguments = argv
       end
+      return arguments
+    end
+    
+    def self.registerHashType()
+      OptionParser.accept :Hash do |arg,|
+        key = ""
+        value = ""
+        result = {}
+        add_to_key = true
+        char_escaped = false
+        string_escaped = false
+        arg.split("").each do |c|
+          if not char_escaped and c.eql?('"')
+            string_escaped = !string_escaped
+            next
+          end
+          if not char_escaped and c.eql?('\\')
+            char_escaped = true
+            next
+          end
+          if not (string_escaped or char_escaped) and c.eql?("=") and add_to_key
+            add_to_key = false
+            next
+          end
+          if not (string_escaped or char_escaped) and c.eql?(",")
+            result[key.strip] = value.strip
+            key = ""
+            value = ""
+            add_to_key = true
+            next
+          end
+          if add_to_key
+            key << c
+          else
+            value << c
+          end
+          char_escaped = false
+        end
+        result[key.strip] = value.strip unless key.strip.empty?
+        result
+      end
+    end
+
+    def self.parseArgs(argv)
+      self.registerHashType()
+      argv = self.replace_presets(argv)
+      shorts = []
+      shorts << ["--audio-copy", ["--audio-track", "encoder=copy"]]
+      shorts << ["--audio-mixdown", ["--audio-track", "encoder=ca_aac,mixdown=dpl2"]]
+      shorts << ["--movie", ["--default", "--main"]]
+      shorts << ["--episodes", ["--default", "--min-length", "00:10:00", "--max-length", "00:50:00", "--skip-duplicates"]]
+      shorts << ["--default", ["--audio", "deu,eng", "--subtitles", "deu,eng", "--audio-copy", "--skip-commentaries", "--only-first-track-per-language"]]
+      0.upto(10) { shorts.each {|a| argv = self.replace_argument(argv, a.first, a.last) } }
       options = HBOptions.new
       options.inputDoneCommands = []
       options.outputDoneCommands= []
@@ -112,7 +157,17 @@ module HandbrakeCLI
         opts.separator("")
         opts.separator("common")
         opts.on("--input INPUT", "input-source") { |arg| options.input = arg }
-        opts.on("--output OUTPUT", "output-file (mp4, m4v and mkv supported)") { |arg| options.output = arg }
+        output_help = ["output-file (mp4, m4v and mkv supported)"]
+        output_help << "available place-holders"
+        output_help << "#pos#             - title-number on input-source"
+        output_help << "#size#            - resolution"
+        output_help << "#fps#             - frames per second"
+        output_help << "#ts#              - current timestamp"
+        output_help << "#title#           - source-title (dvd-label, directory-basename, filename)"
+        output_help << "#source#          - name of input"
+        output_help << "#source_basename# - name of input without extension"
+        output_help << "#source_dirname#  - path to the input-file"
+        opts.on("--output OUTPUT", *output_help) { |arg| options.output = arg }
         opts.on("--force", "force override of existing files") { |arg| options.force = arg }
         opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
         opts.on("--help", "Display this screen") { |arg| showUsageAndExit(opts) }
@@ -129,15 +184,23 @@ module HandbrakeCLI
         opts.on("--max-width WIDTH", "maximum video width (e.g. 1920, 1280, 720)") { |arg| options.maxWidth = arg }
         opts.on("--max-height HEIGTH", "maximum video height (e.g. 1080, 720, 576)") { |arg| options.maxHeight = arg }
         opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
-        opts.on("--audio-copy", "add original-audio track") { |arg| options.audioCopy = arg }
-        opts.on("--audio-mixdown [MAPPINGS]", Array, "add mixed down track. Use optional MAPPINGS to define the mixdown per track description (default: dpl2, allowed: #{(["copy", "auto"] + Handbrake::getAudioMixdowns()).join(', ')})") { |arg| 
-            options.audioMixdown = true
-            options.audioMixdownMappings = arg 
-        }
-        opts.on("--audio-mixdown-encoder ENCODER", "add encoded audio track (#{Handbrake::getAudioEncoders().join(', ')})") { |arg| options.audioMixdownEncoder = arg }
-        opts.on("--audio-mixdown-bitrate BITRATE", "bitrate for encoded audio track (default 160kb/s)") { |arg| options.audioMixdownBitrate = arg }
         opts.on("--subtitles LANGUAGES", Array, "the subtitle languages") { |arg| options.subtitles = arg }
-        opts.on("--preset PRESET", "the handbrake-preset to use (#{Handbrake::getPresets().keys.sort.join(', ')})") { |arg| options.preset = arg }
+        opts.on("--lang LANGUAGES", Array, "sets audio and subtitle languges") do |arg|
+          options.languages = arg
+          options.subtitles = arg
+        end
+        audio_track_args = {
+          "encoder" => "the audio encoder to use (allowed: #{(["copy"] + Handbrake::getAudioEncoders()).join(', ')}, default: copy)",
+          "mixdown" => "allowed: #{(["auto"] + Handbrake::getAudioMixdowns()).join(', ')}), default: auto)", 
+          "bitrate" => "the bitrate to use (default: 160kb/s)",
+          "codec" => "the codec-filter to apply (regular expression)",
+          "language" => "the language-filter to apply (space separated)"
+        }
+        opts.on("--audio-track SETTINGS", :Hash, *(["the audio-settings to use", "allowed options"] + audio_track_args.collect{|k,v| "#{k} - #{v}"})) { |arg|
+          options.audioSettings = [] if options.audioSettings.nil?
+          options.audioSettings << arg
+        }
+        opts.on("--preset PRESET", "the handbrake-preset to use", "allowed: #{Handbrake::getPresets().keys.sort.join(', ')})") { |arg| options.preset = arg }
         opts.on("--preview [RANGE]", "convert only a preview in RANGE (default: 00:01:00-00:02:00)") { |arg| options.preview = arg || "00:01:00-00:02:00" }
       
         opts.separator("")
@@ -197,29 +260,17 @@ module HandbrakeCLI
           end
         end
       
-        opts.separator("")
-        opts.separator("shorts")
-        opts.on("--default",   "sets: --audio deu,eng --subtitles deu,eng --audio-copy --skip-commentaries --only-first-track-per-language") do |arg|
-          setdefaults(options)
-        end
-        opts.on("--movie",   "sets: --default --main") do |arg|
-          setdefaults(options)
-          options.mainFeatureOnly = true
-        end
-        opts.on("--episodes", "sets: --default --min-length 00:10:00 --max-length 00:50:00 --skip-duplicates") do |arg|
-          setdefaults(options)
-          options.minLength = "00:10:00"
-          options.maxLength = "00:50:00"
-          options.skipDuplicates = true
-        end
-        opts.on("--lang LANGUAGES", Array, "set subtitle and audio languges") do |arg|
-          options.languages = arg
-          options.subtitles = arg
+        unless shorts.empty?
+          opts.separator("")
+          opts.separator("shorts")
+          shorts.each do |s|
+            opts.on(s.first, "sets: #{s.last.join(' ')}")
+          end
         end
       end
       
       begin
-        optparse.parse!(arguments)
+        optparse.parse!(argv)
       rescue => e
         if not e.kind_of?(SystemExit)
           showUsageAndExit(optparse, e.to_s)
@@ -234,7 +285,6 @@ module HandbrakeCLI
       options.force = false if options.force.nil?
       options.ipodCompatibility = false if options.ipodCompatibility.nil?
       options.enableAutocrop = false if options.enableAutocrop.nil?
-      options.audioCopy = true if options.audioMixdown.nil? and options.audioCopy.nil?
       options.mainFeatureOnly = false if options.mainFeatureOnly.nil?
       options.skipDuplicates = false if options.skipDuplicates.nil?
       options.onlyFirstTrackPerLanguage = false if options.onlyFirstTrackPerLanguage.nil?
@@ -243,7 +293,6 @@ module HandbrakeCLI
       options.debug = false if options.debug.nil?
       options.verbose = false if options.verbose.nil?
       options.titles.collect!{ |t| t.to_i } if not options.titles.nil?
-      options.audioMixdownBitrate = "160" if options.audioMixdownBitrate.nil?
       
       if not Tools::OS::command2?(Handbrake::HANDBRAKE_CLI)
          showUsageAndExit(optparse,"""handbrake not found
@@ -256,22 +305,31 @@ module HandbrakeCLI
       showUsageAndExit(optparse, "input not set") if options.input.nil?()
       showUsageAndExit(optparse, "output not set") if not options.checkOnly and options.output.nil?()
       #showUsageAndExit(optparse, "\"#{options.input}\" does not exist") if not File.exists? options.input
+      options.audioSettings = [{"encoder" => "copy"}] if options.audioSettings.nil?
+      options.audioSettings.each do |arg|
+        defaults = {
+          "encoder" => "copy",
+          "mixdown" => "auto",
+          "bitrate" => "160",
+          "codec" => nil,
+          "language" => nil
+        }
+        defaults.each {|k,v| arg[k] = v if arg[k].nil? or arg[k].strip.empty? }
+        arg["language"] = arg["language"].split(" ").collect{|l| l.strip } unless arg["language"].nil?
+        allowed = {
+          "encoder" => ["copy"] + Handbrake::getAudioEncoders(),
+          "mixdown" => ["auto"] + Handbrake::getAudioMixdowns()
+        }
+        allowed.each do |k,v|
+          showUsageAndExit(options, "wrong value #{arg[k]} for {k} - allowed: #{v.join(', ')}") unless v.include?(arg[k])
+        end
+      end
+      options.audioSettings.uniq!
       showUsageAndExit(optparse,"unknown x264-profile: #{options.x264profile}") if not options.x264profile.nil? and not Handbrake::X264_PROFILES.include?(options.x264profile)
       showUsageAndExit(optparse,"unknown x264-preset: #{options.x264preset}") if not options.x264preset.nil? and not Handbrake::X264_PRESETS.include?(options.x264preset)
       showUsageAndExit(optparse,"unknown x264-tune option: #{options.x264tune}") if not options.x264tune.nil? and not Handbrake::X264_TUNES.include?(options.x264tune)
-      showUsageAndExit(optparse,"unknown audio-encoder: #{options.audioMixdownEncoder}") if not options.audioMixdownEncoder.nil? and not Handbrake::getAudioEncoders().include?(options.audioMixdownEncoder)
-      if not options.audioMixdownMappings.nil?
-        h = {}
-        allowed = ["copy", "auto"] + Handbrake::getAudioMixdowns()
-        options.audioMixdownMappings.each do |m|
-          a = m.split(":", 2)
-          showUsageAndExit(options,"unknon mixdown option #{a.last} (allowed: #{allowed.join(', ')})") if not allowed.include?(a.last)
-          h[a.first] = a.last
-        end
-        options.audioMixdownMappings = h
-      end
-      showUsageAndExit(options,"unknown preset #{options.preset}") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil?
-      options.argv = arguments
+      showUsageAndExit(optparse,"unknown preset #{options.preset}") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil?
+      options.argv = argv
       return options
     end
   end
@@ -365,7 +423,7 @@ module HandbrakeCLI
         pname = nil
         File.open(fname).each do |line|
           l = line.strip
-          next if l.empty?
+          next if l.empty? or l.start_with?(";")
           if l.start_with?("[") and l.end_with?("]")
             pname = l[1..-2]
             result[pname] = [] unless pname.nil? or pname.strip.empty?
@@ -602,18 +660,7 @@ module HandbrakeCLI
       
       return source
     end
-    
-    def self.getMixdown(track, mappings, default)
-      descr = "#{track.descr}"
-      if not mappings.nil?
-        mappings.each do |r,m|
-          next if r.eql?".*" or r.eql?"*"
-          return m if descr =~ /#{r}/
-        end
-      end
-      return mappings[".*"] || mappings["*"] || default
-    end
-  
+
     def self.convert(options, titleMatcher, audioMatcher, subtitleMatcher)
       source = Handbrake::readInfo(options.input, options.debug && options.verbose, options.testdata)
       created = []
@@ -798,24 +845,7 @@ module HandbrakeCLI
         paname = []
         
         tracks.each do |t|
-          mixdown_track = options.audioMixdown
-          copy_track = options.audioCopy
           use_preset_settings = !options.preset.nil?
-          mixdown = nil
-  
-          if mixdown_track
-            mixdown = getMixdown(t, options.audioMixdownMappings, "dpl2")
-            if mixdown.eql?("copy")
-              mixdown = nil
-              mixdown_track = false
-              copy_track = true
-            end
-          end
-          
-          if use_preset_settings
-            mixdown_track = false
-            copy_track = false
-          end
   
           HandbrakeCLI::logger.info("checking audio-track #{t}")
           if use_preset_settings
@@ -833,41 +863,41 @@ module HandbrakeCLI
             value = preset_arguments.match(/(?:-D|--drc) ([^ ]+)/)[1]
             pdrc << value unless value.nil?
             paname << (["#{t.descr(true, true)}"] * track_count).join("\",\"")
-            HandbrakeCLI::logger.info("adding audio-track: #{t}")            
-          end
-          if copy_track
-            # copy original track
-            paudio << t.pos
-            paencoder << "copy"
-            parate << "auto"
-            pmixdown << "auto"
-            pab << "auto"
-            pdrc << "0.0"
-            paname << "#{t.descr}"
             HandbrakeCLI::logger.info("adding audio-track: #{t}")
-          end
-          if mixdown_track
-            # add mixdown track
-            paudio << t.pos
-            if not options.audioMixdownEncoder.nil?
-              paencoder << options.audioMixdownEncoder
-            elsif ismp4
-              paencoder << "ca_aac"
-            else
-              paencoder << "ca_aac"
-            end
-            parate << "auto"
-            pmixdown << mixdown
-            pab << options.audioMixdownBitrate
-            pdrc << "0.0"
-            if mixdown.eql?"auto"
-              paname << "#{t.descr(true, false)}"
-            else
-              paname << "#{t.descr(true, true)} (#{AUDIO_MIXDOWN_DESCR[mixdown] || mixdown})"
-            end
-            HandbrakeCLI::logger.info("adding mixed down audio-track: #{t}")
+          else
+            options.audioSettings.each do |at|
+              #puts at["encoder"] + ": " + t.descr.to_s + " =~ " + /#{at["codec"]}/.to_s + " -> " + (!!("#{t.descr}" =~ /#{at["codec"]}/)).to_s  
+              next if !at["language"].nil? and !at["language"].include?(t.lang)
+              next if !at["codec"].nil? and !("#{t.descr}" =~ /#{at["codec"]}/)
+              #puts at["encoder"] + ": " + t.descr
+              paudio << t.pos
+              paencoder << at["encoder"]
+              parate << "auto"
+              if at["encoder"].eql?("copy")
+                pmixdown << "auto"
+                pab << "auto"
+                paname << "#{t.descr}"
+              else
+                pmixdown << at["mixdown"]
+                pab << at["bitrate"]
+                if at["mixdown"].eql?"auto"
+                  paname << "#{t.descr(true, false)}"
+                else
+                  paname << "#{t.descr(true, true)} (#{AUDIO_MIXDOWN_DESCR[at["mixdown"]] || at["mixdown"]})"
+                end
+              end
+              pdrc << "0.0"
+              
+              HandbrakeCLI::logger.info("adding audio-track: #{t}")
+            end            
           end
         end
+        
+       if paudio.empty?()
+          HandbrakeCLI::logger.info("skipping title because found to audio-tracks to add")
+          next
+        end
+        
         command << " --audio #{paudio.join(',')}"
         command << " --aencoder #{paencoder.join(',')}" unless paencoder.empty?
         command << " --arate #{parate.join(',')}" unless parate.empty?
