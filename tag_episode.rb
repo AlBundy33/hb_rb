@@ -27,7 +27,8 @@ providers["sj"] = SerienjunkiesProvider.new
 providers["imdb"] = ImdbProvider.new
 
 options = Struct.new(:identifier, :name, :season, :episode, :rename, :tag, :test, :append_old_name, :pattern, :provider).new
-options.pattern = "#name# - #season#x#episode# - #title# (#title_org#).#filename#"
+#options.pattern = "#name# - #season#x#episode# - #title# (#title_org#).#filename#"
+options.pattern = "#name# - #season#x#episode# - #title# (#title_org#)"
 options.provider = "sj"
 provider_list = ""
 providers.each{|k,v| provider_list << "\n\t\t#{k}: #{v.name} (#{v.languages.join(', ')})"}
