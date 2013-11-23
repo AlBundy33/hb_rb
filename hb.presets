@@ -1,4 +1,5 @@
 [bluray]
+; disabled subtitles because of resizing issues with pgs-subtitles
 --audio
 deu,eng
 --audio-track
