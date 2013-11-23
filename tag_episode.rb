@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# encoding: UTF-8
 require 'optparse'
 require File.join(File.dirname(__FILE__), "lib", "tools.rb")
 require File.join(File.dirname(__FILE__), "lib", "taggers.rb")

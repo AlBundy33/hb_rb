@@ -51,6 +51,9 @@ class AbstractInfoProvider
   end
   
   def loadUrl(url, xml = false)
+    f = open(url, 'User-Agent' => USER_AGENT)
+    content = Tools::StringTool::encode(f.read,f.charset,'utf-8')
+=begin
     content = open(url, 'User-Agent' => USER_AGENT).read
     content.gsub!(/&Ouml;/, "Ö")
     content.gsub!(/&ouml;/, "ö")
@@ -63,6 +66,7 @@ class AbstractInfoProvider
     content.gsub!("\304", "Ä")
     content.gsub!("\366", "ö")
     content.gsub!("\326", "Ö")
+=end
     if xml
       return REXML::Document.new(content)
     else
