@@ -1,4 +1,5 @@
 # encoding: UTF-8
+# for useful settings see: http://roku.yt1300.com/settings.html
 require 'fileutils'
 require 'optparse'
 begin
@@ -25,7 +26,9 @@ module HandbrakeCLI
                   :x264profile, :x264preset, :x264tune,
                   :testdata, :preview, :inputWaitLoops, :loops,
                   :logfile, :logOverride, :logOverview,
-                  :inputDoneCommands, :outputDoneCommands, :bluray
+                  :inputDoneCommands, :outputDoneCommands, :bluray,
+                  :passedThroughArguments, :enableDecomb, :enableDetelecine, :looseAnamorphic,
+                  :createEncodeLog
 
     def self.showUsageAndExit(options, msg = nil)
       puts options.to_s
@@ -149,10 +152,19 @@ module HandbrakeCLI
       shorts << ["--movie", ["--default", "--main"]]
       shorts << ["--episodes", ["--default", "--min-length", "00:10:00", "--max-length", "00:50:00", "--skip-duplicates"]]
       shorts << ["--default", ["--audio", "deu,eng", "--subtitles", "deu,eng", "--audio-copy", "--skip-commentaries", "--only-first-track-per-language"]]
+      shorts << ["--bluray", ["--no-decomb", "--no-detelecine", "--quality", "23", "--large-file", "--no-loose-anamorphic"]]
       0.upto(10) { shorts.each {|a| argv = self.replace_argument(argv, a.first, a.last) } }
+      passed_through = []
+      passed_through << ["--large-file", nil]
+      passed_through << ["--quality QUALITY", "--quality"]
       options = HBOptions.new
       options.inputDoneCommands = []
       options.outputDoneCommands= []
+      options.passedThroughArguments = []
+      options.enableDecomb = true
+      options.enableDetelecine = true
+      options.looseAnamorphic = true
+      options.createEncodeLog = false
       optparse = OptionParser.new do |opts|
         opts.separator("")
         opts.separator("common")
@@ -179,7 +191,7 @@ module HandbrakeCLI
         opts.separator("")
         opts.separator("output-options")
         opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
-        opts.on("--bluray", "sets quality to 23, disables decomb and detelecine, enables support for mp4-files over 4GB") { |arg| options.bluray = arg }
+        #opts.on("--bluray", "sets quality to 23, disables decomb and detelecine, enables support for mp4-files over 4GB") { |arg| options.bluray = arg }
         opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
         opts.on("--max-width WIDTH", "maximum video width (e.g. 1920, 1280, 720)") { |arg| options.maxWidth = arg }
         opts.on("--max-height HEIGTH", "maximum video height (e.g. 1080, 720, 576)") { |arg| options.maxHeight = arg }
@@ -223,12 +235,25 @@ module HandbrakeCLI
         opts.on("--skip-duplicates", "skip duplicate titles (checks block-size)") { |arg| options.skipDuplicates = arg }
         opts.on("--only-first-track-per-language", "convert only first audio-track per language") { |arg| options.onlyFirstTrackPerLanguage = arg }
         opts.on("--skip-commentaries", "ignore commentary-audio- and subtitle-tracks") { |arg| options.skipCommentaries = arg }
+        
+        opts.on("")
+        opts.on("options passed through handbrake (see handbrake-help for info)")
+        passed_through.each do |k,v|
+          opts.on(k, "") { |arg|
+            options.passedThroughArguments << (v || k)
+            options.passedThroughArguments << arg if !arg.nil? and !v.nil?
+          }
+        end
+        opts.on("--[no-]decomb") {|arg| options.enableDecomb = arg }
+        opts.on("--[no-]detelecine") {|arg| options.enableDetelecine = arg }
+        opts.on("--[no-]loose-anamorphic") { |arg| options.looseAnamorphic = arg }
           
         opts.separator("")
         opts.separator("logging")
         opts.on("--log [LOGFILE]", "write all output to LOGFILE") { |arg| options.logfile = arg || "hb.log" }
         opts.on("--log-override", "always override logfile") { |arg| options.logOverride = arg }
         opts.on("--log-overview LOGFILE", "write additional overview-file") { |arg| options.logOverview = arg }
+        opts.on("--create-encode-log", "create the handbrake encode-log based on the outputfile-name") { |arg| options.createEncodeLog = arg}
       
         opts.separator("")
         opts.separator("expert-options")
@@ -817,15 +842,11 @@ module HandbrakeCLI
   
         if options.preset.nil?
           command << " --encoder x264"
-          if options.bluray
-            command << " --quality 23.0"
-          else
-            command << " --quality 20.0"
-            command << " --decomb"
-            command << " --detelecine"
-          end
+          command << " --quality 20.0"
+          command << " --decomb" if options.enableDecomb
+          command << " --detelecine" if options.enableDetelecine
           command << " --crop 0:0:0:0" if not options.enableAutocrop
-          if not options.ipodCompatibility
+          if options.looseAnamorphic and !options.ipodCompatibility
             command << " --loose-anamorphic"
           end
           if ismp4 and options.ipodCompatibility
@@ -843,7 +864,6 @@ module HandbrakeCLI
         if ismp4
           command << " --format mp4"
           command << " --optimize"
-          command << " --large-file" if options.bluray
         elsif ismkv
           command << " --format mkv"
         end
@@ -993,6 +1013,13 @@ module HandbrakeCLI
         else
           command << " --audio-fallback lame"
         end
+        
+        # preserve fps to keep encoded audio in sync
+        allowed_fps = ["5", "10", "12", "15", "23.976", "24", "25", "29.97", "30", "50", "59.94", "60"]
+        if !title.fps.nil? and !title.fps.strip.empty? and allowed_fps.include?(title.fps)
+          command << " --cfr" 
+          command << " --rate #{title.fps}"
+        end
   
         # subtitles
         psubtitles = subtitles.collect{ |s| s.pos }
@@ -1001,12 +1028,14 @@ module HandbrakeCLI
         # arguments to delegate...
         command << " #{options.xtra_args}" if not options.xtra_args.nil?
 
-        if options.verbose
-          command << " 2>&1"
-        else
+        # passthroug arguments
+        command << " " + options.passedThroughArguments.join(" ")
+        if options.createEncodeLog
+          command << " 2>\"#{outputFile}_encode.log\""
+        elsif not options.verbose
           command << " 2>#{Tools::OS::nullDevice()}"
         end
-  
+
         start_time = Time.now
         HandbrakeCLI::logger.warn "input title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
         unless title.audioTracks.empty?
