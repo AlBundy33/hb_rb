@@ -17,7 +17,5 @@ track=*,encoder=copy
 --no-loose-anamorphic
 --quality
 23
---max-width
-720
 --max-height
 576
