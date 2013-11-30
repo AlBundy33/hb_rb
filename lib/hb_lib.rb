@@ -156,6 +156,7 @@ module HandbrakeCLI
       0.upto(10) { shorts.each {|a| argv = self.replace_argument(argv, a.first, a.last) } }
       passed_through = []
       passed_through << ["--large-file", nil]
+      passed_through << ["--encopts OPTIONS", "--encopts"]
       passed_through << ["--quality QUALITY", "--quality"]
       options = HBOptions.new
       options.inputDoneCommands = []
@@ -950,7 +951,8 @@ module HandbrakeCLI
                   end
                 end
               end
-              atc["encoder"] = "copy" if atc["encoder"].eql?("auto")
+              # no default found - so skip this track
+              next if atc["encoder"].eql?("auto")
 
               audio_settings = {}
               #puts atc["encoder"] + ": " + t.descr.to_s + " =~ " + /#{atc["codec"]}/.to_s + " -> " + (!!("#{t.descr}" =~ /#{atc["codec"]}/)).to_s  
