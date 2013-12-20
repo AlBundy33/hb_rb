@@ -465,8 +465,8 @@ module HandbrakeCLI
     
     def self.getHbPresets()
       result = {}
-      fname = "hb.presets"
-      if File.exist?(File.join(File.dirname($0), fname))
+      fname = File.join(File.dirname($0), "hb.presets")
+      if File.exist?(fname)
         pname = nil
         File.open(fname).each do |line|
           l = line.strip
