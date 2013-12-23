@@ -80,26 +80,27 @@ module HandbrakeCLI
     
     def self.replace_presets(argv)
       hbpresets = Handbrake::getHbPresets()
-      unless hbpresets.empty?
+      return argv if hbpresets.empty?
+      arguments = [*argv]
+      loop_cnt = 100
+      begin
+        tmp = [*arguments]
         arguments = []
         preset_name = false
-        argv.each do |a|
+        tmp.each do |a|
           if a.eql? "--hbpreset"
             preset_name = true
-            next 
-          end
-          raise "unknown preset #{a}" if preset_name and not hbpresets.keys.include?(a)
-          if preset_name
+          elsif preset_name
+            raise "unknown preset #{a}" if not hbpresets.keys.include?(a)
             preset_name = false
-            preset = hbpresets[a]
-            arguments += preset
+            arguments += hbpresets[a]
           else
             arguments << a
           end
         end
-      else
-        arguments = argv
-      end
+        loop_cnt -= 1
+        raise "configuration error detected" if loop_cnt <= 0
+      end while arguments.include?("--hbpreset")
       return arguments
     end
     
@@ -469,14 +470,14 @@ module HandbrakeCLI
       if File.exist?(fname)
         pname = nil
         File.open(fname).each do |line|
-          l = line.strip
+          l = line.strip.chomp.chomp
           next if l.empty? or l.start_with?(";")
           if l.start_with?("[") and l.end_with?("]")
             pname = l[1..-2]
             result[pname] = [] unless pname.nil? or pname.strip.empty?
             next
           end
-          result[pname] << line.chop unless pname.nil? or pname.strip.empty?
+          result[pname] << l unless pname.nil? or pname.strip.empty?
         end
       end
       return result
