@@ -784,7 +784,10 @@ module HandbrakeCLI
         result.subtitles = subtitles
   
         outputFile = File.expand_path(options.output)
-        source_title = source.name.gsub(/[^0-9a-zA-Z_\- .]/, "_")
+        source_title = source.name.dup
+        source_title.gsub!(/[_]+/, " ")
+        source_title.gsub!(/[^0-9a-zA-Z_\-= .,&\{\}\[\]\(\)]/, "_")
+        source_title.gsub!(/[\s]+/, " ")
         outputFile.gsub!("#pos#", "%02d" % title.pos)
         outputFile.gsub!("#size#", title.size || "")
         outputFile.gsub!("#fps#", title.fps || "")
