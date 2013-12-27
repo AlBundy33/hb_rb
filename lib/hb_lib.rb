@@ -786,7 +786,7 @@ module HandbrakeCLI
         outputFile = File.expand_path(options.output)
         source_title = source.name.dup
         source_title.gsub!(/[_]+/, " ")
-        source_title.gsub!(/[^0-9a-zA-Z_\-= .,&\{\}\[\]\(\)]/, "_")
+        source_title = Tools::FileTool::fixname(source_title)
         source_title.gsub!(/[\s]+/, " ")
         outputFile.gsub!("#pos#", "%02d" % title.pos)
         outputFile.gsub!("#size#", title.size || "")

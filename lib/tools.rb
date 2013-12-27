@@ -266,6 +266,11 @@ module Tools
   end
   
   class FileTool
+    
+    def self.fixname(filename)
+      filename.gsub(/[#{Regexp::escape('<>:"\/?*')}]/, "_")
+    end
+    
     def self.wait_for(file, retry_count = -1, sleep_time = 1)
       found = false
       loop = retry_count
