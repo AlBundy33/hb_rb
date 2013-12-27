@@ -16,17 +16,5 @@ track=*,encoder=copy
 --no-loose-anamorphic
 --quality
 20.0
-
-[bluray2sd]
---hbpreset
-bluray
---max-width
-720
---max-height
-576
-
-[bluray720p]
---hbpreset
-bluray
 --max-height
 720

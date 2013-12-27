@@ -148,12 +148,12 @@ module HandbrakeCLI
       self.registerHashType()
       argv = self.replace_presets(argv)
       shorts = []
-      shorts << ["--audio-copy", ["--audio-track", "encoder=auto"]]
+      shorts << ["--audio-copy", ["--audio-track", "encoder=copy"]]
       shorts << ["--audio-mixdown", ["--audio-track", "encoder=ca_aac,mixdown=dpl2"]]
       shorts << ["--movie", ["--default", "--main"]]
       shorts << ["--episodes", ["--default", "--min-length", "00:10:00", "--max-length", "00:50:00", "--skip-duplicates"]]
       shorts << ["--default", ["--audio", "deu,eng", "--subtitles", "deu,eng", "--audio-copy", "--skip-commentaries", "--only-first-track-per-language"]]
-      shorts << ["--bluray", ["--no-decomb", "--no-detelecine", "--quality", "23", "--large-file", "--no-loose-anamorphic"]]
+      shorts << ["--bluray", ["--no-decomb", "--no-detelecine", "--no-loose-anamorphic"]]
       0.upto(10) { shorts.each {|a| argv = self.replace_argument(argv, a.first, a.last) } }
       passed_through = []
       passed_through << ["--large-file", nil]
