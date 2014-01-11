@@ -4,21 +4,7 @@ require 'logger'
 require File.join(File.dirname(__FILE__), "lib", "hb_lib.rb")
 include HandbrakeCLI
 
-def cleanup()
-  HandbrakeCLI::logger.close()
-end
-
-at_exit do
-
-end
-
-Signal.trap("INT") do
-  puts "CTRL-C detected - exiting #{File.basename($0)}"
-  cleanup()
-  exit!(1)
-end
-
-puts "#{File.basename($0)} Copyright (C) 2013 AlBundy
+puts "#{File.basename($0)} Copyright (C) 2014 AlBundy
 This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt.
 This is free software, and you are welcome to redistribute it under certain conditions.
 
@@ -54,33 +40,37 @@ subtitleMatcher.skipCommentaries = options.skipCommentaries
 inputs = [options.input]
 inputs += options.argv if not options.argv.empty?
 
-inout = []
-current_loop = options.loops
-while current_loop != 0
-  inputs.each do |input|
-    input = File.expand_path(input)
-    if input.include?("*")
-      i_list = Dir[input]
-      if i_list.empty?
-        puts "found no files for pattern #{input}"
-        sleep 1
-        next
+begin
+  inout = []
+  current_loop = options.loops
+  while current_loop != 0
+    inputs.each do |input|
+      input = File.expand_path(input)
+      if input.include?("*")
+        i_list = Dir[input]
+        if i_list.empty?
+          puts "found no files for pattern #{input}"
+          sleep 1
+          next
+        end
+      else
+        i_list = [input]
       end
-    else
-      i_list = [input]
-    end
-    i_list.each do |i|
-      opts = options.dup
-      opts.input = i
-      unless Tools::FileTool::wait_for(opts.input, options.inputWaitLoops, 2) {|loop, max| puts "waiting for #{opts.input}..." if loop == max }
-        puts "#{opts.input} does not exist"
-        next
+      i_list.each do |i|
+        opts = options.dup
+        opts.input = i
+        unless Tools::FileTool::wait_for(opts.input, options.inputWaitLoops, 2) {|loop, max| puts "waiting for #{opts.input}..." if loop == max }
+          puts "#{opts.input} does not exist"
+          next
+        end
+        results = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
+        inout << [opts.input, results]
       end
-      results = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
-      inout << [opts.input, results]
     end
+    current_loop -= 1
   end
-  current_loop -= 1
+rescue Interrupt
+  puts "CTRL-C detected - stopping conversion"
 end
 
 # default overview
@@ -127,3 +117,5 @@ begin
 ensure
   overview.close unless overview.nil?
 end
+
+HandbrakeCLI::logger.close()

@@ -743,7 +743,7 @@ module HandbrakeCLI
         maxLength = TimeTool::timeToSeconds(options.maxLength)
       end
   
-      HandbrakeCLI::logger.warn("#{source}")
+      HandbrakeCLI::logger.info("#{source}")
       source.titles().each do |title|
         HandbrakeCLI::logger.info("checking #{title}")
         
@@ -1043,7 +1043,8 @@ module HandbrakeCLI
         end
 
         start_time = Time.now
-        HandbrakeCLI::logger.warn "input title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})"
+        HandbrakeCLI::logger.warn "input: #{source}"
+        HandbrakeCLI::logger.warn "  title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})" 
         unless title.audioTracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
           title.audioTracks.each do |t|
@@ -1056,7 +1057,8 @@ module HandbrakeCLI
             HandbrakeCLI::logger.warn "    - track #{s.pos}: #{s.descr}"
           end
         end
-        HandbrakeCLI::logger.warn "  == converting to ==" 
+        #HandbrakeCLI::logger.warn "  == converting to =="
+        HandbrakeCLI::logger.warn "output: #{outputFile}"
         if not tracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
           paudio.each_with_index do |t,i|
@@ -1078,14 +1080,21 @@ module HandbrakeCLI
         elsif not options.debug
           parentDir = File.dirname(outputFile)
           FileUtils.mkdir_p(parentDir) unless File.directory?(parentDir)
-          Tools::Loggers::tee(command,HandbrakeCLI::logger)
-          return_code = $?
+          begin
+            Tools::Loggers::tee(command,HandbrakeCLI::logger)
+            return_code = $?
+          rescue Interrupt => e
+            puts
+            return_code = 130
+          end
+          
           if File.exists?(outputFile)
             size = Tools::FileTool::size(outputFile)
             if return_code != 0
               HandbrakeCLI::logger.warn("Handbrake exited with return-code #{return_code} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
+              raise Interrupt if return_code == 130 
             elsif size >= 0 and size < (1 * 1024 * 1024)
               HandbrakeCLI::logger.warn("file-size only #{Tools::FileTool::humanReadableSize(size)} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
@@ -1295,7 +1304,7 @@ module HandbrakeCLI
     end
   
     def to_s
-      "#{path} (title=#{title}, title_alt=#{title_alt}, serial=#{serial}, name=#{name()})"
+      "#{path} (title=#{title}, title_alt=#{title_alt}, name=#{name()})"
     end
   end
   
