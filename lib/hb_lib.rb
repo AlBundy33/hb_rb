@@ -1094,7 +1094,6 @@ module HandbrakeCLI
               HandbrakeCLI::logger.warn("Handbrake exited with return-code #{return_code} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
-              raise Interrupt if return_code == 130 
             elsif size >= 0 and size < (1 * 1024 * 1024)
               HandbrakeCLI::logger.warn("file-size only #{Tools::FileTool::humanReadableSize(size)} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
@@ -1128,6 +1127,7 @@ module HandbrakeCLI
         required_time = Tools::TimeTool::secondsToTime((end_time - start_time).round)
         HandbrakeCLI::logger.warn("== done (required time: #{required_time}) =================================")
       end
+      raise Interrupt if return_code == 130
       unless created.empty?
         options.inputDoneCommands.each do |command|
           cmd = command.create_command(options.input)
