@@ -1126,8 +1126,8 @@ module HandbrakeCLI
         end_time = Time.now
         required_time = Tools::TimeTool::secondsToTime((end_time - start_time).round)
         HandbrakeCLI::logger.warn("== done (required time: #{required_time}) =================================")
+        raise Interrupt if return_code == 130
       end
-      raise Interrupt if return_code == 130
       unless created.empty?
         options.inputDoneCommands.each do |command|
           cmd = command.create_command(options.input)
