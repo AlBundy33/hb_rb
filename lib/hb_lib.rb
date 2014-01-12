@@ -743,7 +743,7 @@ module HandbrakeCLI
         maxLength = TimeTool::timeToSeconds(options.maxLength)
       end
   
-      HandbrakeCLI::logger.warn "input: #{source}"
+      HandbrakeCLI::logger.warn "checking #{source}"
       source.titles().each do |title|
         HandbrakeCLI::logger.info("checking #{title}")
         
@@ -1043,6 +1043,7 @@ module HandbrakeCLI
         end
 
         start_time = Time.now
+        HandbrakeCLI::logger.warn "input: #{source}"
         HandbrakeCLI::logger.warn "  title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})" 
         unless title.audioTracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
@@ -1056,7 +1057,6 @@ module HandbrakeCLI
             HandbrakeCLI::logger.warn "    - track #{s.pos}: #{s.descr}"
           end
         end
-        #HandbrakeCLI::logger.warn "  == converting to =="
         HandbrakeCLI::logger.warn "output: #{outputFile}"
         if not tracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
@@ -1098,7 +1098,7 @@ module HandbrakeCLI
               File.delete(outputFile)
               converted.delete(title.blocks())
             else
-              HandbrakeCLI::logger.warn("file #{outputFile} created (#{Tools::FileTool::humanReadableSize(size)})")
+              HandbrakeCLI::logger.warn("created file #{outputFile} (#{Tools::FileTool::humanReadableSize(size)})")
               if size >= 4 * 1024 * 1024 * 1024 and !command =~ /--large-file/
                 HandbrakeCLI::logger.warn("file maybe useless because it's over 4GB and --large-file was not specified")
               end
