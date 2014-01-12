@@ -743,7 +743,7 @@ module HandbrakeCLI
         maxLength = TimeTool::timeToSeconds(options.maxLength)
       end
   
-      HandbrakeCLI::logger.info("#{source}")
+      HandbrakeCLI::logger.warn "input: #{source}"
       source.titles().each do |title|
         HandbrakeCLI::logger.info("checking #{title}")
         
@@ -1043,7 +1043,6 @@ module HandbrakeCLI
         end
 
         start_time = Time.now
-        HandbrakeCLI::logger.warn "input: #{source}"
         HandbrakeCLI::logger.warn "  title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})" 
         unless title.audioTracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
