@@ -67,7 +67,7 @@ ARGV.options do |opts|
 end
 
 if __FILE__ == $0
-  puts "#{File.basename($0)} Copyright (C) 2013 AlBundy
+  puts "#{File.basename($0)} Copyright (C) 2014 AlBundy
 This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt.
 This is free software, and you are welcome to redistribute it under certain conditions.
 
