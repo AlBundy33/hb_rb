@@ -15,6 +15,7 @@
 			<include name="lib/taggers.rb"/>
 			<include name="lib/provider_lib.rb"/>
 			<include name="lib/commands.rb" />
+			<include name="lib/manicure.rb" />
 			<include name="tag_episode.rb" />
 			<include name="hb.rb" />
 			<include name="readme.txt" />

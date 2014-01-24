@@ -430,28 +430,28 @@ class Display
     #Auto Passthru Mask
     audioCopyMask = ""
     
-    if hash["AudioAllowAACPass"].to_i == 1
+    if trueOrOne(hash["AudioAllowAACPass"])
       audioCopyMask << "aac"
     end
-    if hash["AudioAllowAC3Pass"].to_i == 1
+    if trueOrOne(hash["AudioAllowAC3Pass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "ac3"
     end
-    if hash["AudioAllowDTSHDPass"].to_i == 1
+    if trueOrOne(hash["AudioAllowDTSHDPass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dtshd"
     end
-    if hash["AudioAllowDTSPass"].to_i == 1
+    if trueOrOne(hash["AudioAllowDTSPass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dts"
     end
-    if hash["AudioAllowMP3Pass"].to_i == 1
+    if trueOrOne(hash["AudioAllowMP3Pass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
@@ -508,7 +508,7 @@ class Display
     end
     
     #iPod MP4 atom
-    if hash["Mp4iPodCompatible"].to_i == 1
+    if trueOrOne(hash["Mp4iPodCompatible"])
       commandString << " -I"
     end
     
@@ -518,7 +518,7 @@ class Display
     end
     
     #MP4 Optimize for HTTP Streaming
-    if hash["Mp4HttpOptimize"].to_i == 1
+    if trueOrOne(hash["Mp4HttpOptimize"])
       commandString << " -O"
     end
     
@@ -680,6 +680,10 @@ class Display
     puts commandString
   end
   
+  def trueOrOne(value)
+    value.to_s.eql?("true") or value.to_s.eql?("1")
+  end
+  
   def generateCLIParse(hash, depth) # Makes a CLI equivalent of all user presets, for wrappers to parse
     commandString = ""
     depth.times do
@@ -838,28 +842,28 @@ class Display
     #Auto Passthru Mask
     audioCopyMask = ""
     
-    if hash["AudioAllowAACPass"].to_i == 1
+    if trueOrOne(hash["AudioAllowAACPass"])
       audioCopyMask << "aac"
     end
-    if hash["AudioAllowAC3Pass"].to_i == 1
+    if trueOrOne(hash["AudioAllowAC3Pass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "ac3"
     end
-    if hash["AudioAllowDTSHDPass"].to_i == 1
+    if trueOrOne(hash["AudioAllowDTSHDPass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dtshd"
     end
-    if hash["AudioAllowDTSPass"].to_i == 1
+    if trueOrOne(hash["AudioAllowDTSPass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dts"
     end
-    if hash["AudioAllowMP3Pass"].to_i == 1
+    if trueOrOne(hash["AudioAllowMP3Pass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
@@ -916,7 +920,7 @@ class Display
     end
     
     #iPod MP4 atom
-    if hash["Mp4iPodCompatible"].to_i == 1
+    if trueOrOne(hash["Mp4iPodCompatible"])
       commandString << " -I"
     end
     
@@ -926,7 +930,7 @@ class Display
     end
     
     #MP4 Optimize for HTTP Streaming
-    if hash["Mp4HttpOptimize"].to_i == 1
+    if trueOrOne(hash["Mp4HttpOptimize"])
       commandString << " -O"
     end
     
@@ -1085,17 +1089,17 @@ class Display
     commandString << "}\n    "
     
     #iPod MP4 atom
-    if hash["Mp4iPodCompatible"].to_i == 1
+    if trueOrOne(hash["Mp4iPodCompatible"])
       commandString << "job->ipod_atom = 1;\n    "
     end
     
     # 64-bit files
-    if hash["Mp4LargeFile"] == 1
+    if trueOrOne(hash["Mp4LargeFile"])
       commandString << "job->largeFileSize = 1;\n    "
     end
     
     #MP4 Optimize for HTTP Streaming
-    if hash["Mp4HttpOptimize"].to_i == 1
+    if trueOrOne(hash["Mp4HttpOptimize"])
       commandString << "job->mp4_optimize = 1;\n    "
     end
     
@@ -1283,19 +1287,19 @@ class Display
       commandString << "if( allowed_audio_copy == -1 )\n    "
       commandString << "{\n    "
       commandString << "    allowed_audio_copy = 0;\n    "
-      if hash["AudioAllowAACPass"].to_i == 1
+      if trueOrOne(hash["AudioAllowAACPass"])
         commandString << "    allowed_audio_copy |= HB_ACODEC_AAC_PASS;\n    "
       end
-      if hash["AudioAllowAC3Pass"].to_i == 1
+      if trueOrOne(hash["AudioAllowAC3Pass"])
         commandString << "    allowed_audio_copy |= HB_ACODEC_AC3_PASS;\n    "
       end
-      if hash["AudioAllowDTSHDPass"].to_i == 1
+      if trueOrOne(hash["AudioAllowDTSHDPass"])
         commandString << "    allowed_audio_copy |= HB_ACODEC_DCA_HD_PASS;\n    "
       end
-      if hash["AudioAllowDTSPass"].to_i == 1
+      if trueOrOne(hash["AudioAllowDTSPass"])
         commandString << "    allowed_audio_copy |= HB_ACODEC_DCA_PASS;\n    "
       end
-      if hash["AudioAllowMP3Pass"].to_i == 1
+      if trueOrOne(hash["AudioAllowMP3Pass"])
         commandString << "    allowed_audio_copy |= HB_ACODEC_MP3_PASS;\n    "
       end
       commandString << "    allowed_audio_copy &= HB_ACODEC_PASS_MASK;\n    "
@@ -1439,11 +1443,11 @@ class Display
       when 1
         commandString << "denoise_opt = \"" << hash["PictureDenoiseCustom"].to_s << "\";\n    "
       when 2
-        commandString << "denoise_opt = \"2:1:2:3\";\n    "
+        commandString << "denoise_opt = \"2:1:1:2:3:3\";\n    "
       when 3
-        commandString << "denoise_opt = \"3:2:2:3\";\n    "
+        commandString << "denoise_opt = \"3:2:2:2:3:3\";\n    "
       when 4
-        commandString << "denoise_opt = \"7:7:5:5\";\n    "
+        commandString << "denoise_opt = \"7:7:7:5:5:5\";\n    "
       end
       
       if hash["PictureDecomb"].to_i != 0
@@ -1708,28 +1712,28 @@ class Display
     #Auto Passthru Mask
     audioCopyMask = ""
     
-    if hash["AudioAllowAACPass"].to_i == 1
+    if trueOrOne(hash["AudioAllowAACPass"])
       audioCopyMask << "aac"
     end
-    if hash["AudioAllowAC3Pass"].to_i == 1
+    if trueOrOne(hash["AudioAllowAC3Pass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "ac3"
     end
-    if hash["AudioAllowDTSHDPass"].to_i == 1
+    if trueOrOne(hash["AudioAllowDTSHDPass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dtshd"
     end
-    if hash["AudioAllowDTSPass"].to_i == 1
+    if trueOrOne(hash["AudioAllowDTSPass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dts"
     end
-    if hash["AudioAllowMP3Pass"].to_i == 1
+    if trueOrOne(hash["AudioAllowMP3Pass"])
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
@@ -1786,17 +1790,17 @@ class Display
     end
     
     #iPod MP4 atom
-    if hash["Mp4iPodCompatible"].to_i == 1
+    if trueOrOne(hash["Mp4iPodCompatible"])
       commandString << " -I"
     end
     
     # 64-bit files
-    if hash["Mp4LargeFile"] == 1
+    if trueOrOne(hash["Mp4LargeFile"])
       commandString << " -4"
     end
     
     #MP4 Optimize for HTTP Streaming
-    if hash["Mp4HttpOptimize"].to_i == 1
+    if trueOrOne(hash["Mp4HttpOptimize"])
       commandString << " -O"
     end
     
