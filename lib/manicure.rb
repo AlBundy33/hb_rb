@@ -8,7 +8,7 @@
 # This script parses HandBrake's Mac presets into hashes, which can
 # be displayed in various formats for use by the CLI and its wrappers.
 
-# For handling command line arguments to the script
+# For handling command -line arguments to the script
 require 'optparse'
 require 'ostruct'
 require 'rubygems'
@@ -430,28 +430,28 @@ class Display
     #Auto Passthru Mask
     audioCopyMask = ""
     
-    if trueOrOne(hash["AudioAllowAACPass"])
+    if hash["AudioAllowAACPass"].to_i == 1
       audioCopyMask << "aac"
     end
-    if trueOrOne(hash["AudioAllowAC3Pass"])
+    if hash["AudioAllowAC3Pass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "ac3"
     end
-    if trueOrOne(hash["AudioAllowDTSHDPass"])
+    if hash["AudioAllowDTSHDPass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dtshd"
     end
-    if trueOrOne(hash["AudioAllowDTSPass"])
+    if hash["AudioAllowDTSPass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dts"
     end
-    if trueOrOne(hash["AudioAllowMP3Pass"])
+    if hash["AudioAllowMP3Pass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
@@ -508,7 +508,7 @@ class Display
     end
     
     #iPod MP4 atom
-    if trueOrOne(hash["Mp4iPodCompatible"])
+    if hash["Mp4iPodCompatible"].to_i == 1
       commandString << " -I"
     end
     
@@ -518,7 +518,7 @@ class Display
     end
     
     #MP4 Optimize for HTTP Streaming
-    if trueOrOne(hash["Mp4HttpOptimize"])
+    if hash["Mp4HttpOptimize"].to_i == 1
       commandString << " -O"
     end
     
@@ -680,10 +680,6 @@ class Display
     puts commandString
   end
   
-  def trueOrOne(value)
-    value.to_s.eql?("true") or value.to_s.eql?("1")
-  end
-  
   def generateCLIParse(hash, depth) # Makes a CLI equivalent of all user presets, for wrappers to parse
     commandString = ""
     depth.times do
@@ -842,28 +838,28 @@ class Display
     #Auto Passthru Mask
     audioCopyMask = ""
     
-    if trueOrOne(hash["AudioAllowAACPass"])
+    if hash["AudioAllowAACPass"].to_i == 1
       audioCopyMask << "aac"
     end
-    if trueOrOne(hash["AudioAllowAC3Pass"])
+    if hash["AudioAllowAC3Pass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "ac3"
     end
-    if trueOrOne(hash["AudioAllowDTSHDPass"])
+    if hash["AudioAllowDTSHDPass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dtshd"
     end
-    if trueOrOne(hash["AudioAllowDTSPass"])
+    if hash["AudioAllowDTSPass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dts"
     end
-    if trueOrOne(hash["AudioAllowMP3Pass"])
+    if hash["AudioAllowMP3Pass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
@@ -920,7 +916,7 @@ class Display
     end
     
     #iPod MP4 atom
-    if trueOrOne(hash["Mp4iPodCompatible"])
+    if hash["Mp4iPodCompatible"].to_i == 1
       commandString << " -I"
     end
     
@@ -930,7 +926,7 @@ class Display
     end
     
     #MP4 Optimize for HTTP Streaming
-    if trueOrOne(hash["Mp4HttpOptimize"])
+    if hash["Mp4HttpOptimize"].to_i == 1
       commandString << " -O"
     end
     
@@ -1089,17 +1085,17 @@ class Display
     commandString << "}\n    "
     
     #iPod MP4 atom
-    if trueOrOne(hash["Mp4iPodCompatible"])
+    if hash["Mp4iPodCompatible"].to_i == 1
       commandString << "job->ipod_atom = 1;\n    "
     end
     
     # 64-bit files
-    if trueOrOne(hash["Mp4LargeFile"])
+    if hash["Mp4LargeFile"] == 1
       commandString << "job->largeFileSize = 1;\n    "
     end
     
     #MP4 Optimize for HTTP Streaming
-    if trueOrOne(hash["Mp4HttpOptimize"])
+    if hash["Mp4HttpOptimize"].to_i == 1
       commandString << "job->mp4_optimize = 1;\n    "
     end
     
@@ -1287,19 +1283,19 @@ class Display
       commandString << "if( allowed_audio_copy == -1 )\n    "
       commandString << "{\n    "
       commandString << "    allowed_audio_copy = 0;\n    "
-      if trueOrOne(hash["AudioAllowAACPass"])
+      if hash["AudioAllowAACPass"].to_i == 1
         commandString << "    allowed_audio_copy |= HB_ACODEC_AAC_PASS;\n    "
       end
-      if trueOrOne(hash["AudioAllowAC3Pass"])
+      if hash["AudioAllowAC3Pass"].to_i == 1
         commandString << "    allowed_audio_copy |= HB_ACODEC_AC3_PASS;\n    "
       end
-      if trueOrOne(hash["AudioAllowDTSHDPass"])
+      if hash["AudioAllowDTSHDPass"].to_i == 1
         commandString << "    allowed_audio_copy |= HB_ACODEC_DCA_HD_PASS;\n    "
       end
-      if trueOrOne(hash["AudioAllowDTSPass"])
+      if hash["AudioAllowDTSPass"].to_i == 1
         commandString << "    allowed_audio_copy |= HB_ACODEC_DCA_PASS;\n    "
       end
-      if trueOrOne(hash["AudioAllowMP3Pass"])
+      if hash["AudioAllowMP3Pass"].to_i == 1
         commandString << "    allowed_audio_copy |= HB_ACODEC_MP3_PASS;\n    "
       end
       commandString << "    allowed_audio_copy &= HB_ACODEC_PASS_MASK;\n    "
@@ -1712,28 +1708,28 @@ class Display
     #Auto Passthru Mask
     audioCopyMask = ""
     
-    if trueOrOne(hash["AudioAllowAACPass"])
+    if hash["AudioAllowAACPass"].to_i == 1
       audioCopyMask << "aac"
     end
-    if trueOrOne(hash["AudioAllowAC3Pass"])
+    if hash["AudioAllowAC3Pass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "ac3"
     end
-    if trueOrOne(hash["AudioAllowDTSHDPass"])
+    if hash["AudioAllowDTSHDPass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dtshd"
     end
-    if trueOrOne(hash["AudioAllowDTSPass"])
+    if hash["AudioAllowDTSPass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
       audioCopyMask << "dts"
     end
-    if trueOrOne(hash["AudioAllowMP3Pass"])
+    if hash["AudioAllowMP3Pass"].to_i == 1
       if audioCopyMask.size > 0
         audioCopyMask << ","
       end
@@ -1790,17 +1786,17 @@ class Display
     end
     
     #iPod MP4 atom
-    if trueOrOne(hash["Mp4iPodCompatible"])
+    if hash["Mp4iPodCompatible"].to_i == 1
       commandString << " -I"
     end
     
     # 64-bit files
-    if trueOrOne(hash["Mp4LargeFile"])
+    if hash["Mp4LargeFile"] == 1
       commandString << " -4"
     end
     
     #MP4 Optimize for HTTP Streaming
-    if trueOrOne(hash["Mp4HttpOptimize"])
+    if hash["Mp4HttpOptimize"].to_i == 1
       commandString << " -O"
     end
     
@@ -1942,19 +1938,17 @@ class Display
   
 end
 
-if __FILE__ == $0
-  # First grab the specified CLI options
-  options = readOptions
-  
-  # Only run if one of the useful CLI flags have been passed
-  if options.cliraw == true || options.cliparse == true || options.api == true || options.apilist == true
-    # This line is the ignition -- generates hashes of
-    # presets and then displays them to the screen
-    # with the options the user selects on the CLI. 
-    Display.new( Presets.new.hashMasterList, options )
-  else
-    # Direct the user to the help
-    puts "\n\tUsage: manicure.rb [options]"
-    puts "\tSee help with -h or --help"
-  end
+# First grab the specified CLI options
+options = readOptions
+
+# Only run if one of the useful CLI flags have been passed
+if options.cliraw == true || options.cliparse == true || options.api == true || options.apilist == true
+  # This line is the ignition -- generates hashes of
+  # presets and then displays them to the screen
+  # with the options the user selects on the CLI. 
+  Display.new( Presets.new.hashMasterList, options )
+else
+  # Direct the user to the help
+  puts "\n\tUsage: manicure.rb [options]"
+  puts "\tSee help with -h or --help"
 end
