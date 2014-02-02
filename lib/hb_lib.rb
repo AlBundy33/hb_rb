@@ -173,14 +173,15 @@ module HandbrakeCLI
         opts.on("--input INPUT", "input-source") { |arg| options.input = arg }
         output_help = ["output-file (mp4, m4v and mkv supported)"]
         output_help << "available place-holders"
-        output_help << "#pos#             - title-number on input-source"
-        output_help << "#size#            - resolution"
-        output_help << "#fps#             - frames per second"
-        output_help << "#ts#              - current timestamp"
-        output_help << "#title#           - source-title (dvd-label, directory-basename, filename)"
-        output_help << "#source#          - name of input"
-        output_help << "#source_basename# - name of input without extension"
-        output_help << "#source_dirname#  - path to the input-file"
+        output_help << "#pos#               - title-number on input-source"
+        output_help << "#size#              - resolution"
+        output_help << "#fps#               - frames per second"
+        output_help << "#ts#                - current timestamp"
+        output_help << "#title#             - source-title (dvd-label, directory-basename, filename)"
+        output_help << "#source#            - name of input"
+        output_help << "#source_basename#   - name of input without extension"
+        output_help << "#source_dirname#    - complete path to the input-file"
+        output_help << "#source_parentname# - directoryname of the input-file"
         opts.on("--output OUTPUT", *output_help) { |arg| options.output = arg }
         opts.on("--force", "force override of existing files") { |arg| options.force = arg }
         opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
@@ -788,14 +789,18 @@ module HandbrakeCLI
         source_title.gsub!(/[_]+/, " ")
         source_title = Tools::FileTool::fixname(source_title)
         source_title.gsub!(/[\s]+/, " ")
+        source_basename = source.input_name(true) || source_title
+        source_dirname = File.dirname(source.path) || File.expand_path(".")
+        source_parentname = File.basename(File.expand_path("..", source_dirname))
         outputFile.gsub!("#pos#", "%02d" % title.pos)
         outputFile.gsub!("#size#", title.size || "")
         outputFile.gsub!("#fps#", title.fps || "")
         outputFile.gsub!("#ts#", Time.new.strftime("%Y-%m-%d_%H_%M_%S"))
         outputFile.gsub!("#title#", source_title)
         outputFile.gsub!("#source#", source.input_name(false) || source_title)
-        outputFile.gsub!("#source_basename#", source.input_name(true) || source_title)
-        outputFile.gsub!("#source_dirname#", File.dirname(source.path) || File.expand_path("."))
+        outputFile.gsub!("#source_basename#", source_basename)
+        outputFile.gsub!("#source_dirname#", source_dirname)
+        outputFile.gsub!("#source_parentname#", source_parentname)
         if not options.force
           if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
             HandbrakeCLI::logger.warn("skipping title because \"#{outputFile}\" already exists")
