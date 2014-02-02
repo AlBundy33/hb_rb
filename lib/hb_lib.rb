@@ -790,8 +790,8 @@ module HandbrakeCLI
         source_title = Tools::FileTool::fixname(source_title)
         source_title.gsub!(/[\s]+/, " ")
         source_basename = source.input_name(true) || source_title
-        source_dirname = File.dirname(source.path) || File.expand_path(".")
-        source_parentname = File.basename(File.expand_path("..", source_dirname))
+        source_dirname = File.expand_path(File.dirname(source.path))
+        source_parentname = File.basename(source_dirname)
         outputFile.gsub!("#pos#", "%02d" % title.pos)
         outputFile.gsub!("#size#", title.size || "")
         outputFile.gsub!("#fps#", title.fps || "")
