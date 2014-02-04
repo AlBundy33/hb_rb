@@ -1053,13 +1053,13 @@ module HandbrakeCLI
         unless title.audioTracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
           title.audioTracks.each do |t|
-            HandbrakeCLI::logger.warn "    - track #{t.pos}: #{t.descr}"
+            HandbrakeCLI::logger.warn "    - track #{t.pos}: [#{t.lang}] #{t.descr}"
           end
         end
         unless title.subtitles.empty?
           HandbrakeCLI::logger.warn "  subtitles"
           title.subtitles.each do |s|
-            HandbrakeCLI::logger.warn "    - track #{s.pos}: #{s.descr}"
+            HandbrakeCLI::logger.warn "    - track #{s.pos}: [#{s.lang}] #{s.descr}"
           end
         end
         HandbrakeCLI::logger.warn "output: #{outputFile}"
