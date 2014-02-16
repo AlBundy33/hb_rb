@@ -851,6 +851,15 @@ module HandbrakeCLI
         end
   
         if options.preset.nil?
+=begin
+          if ????
+            # https://forum.handbrake.fr/viewtopic.php?f=11&t=29490
+            command << " --encoder qsv_h264"
+            #command << " --encopts b-pyramid=0"
+          else
+            command << " --encoder x264"
+          end
+=end
           command << " --encoder x264"
           command << " --quality 20.0"
           command << " --decomb" if options.enableDecomb
