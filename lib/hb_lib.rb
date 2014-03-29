@@ -557,10 +557,10 @@ module HandbrakeCLI
       str
     end
   
-    def self.readInfo(input, debug = false, testdata = nil)
+    def self.readInfo(input, debug = false, testdata = nil, titles = nil)
       path = File.expand_path(input)
 
-      cmd = "\"#{HANDBRAKE_CLI}\" -i \"#{path}\" --scan --title 0 2>&1"
+      cmd = "\"#{HANDBRAKE_CLI}\" -i \"#{path}\" --scan --title #{titles.nil? || titles.size != 1 ? 0 : titles.first} 2>&1"
       if !testdata.nil? and File.exists?(testdata)
         puts "reading file #{testdata}" if debug
         output = File.read(testdata)
@@ -720,7 +720,7 @@ module HandbrakeCLI
     end
 
     def self.convert(options, titleMatcher, audioMatcher, subtitleMatcher)
-      source = Handbrake::readInfo(options.input, options.debug && options.verbose, options.testdata)
+      source = Handbrake::readInfo(options.input, options.debug && options.verbose, options.testdata, options.titles)
       created = []
       if options.checkOnly
         puts source.info
