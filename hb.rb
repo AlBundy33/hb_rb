@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'logger'
-require File.join(File.dirname(__FILE__), "lib", "hb_lib.rb")
+require File.join(File.dirname(File.absolute_path(__FILE__)), "lib", "hb_lib.rb")
 include HandbrakeCLI
 
 puts "#{File.basename($0)} Copyright (C) 2014 AlBundy
