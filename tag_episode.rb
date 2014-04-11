@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 # encoding: UTF-8
 require 'optparse'
-require File.join(File.dirname(__FILE__), "lib", "tools.rb")
-require File.join(File.dirname(__FILE__), "lib", "taggers.rb")
-require File.join(File.dirname(__FILE__), "lib", "provider_lib.rb")
+require File.join(File.dirname(File.absolute_path(__FILE__)), "lib", "tools.rb")
+require File.join(File.dirname(File.absolute_path(__FILE__)), "lib", "taggers.rb")
+require File.join(File.dirname(File.absolute_path(__FILE__)), "lib", "provider_lib.rb")
 
 def fix_filename(str, chars_to_replace = ['/', '\\', '?', '%', '*',':', '|', '"', '<', '>' ] )
   return nil if str.nil? or str.strip.empty?
