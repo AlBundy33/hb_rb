@@ -52,21 +52,13 @@ class AbstractInfoProvider
   
   def loadUrl(url, xml = false)
     f = open(url, 'User-Agent' => USER_AGENT)
-    content = Tools::StringTool::encode(f.read,f.charset,'utf-8')
-=begin
-    content = open(url, 'User-Agent' => USER_AGENT).read
-    content.gsub!(/&Ouml;/, "Ö")
-    content.gsub!(/&ouml;/, "ö")
-    content.gsub!(/&auml;/, "ä")
-    content.gsub!(/&uuml;/, "ü")
-    content.gsub!(/&szlig;/, "ß")
-    content.gsub!("\374", "ü")
-    content.gsub!("\334", "Ü")
-    content.gsub!("\344", "ä")
-    content.gsub!("\304", "Ä")
-    content.gsub!("\366", "ö")
-    content.gsub!("\326", "Ö")
-=end
+    if Tools::OS::windows?
+      charset = "iso-8859-1"
+    else
+      charset = "utf-8"
+    end
+    content = Tools::StringTool::encode(f.read,f.charset,charset)
+
     if xml
       return REXML::Document.new(content)
     else
