@@ -13,6 +13,10 @@ class Tagger
     @command = cmd
   end
   
+  def can_handle?(file)
+    return true
+  end
+  
   def available?()
     return (Tools::OS::platform?(@platform) and Tools::OS::command?(@command))
   end
@@ -20,6 +24,24 @@ class Tagger
   def to_s
     @command
   end
+end
+
+class NullTagger < Tagger
+  def initialize()
+    super(nil,nil)
+  end
+  
+  def createCommand(file, tagInfo)
+    return nil
+  end
+  
+  def can_handle?(file)
+    return true
+  end
+  
+  def available?()
+    return true
+  end  
 end
 
 class AtomicParsley < Tagger
@@ -35,6 +57,10 @@ class AtomicParsley < Tagger
     "season" => ["--TVSeasonNum"],
     "descr" => ["--description"]
   }
+  
+  def can_handle?(file)
+    return file.downcase.end_with?(".mp4") || file.downcase.end_with?(".m4v")
+  end
 
   def createCommand(file, tagInfo)
     cmd = "#{@command} \"#{file}\""
@@ -72,6 +98,10 @@ class SublerCLITagger < Tagger
     "season" => "TV Season",
     "descr" => "Description"
   }
+  
+  def can_handle?(file)
+    return file.downcase.end_with?(".mp4") || file.downcase.end_with?(".m4v")
+  end
 
   def createCommand(file, tagMap)
     tags = ""
@@ -101,10 +131,11 @@ class TaggerFactory
     SublerCLITagger.new(Tools::OS::OSX, SublerCLITagger::OSX_COMMAND)
   ]
 
-  def self.newTagger()
+  def self.newTagger(file)
     @@TAGGERS.each do |t|
-      return t if t.available?()
+      return t if t.available?() and t.can_handle?(file)
     end
-    raise "found no tagger for platform #{Tools::OS.platform()}"
+    #raise "found no tagger for platform #{Tools::OS.platform()} and file #{file}"
+    return NullTagger.new
   end
 end

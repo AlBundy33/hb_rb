@@ -98,7 +98,7 @@ For questions, feature-requests etc. visit: https://forum.handbrake.fr/viewtopic
     end
   
     if options.tag
-      tagger = TaggerFactory::newTagger()
+      tagger = TaggerFactory::newTagger(f)
       cmd = tagger.createCommand(f, info.to_map)
       if cmd.nil?
         Tools::CON.warn("found no command to tag file")
