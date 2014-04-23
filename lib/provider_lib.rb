@@ -71,7 +71,7 @@ class AbstractInfoProvider
     return nil if value.nil? or value.strip.empty?
     if Tools::OS::windows?
       begin
-        v = Tools::StringTool::encode(value, 'iso-8859-15', 'utf-8')
+        v = Tools::StringTool::encode(value, 'windows-1252', 'utf-8')
       rescue => e
         v = value
       end
