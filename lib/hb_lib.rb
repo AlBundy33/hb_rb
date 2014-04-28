@@ -263,6 +263,11 @@ module HandbrakeCLI
         opts.on("--loops LOOPS", "processes input LOOPS times (default: 1)") { |arg| options.loops = arg.to_i }
         opts.on("--wait LOOPS", "retries LOOPS times to wait for input (default: unlimited)") { |arg| options.inputWaitLoops = arg.to_i }
         opts.on("--xtra ARGS", "additional arguments for handbrake") { |arg| options.xtra_args = arg }
+        opts.on("--temp DIR", "use DIR as temp-direcotry") { |arg|
+          t = File.absolute_path(arg)
+          FileUtils.mkdir_p(t) unless File.directory?(t)
+          ["TEMP", "TMP", "TMPDIR"].each {|n| ENV[n] = t }
+        }
         opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
         opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
         opts.on("--testdata FILE", "read info from/write info to file") { |arg| options.testdata = arg }
