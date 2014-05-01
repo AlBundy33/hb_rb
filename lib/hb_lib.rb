@@ -28,7 +28,10 @@ module HandbrakeCLI
                   :logfile, :logOverride, :logOverview,
                   :inputDoneCommands, :outputDoneCommands, :bluray,
                   :passedThroughArguments, :enableDecomb, :enableDetelecine, :looseAnamorphic,
-                  :createEncodeLog
+                  :createEncodeLog, :encoder
+    def initialize()
+      @encoder = "x264"
+    end
 
     def self.showUsageAndExit(options, msg = nil)
       puts options.to_s
@@ -271,6 +274,18 @@ module HandbrakeCLI
         opts.on("--debug", "enable debug-mode (doesn't start conversion)") { |arg| options.debug = arg }
         opts.on("--verbose", "enable verbose output") { |arg| options.verbose = arg }
         opts.on("--testdata FILE", "read info from/write info to file") { |arg| options.testdata = arg }
+        opts.on("--encoder ENCODER", "sets the video-encoder to use (available: #{Handbrake::getEncoders().join(', ')})") {|arg|
+          options.encoder = arg
+        }
+        opts.on("--qsv", "enables hardware-acceleration with qsv_h264 if available, otherwise x264 will be used") {
+          encoders = Handbrake::getEncoders()
+          if encoders.include?("qsv_h264")
+            options.encoder = "qsv_h264"
+          else
+            puts "WARNING: QSV is not supported. available encoders are: #{encoders.join(', ')}"
+            puts "to enable qsv please check https://forum.handbrake.fr/viewtopic.php?f=11&t=29498"
+          end
+        }
         opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
         opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
         opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
@@ -347,6 +362,7 @@ module HandbrakeCLI
       # check settings
       showUsageAndExit(optparse, "input not set") if options.input.nil?()
       showUsageAndExit(optparse, "output not set") if not options.checkOnly and options.output.nil?()
+      showUsageAndExit(optparse, "unknown video-encoder #{options.encoder}") if not Handbrake::getEncoders().include?(options.encoder)
       #showUsageAndExit(optparse, "\"#{options.input}\" does not exist") if not File.exists? options.input
       options.audioTrackSettings = [{"encoder" => "auto"}] if options.audioTrackSettings.nil?
       options.audioTrackSettings.each do |arg|
@@ -423,6 +439,25 @@ module HandbrakeCLI
     X264_PROFILES = %w(baseline main high high10 high422 high444)
     X264_PRESETS = %w(ultrafast superfast veryfast faster fast medium slow slower veryslow placebo)
     X264_TUNES = %w(film animation grain stillimage psnr ssim fastdecode zerolatency)
+    
+    def self.getEncoders()
+      cmd = "\"#{HANDBRAKE_CLI}\" --help 2>&1"
+      output = %x[#{cmd}]
+      result = []
+      add = false
+      output.each_line do |line|
+        l = line.strip
+        if l.start_with?("-e, --encoder")
+          add = true
+          next
+        end
+        next unless add
+        break if l.start_with?("--")
+        next unless l.start_with?("Options:")
+        result += l[8..-1].strip.split("/")
+      end
+      return result
+    end
     
     def self.getAudioEncoders()
       cmd = "\"#{HANDBRAKE_CLI}\" --help 2>&1"
@@ -865,7 +900,7 @@ module HandbrakeCLI
             command << " --encoder x264"
           end
 =end
-          command << " --encoder x264"
+          command << " --encoder #{options.encoder}"
           command << " --quality 20.0"
           command << " --decomb" if options.enableDecomb
           command << " --detelecine" if options.enableDetelecine
