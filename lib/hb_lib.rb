@@ -29,7 +29,27 @@ module HandbrakeCLI
                   :inputDoneCommands, :outputDoneCommands,
                   :passedThroughArguments, :enableDecomb, :enableDetelecine, :looseAnamorphic,
                   :createEncodeLog, :encoder
+
     def initialize()
+      @inputWaitLoops = -1
+      @loops = 1
+      @force = false
+      @ipodCompatibility = false
+      @enableAutocrop = false
+      @mainFeatureOnly = false
+      @skipDuplicates = false
+      @onlyFirstTrackPerLanguage = false
+      @skipCommentaries = false
+      @checkOnly = false
+      @debug = false
+      @verbose = false
+      @inputDoneCommands = []
+      @outputDoneCommands= []
+      @passedThroughArguments = []
+      @enableDecomb = true
+      @enableDetelecine = true
+      @looseAnamorphic = true
+      @createEncodeLog = false
       @encoder = "x264"
     end
 
@@ -163,13 +183,6 @@ module HandbrakeCLI
       passed_through << ["--encopts OPTIONS", "--encopts"]
       passed_through << ["--quality QUALITY", "--quality"]
       options = HBOptions.new
-      options.inputDoneCommands = []
-      options.outputDoneCommands= []
-      options.passedThroughArguments = []
-      options.enableDecomb = true
-      options.enableDetelecine = true
-      options.looseAnamorphic = true
-      options.createEncodeLog = false
       optparse = OptionParser.new do |opts|
         opts.separator("")
         opts.separator("common")
@@ -283,6 +296,7 @@ module HandbrakeCLI
           else
             puts "WARNING: QSV is not supported. available encoders are: #{encoders.join(', ')}"
             puts "to enable qsv please check https://forum.handbrake.fr/viewtopic.php?f=11&t=29498"
+            puts
           end
         }
         opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
@@ -336,19 +350,6 @@ module HandbrakeCLI
         end
       end
       
-      # set default values
-      options.inputWaitLoops = -1 if options.inputWaitLoops.nil?
-      options.loops = 1 if options.loops.nil?
-      options.force = false if options.force.nil?
-      options.ipodCompatibility = false if options.ipodCompatibility.nil?
-      options.enableAutocrop = false if options.enableAutocrop.nil?
-      options.mainFeatureOnly = false if options.mainFeatureOnly.nil?
-      options.skipDuplicates = false if options.skipDuplicates.nil?
-      options.onlyFirstTrackPerLanguage = false if options.onlyFirstTrackPerLanguage.nil?
-      options.skipCommentaries = false if options.skipCommentaries.nil?
-      options.checkOnly = false if options.checkOnly.nil?
-      options.debug = false if options.debug.nil?
-      options.verbose = false if options.verbose.nil?
       options.titles.collect!{ |t| t.to_i } if not options.titles.nil?
       
       if not Tools::OS::command2?(Handbrake::HANDBRAKE_CLI)
@@ -362,7 +363,6 @@ module HandbrakeCLI
       showUsageAndExit(optparse, "input not set") if options.input.nil?()
       showUsageAndExit(optparse, "output not set") if not options.checkOnly and options.output.nil?()
       showUsageAndExit(optparse, "unknown video-encoder #{options.encoder}") if not Handbrake::getEncoders().include?(options.encoder)
-      #showUsageAndExit(optparse, "\"#{options.input}\" does not exist") if not File.exists? options.input
       options.audioTrackSettings = [{"encoder" => "auto"}] if options.audioTrackSettings.nil?
       options.audioTrackSettings.each do |arg|
         defaults = {
@@ -783,7 +783,7 @@ module HandbrakeCLI
         maxLength = TimeTool::timeToSeconds(options.maxLength)
       end
   
-      HandbrakeCLI::logger.warn "checking #{source}"
+      HandbrakeCLI::logger.warn "processing #{source}"
       source.titles().each do |title|
         HandbrakeCLI::logger.info("checking #{title}")
         
@@ -1356,7 +1356,11 @@ module HandbrakeCLI
     end
   
     def to_s
-      "#{path} (title=#{title}, title_alt=#{title_alt}, name=#{name()})"
+      size = nil
+      if File.file?(path)
+        size = ", size=#{Tools::FileTool::humanReadableSize(Tools::FileTool::size(path) || 0)}"
+      end
+      return "#{path} (title=#{title}, title_alt=#{title_alt}, name=#{name()}#{size})"
     end
   end
   

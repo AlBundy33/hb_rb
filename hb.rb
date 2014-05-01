@@ -88,7 +88,11 @@ write_overview = lambda{|msg|
 begin
   write_overview.call("overview")
   inout.each do |input,results|
-    write_overview.call("input: #{input}")
+    size = nil
+    if File.file?(input)
+      size = " (#{Tools::FileTool::humanReadableSize(Tools::FileTool::size(input) || 0)})"
+    end
+    write_overview.call("input: #{input}#{size}")
     if results.empty?
       write_overview.call("  no outputs")
     else
