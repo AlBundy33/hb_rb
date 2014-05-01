@@ -26,7 +26,7 @@ module HandbrakeCLI
                   :x264profile, :x264preset, :x264tune,
                   :testdata, :preview, :inputWaitLoops, :loops,
                   :logfile, :logOverride, :logOverview,
-                  :inputDoneCommands, :outputDoneCommands, :bluray,
+                  :inputDoneCommands, :outputDoneCommands,
                   :passedThroughArguments, :enableDecomb, :enableDetelecine, :looseAnamorphic,
                   :createEncodeLog, :encoder
     def initialize()
@@ -197,7 +197,6 @@ module HandbrakeCLI
         opts.separator("")
         opts.separator("output-options")
         opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
-        #opts.on("--bluray", "sets quality to 23, disables decomb and detelecine, enables support for mp4-files over 4GB") { |arg| options.bluray = arg }
         opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
         opts.on("--max-width WIDTH", "maximum video width (e.g. 1920, 1280, 720)") { |arg| options.maxWidth = arg }
         opts.on("--max-height HEIGTH", "maximum video height (e.g. 1080, 720, 576)") { |arg| options.maxHeight = arg }
