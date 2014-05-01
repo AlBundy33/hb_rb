@@ -199,6 +199,7 @@ module HandbrakeCLI
         output_help << "#source_basename#   - name of input without extension"
         output_help << "#source_dirname#    - complete path to the input-file"
         output_help << "#source_parentname# - directoryname of the input-file"
+        output_help << "#encoder#           - the used video-encoder"
         opts.on("--output OUTPUT", *output_help) { |arg| options.output = arg }
         opts.on("--force", "force override of existing files") { |arg| options.force = arg }
         opts.on("--check", "show only available titles and tracks") { |arg| options.checkOnly = arg }
@@ -842,6 +843,7 @@ module HandbrakeCLI
         outputFile.gsub!("#source_basename#", source_basename)
         outputFile.gsub!("#source_dirname#", source_dirname)
         outputFile.gsub!("#source_parentname#", source_parentname)
+        outputFile.gsub!("#encoder#", options.encoder || "")
         if not options.force
           if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
             HandbrakeCLI::logger.warn("skipping title because \"#{outputFile}\" already exists")
@@ -892,15 +894,6 @@ module HandbrakeCLI
         end
   
         if options.preset.nil?
-=begin
-          if ????
-            # https://forum.handbrake.fr/viewtopic.php?f=11&t=29490
-            command << " --encoder qsv_h264"
-            #command << " --encopts b-pyramid=0"
-          else
-            command << " --encoder x264"
-          end
-=end
           command << " --encoder #{options.encoder}"
           command << " --quality 20.0"
           command << " --decomb" if options.enableDecomb
