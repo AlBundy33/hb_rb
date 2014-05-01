@@ -28,7 +28,7 @@ module HandbrakeCLI
                   :logfile, :logOverride, :logOverview,
                   :inputDoneCommands, :outputDoneCommands,
                   :passedThroughArguments, :enableDecomb, :enableDetelecine, :looseAnamorphic,
-                  :createEncodeLog, :encoder
+                  :createEncodeLog, :encoder, :disableProgress
 
     def initialize()
       @inputWaitLoops = -1
@@ -51,6 +51,7 @@ module HandbrakeCLI
       @looseAnamorphic = true
       @createEncodeLog = false
       @encoder = "x264"
+      @disableProgress = false
     end
 
     def self.showUsageAndExit(options, msg = nil)
@@ -302,6 +303,7 @@ module HandbrakeCLI
         opts.on("--x264-profile PRESET", "use x264-profile (#{Handbrake::X264_PROFILES.join(', ')})") { |arg| options.x264profile = arg }
         opts.on("--x264-preset PRESET", "use x264-preset (#{Handbrake::X264_PRESETS.join(', ')})") { |arg| options.x264preset = arg }
         opts.on("--x264-tune OPTION", "tune x264 (#{Handbrake::X264_TUNES.join(', ')})") { |arg| options.x264tune = arg }
+        opts.on("--disable-progress", "disables handbrakes progress output") {|arg| options.disableProgress = true }
 
         commands = InputDoneCommands::create()
         unless commands.empty?
@@ -1093,6 +1095,9 @@ module HandbrakeCLI
           command << " 2>\"#{outputFile}_encode.log\""
         elsif not options.verbose
           command << " 2>#{Tools::OS::nullDevice()}"
+        end
+        if options.disableProgress
+          command << " 1>#{Tools::OS::nullDevice()}"
         end
 
         start_time = Time.now
