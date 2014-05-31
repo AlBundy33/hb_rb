@@ -118,6 +118,11 @@ module Tools
     def self.osx?()
       platform?(OSX)
     end
+    
+    # returns true if on linux-platform
+    def self.linux?()
+      platform?(LINUX)
+    end
 
     # checks path if cmd exists and is executable
     #
@@ -158,6 +163,17 @@ module Tools
       paths.each do |folder|
         f = File.join(folder, name)
         return f if File.exists?(f)
+      end
+      return nil
+    end
+    
+    # same as whereis but checks also some known extension on windows
+    #
+    # +name+ the file to find
+    def self.whereis2(name)
+      ["", ".cmd", ".bat", ".exe", ".com"].each do |e|
+        p = whereis("#{name}#{e}")
+        return p unless p.nil?
       end
       return nil
     end
