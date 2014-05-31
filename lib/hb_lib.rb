@@ -2,6 +2,7 @@
 # for useful settings see: http://roku.yt1300.com/settings.html
 require 'fileutils'
 require 'optparse'
+
 begin
   #https://trac.handbrake.fr/browser/trunk/scripts/manicure.rb
   require File.join(File.dirname(__FILE__), "manicure.rb")
@@ -28,9 +29,11 @@ module HandbrakeCLI
                   :logfile, :logOverride, :logOverview,
                   :inputDoneCommands, :outputDoneCommands,
                   :passedThroughArguments, :enableDecomb, :enableDetelecine, :looseAnamorphic,
-                  :createEncodeLog, :encoder, :disableProgress
+                  :createEncodeLog, :encoder, :disableProgress, :burninForced, :skipForced
 
     def initialize()
+      @skipForced = false
+      @burninForced = false
       @inputWaitLoops = -1
       @loops = 1
       @force = false
@@ -221,6 +224,9 @@ module HandbrakeCLI
           options.languages = arg
           options.subtitles = arg
         end
+        opts.on("--burnin-forced", "Burn in the first forced subtitle") do |arg|
+          options.burninForced = arg
+        end
         audio_track_args = {
           "encoder" => "the audio encoder to use (allowed: #{(["copy", "auto"] + Handbrake::getAudioEncoders()).join(', ')}, default: copy)",
           "mixdown" => "allowed: #{(["auto"] + Handbrake::getAudioMixdowns()).join(', ')}), default: auto)", 
@@ -255,6 +261,7 @@ module HandbrakeCLI
         opts.on("--skip-duplicates", "skip duplicate titles (checks block-size)") { |arg| options.skipDuplicates = arg }
         opts.on("--only-first-track-per-language", "convert only first audio-track per language") { |arg| options.onlyFirstTrackPerLanguage = arg }
         opts.on("--skip-commentaries", "ignore commentary-audio- and subtitle-tracks") { |arg| options.skipCommentaries = arg }
+        opts.on("--skip-forced", "ignore forced subtitles") { |arg| options.skipForced = arg }
         
         opts.on("")
         opts.on("options passed through handbrake (see handbrake-help for info)")
@@ -356,10 +363,9 @@ module HandbrakeCLI
       options.titles.collect!{ |t| t.to_i } if not options.titles.nil?
       
       if not Tools::OS::command2?(Handbrake::HANDBRAKE_CLI)
-         showUsageAndExit(optparse,"""handbrake not found
-      download Handbrake CLI at http://handbrake.fr/downloads2.php for your platform
-      and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}
-      """)
+         showUsageAndExit(optparse,"HandbrakeCLI not found
+download Handbrake CLI at http://handbrake.fr/downloads2.php for your platform
+and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
       end
       
       # check settings
@@ -409,7 +415,20 @@ module HandbrakeCLI
   class Handbrake
     include Tools
 
-    HANDBRAKE_CLI = File.expand_path("#{File.dirname(__FILE__)}/../tools/handbrake/#{Tools::OS::platform().to_s.downcase}/HandBrakeCLI")
+    def self.find_hb()
+      # HandbrakeCLI in tool-folder
+      tool_path = File.expand_path("#{File.dirname(__FILE__)}/../tools/handbrake/#{Tools::OS::platform().to_s.downcase}/HandBrakeCLI")
+      return tool_path if Tools::OS::command2?(tool_path) 
+      
+      # HandbrakeCLI in PATH
+      p = Tools::OS::whereis2("HandBrakeCLI")
+      return p unless p.nil?
+      
+      # HandbrakeCLI not found
+      return tool_path
+    end
+
+    HANDBRAKE_CLI = Handbrake::find_hb()
     
     AUDIO_MIXDOWN_DESCR = {
       "mono" => "Mono",
@@ -940,7 +959,7 @@ module HandbrakeCLI
   
         # audio
         audio_settings_list = []
-        
+        first_audio_track = nil
         tracks.each do |t|
           use_preset_settings = !options.preset.nil?
   
@@ -978,6 +997,7 @@ module HandbrakeCLI
               audio_settings_list << as
             end
             HandbrakeCLI::logger.info("adding audio-track: #{t}")
+            first_audio_track = t if first_audio_track.nil?
           else
             options.audioTrackSettings.each do |at|
               atc = at.dup
@@ -1030,6 +1050,7 @@ module HandbrakeCLI
               audio_settings["drc"] = "0.0"
               audio_settings_list << audio_settings
               HandbrakeCLI::logger.info("adding audio-track: #{t}")
+              first_audio_track = t if first_audio_track.nil?
             end            
           end
         end
@@ -1077,8 +1098,31 @@ module HandbrakeCLI
   
         # subtitles
         psubtitles = subtitles.collect{ |s| s.pos }
+        # find the subtitle to burn in
+        forced_subtitle = nil
+        if options.burninForced and !first_audio_track.nil?
+          title.subtitles.each do |s|
+            next unless s.forced?
+            next unless s.lang().eql?(first_audio_track.lang())
+            forced_subtitle = s
+            break
+          end
+        end
+        # add the subtitle to burn in if not in list
+        psubtitles << forced_subtitle.pos unless psubtitles.include?(forced_subtitle.pos)
+        # add subtitles
         command << " --subtitle #{psubtitles.join(',')}" if not psubtitles.empty?()
-  
+        # find index of subtitle to burn in
+        forced_subtitle_idx = 0
+        unless forced_subtitle.nil?
+          psubtitles.each do |s|
+            forced_subtitle_idx += 1
+            break if s == forced_subtitle.pos
+          end
+        end
+        # burn in the subtitle
+        command << " --subtitle-burn #{forced_subtitle_idx}" if forced_subtitle_idx > 0
+          
         # arguments to delegate...
         command << " #{options.xtra_args}" if not options.xtra_args.nil?
 
@@ -1219,12 +1263,15 @@ module HandbrakeCLI
     end
   
     def commentary?()
-      return true if @descr.downcase().include?("commentary")
-      return false
+      return @descr.downcase().include?("commentary")
+    end
+    
+    def forced?()
+      return @descr.downcase().include?("forced")
     end
   
     def to_s
-      "#{pos}. #{descr} (lang=#{lang}, comment=#{comment}, commentary=#{commentary?()})"
+      "#{pos}. #{descr} (lang=#{lang}, comment=#{comment}, commentary=#{commentary?()}, forced=#{forced?()})"
     end
   end
   
@@ -1250,7 +1297,10 @@ module HandbrakeCLI
     end
   
     def commentary?()
-      return true if @descr.downcase().include?("commentary")
+      return @descr.downcase().include?("commentary")
+    end
+    
+    def forced?()
       return false
     end
   
@@ -1395,7 +1445,7 @@ module HandbrakeCLI
           next if not matches(e)
           v = value(e)
           # element already included
-          next if @onlyFirstPerAllowedValue and stack.include?(v)
+          next if (@onlyFirstPerAllowedValue and stack.include?(v)) or filtered.include?(e)
           if v == a or v.eql? a or a.eql? "*"
             # element matches
             stack.push v
@@ -1418,15 +1468,17 @@ module HandbrakeCLI
   end
   
   class LangMatcher < ValueMatcher
-    attr_accessor :skipCommentaries
+    attr_accessor :skipCommentaries, :skipForced
     skipCommentaries = false
+    skipForced = false
   
     def value(obj)
       obj.lang
     end
   
-    def check(obj) 
+    def check(obj)
       return false if @skipCommentaries and obj.commentary?
+      return false if @skipForced and obj.forced?
       return true
     end
   end

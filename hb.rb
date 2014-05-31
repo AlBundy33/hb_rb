@@ -35,6 +35,7 @@ audioMatcher.onlyFirstPerAllowedValue = options.onlyFirstTrackPerLanguage
 audioMatcher.skipCommentaries = options.skipCommentaries
 subtitleMatcher = LangMatcher.new(options.subtitles)
 subtitleMatcher.skipCommentaries = options.skipCommentaries
+subtitleMatcher.skipForced = options.skipForced
 
 # collect all inputs
 inputs = [options.input]
