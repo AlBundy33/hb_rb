@@ -1109,7 +1109,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
           end
         end
         # add the subtitle to burn in if not in list
-        psubtitles << forced_subtitle.pos unless psubtitles.include?(forced_subtitle.pos)
+        psubtitles << forced_subtitle.pos if !forced_subtitle.nil? and !psubtitles.include?(forced_subtitle.pos)
         # add subtitles
         command << " --subtitle #{psubtitles.join(',')}" if not psubtitles.empty?()
         # find index of subtitle to burn in
