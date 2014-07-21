@@ -445,16 +445,30 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
     
     # http://handbrake.fr/doxy/documentation/libhb/html/common_8c.html
     AUDIO_ENCODER_DESCR = {
-      "ca_aac" => "AAC (CoreAudio)",
-      "ca_haac" => "HE-AAC (CoreAudio)",
-      "faac" => "AAC (faac)",
+      "dts" => "DTS",
       "ffaac" => "AAC (ffmpeg)",
       "ffac3" => "AC3 (ffmpeg)",
       "lame" => "MP3 (lame)",
-      "vorbis" => "Vorbis (vorbis)",
+      "libvorbis" => "Vorbis (vorbis)",
       "ffflac" => "FLAC (ffmpeg)",
       "ffflac24" => "FLAC (24-bit)",
-      "copy" => "original"
+      "ca_aac" => "AAC (CoreAudio)",
+      "ca_haac" => "HE-AAC (CoreAudio)",
+      "faac" => "AAC (faac)",
+      "av_aac" => "AAC (avcodec)",
+      "fdk_aac" => "AAC (FDK)",
+      "fdk_haac" => "HE-AAC (FDK)",
+      "copy:aac" => "AAC Passthru",
+      "ac3" => "AC3", 
+      "copy:ac3" => "AC3 Passthru",
+      "copy:dts" => "DTS Passthru",
+      "copy:dtshd" => "DTS-HD Passthru",
+      "mp3" => "MP3",
+      "copy:mp3" => "MP3 Passthru",
+      "vorbis" => "Vorbis",
+      "flac16" => "FLAC 16-bit",
+      "flac24" => "FLAC 24-bit",
+      "copy" => "Auto Passthru"
     }
   
     X264_PROFILES = %w(baseline main high high10 high422 high444)
