@@ -1,5 +1,7 @@
-[bluray_base]
+[bluray]
 --audio
+deu,eng
+--subtitles
 deu,eng
 --audio-track
 encoder=auto
@@ -15,15 +17,9 @@ track=*,encoder=copy
 --quality
 20.0
 
-[bluray_max]
+[plex]
 --hbpreset
-bluray_base
---subtitles
-deu,eng
-
-[bluray]
---hbpreset
-bluray_base
+bluray
 --subtitles
 none
 --max-height
