@@ -321,8 +321,16 @@ module Tools
       return found
     end
     
+    def self.file_exists?(file)
+      if Tools::OS::windows?()
+        %x{dir "#{file}" 1>NUL 2>NUL}
+        return false unless $?.exitstatus == 0
+      end
+      return File.exists?(file)
+    end
+    
     def self.file_type(input, return_extension_for_files = false)
-      return nil if not File.exist?(input)
+      return nil if not file_exists?(input)
       return "dev" if File.stat(input).blockdev? or File.stat(input).chardev?
       return "dir" if File.directory?(input)
       if return_extension_for_files

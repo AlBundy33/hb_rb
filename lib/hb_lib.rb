@@ -14,8 +14,24 @@ require File.join(File.dirname(__FILE__), "tools.rb")
 require File.join(File.dirname(__FILE__), "commands.rb")
 
 module HandbrakeCLI
+  class HBConvertInput
+    attr_accessor :file, :fileSize
+    def initialize(file)
+      @file = file
+      if File.file?(@file)
+        @fileSize = Tools::FileTool::humanReadableSize(Tools::FileTool::size(@file) || 0)
+      end
+    end
+    def to_s
+      if @fileSize.nil?
+        "#{file}"
+      else
+        "#{file} (#{@fileSize})"
+      end
+    end
+  end
   class HBConvertResult
-    attr_accessor :command, :file, :source, :title, :audiotitles, :subtitles, :output
+    attr_accessor :command, :file, :fileSize, :source, :title, :audiotitles, :subtitles, :output
   end
   class HBOptions
     attr_accessor :argv, :input, :output, :force,
@@ -1212,6 +1228,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
                 HandbrakeCLI::logger.warn("file maybe useless because it's over 4GB and --large-file was not specified")
               end
               result.file = outputFile
+              result.fileSize = Tools::FileTool::humanReadableSize(Tools::FileTool::size(outputFile) || 0)
               result.command = command
               result.output = readInfo(outputFile, false, nil)
               options.outputDoneCommands.each do |command|

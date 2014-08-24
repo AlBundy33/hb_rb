@@ -46,7 +46,7 @@ begin
   current_loop = options.loops
   while current_loop != 0
     inputs.each do |input|
-      input = File.expand_path(input)
+      #input = File.expand_path(input)
       if input.include?("*")
         i_list = Dir[input]
         if i_list.empty?
@@ -59,13 +59,14 @@ begin
       end
       i_list.each do |i|
         opts = options.dup
-        opts.input = i
-        unless Tools::FileTool::wait_for(opts.input, options.inputWaitLoops, 2) {|loop, max| puts "waiting for #{opts.input}..." if loop == max }
+        unless Tools::FileTool::wait_for(i, options.inputWaitLoops, 2) {|loop, max| puts "waiting for #{opts.input}..." if loop == max }
           puts "#{opts.input} does not exist"
           next
         end
+        opts.input = File.expand_path(i)
+        hb_input = HBConvertInput.new(opts.input)
         results = Handbrake::convert(opts, titleMatcher, audioMatcher, subtitleMatcher)
-        inout << [opts.input, results]
+        inout << [hb_input, results]
       end
     end
     current_loop -= 1
@@ -89,16 +90,12 @@ write_overview = lambda{|msg|
 begin
   write_overview.call("overview")
   inout.each do |input,results|
-    size = nil
-    if File.file?(input)
-      size = " (#{Tools::FileTool::humanReadableSize(Tools::FileTool::size(input) || 0)})"
-    end
-    write_overview.call("input: #{input}#{size}")
+    write_overview.call("input: #{input}")
     if results.empty?
       write_overview.call("  no outputs")
     else
       results.each do |result|
-        write_overview.call("  #{result.file} (#{Tools::FileTool::humanReadableSize(Tools::FileTool::size(result.file) || 0)})")
+        write_overview.call("  #{result.file} (#{result.fileSize})")
         unless result.output.nil?
           result.output.titles.each do |title|
             write_overview.call("    title #{title.pos} #{title.duration}, #{title.size}, #{title.fps}fps")
