@@ -45,9 +45,10 @@ module HandbrakeCLI
                   :logfile, :logOverride, :logOverview,
                   :inputDoneCommands, :outputDoneCommands,
                   :passedThroughArguments, :enableDecomb, :enableDetelecine, :looseAnamorphic,
-                  :createEncodeLog, :encoder, :disableProgress, :burninForced, :skipForced
+                  :createEncodeLog, :encoder, :disableProgress, :burninForced, :skipForced, :quality
 
     def initialize()
+      @quality = 20.0
       @skipForced = false
       @burninForced = false
       @inputWaitLoops = -1
@@ -201,7 +202,6 @@ module HandbrakeCLI
       passed_through = []
       passed_through << ["--large-file", nil]
       passed_through << ["--encopts OPTIONS", "--encopts"]
-      passed_through << ["--quality QUALITY", "--quality"]
       options = HBOptions.new
       optparse = OptionParser.new do |opts|
         opts.separator("")
@@ -232,6 +232,13 @@ module HandbrakeCLI
         opts.separator("output-options")
         opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
         opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
+        opts.on("--quality", "quality to use (current: #{options.quality})") do |arg|
+          if "#{arg}".strip.empty? or arg.to_f < 0
+            options.quality = nil
+          else
+            options.quality = arg
+          end
+        end
         opts.on("--max-width WIDTH", "maximum video width (e.g. 1920, 1280, 720)") { |arg| options.maxWidth = arg }
         opts.on("--max-height HEIGTH", "maximum video height (e.g. 1080, 720, 576)") { |arg| options.maxHeight = arg }
         opts.on("--audio LANGUAGES", Array, "the audio languages") { |arg| options.languages = arg }
@@ -944,7 +951,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
   
         if options.preset.nil?
           command << " --encoder #{options.encoder}"
-          command << " --quality 20.0"
+          command << " --quality #{options.quality}" if !options.quality.nil? and options.quality > 0
           command << " --decomb" if options.enableDecomb
           command << " --detelecine" if options.enableDetelecine
           command << " --crop 0:0:0:0" if not options.enableAutocrop

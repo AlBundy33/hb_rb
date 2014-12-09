@@ -323,7 +323,7 @@ module Tools
     
     def self.file_exists?(file)
       if Tools::OS::windows?()
-        %x{dir "#{file}" 1>NUL 2>NUL}
+        %x{dir "#{file.gsub("/", "\\")}" 1>NUL 2>NUL}
         return false unless $?.exitstatus == 0
       end
       return File.exists?(file)
