@@ -1,3 +1,0 @@
-This quick script was made when an atom was listed as a valid mpeg-4 atom ("wide"), when it should not have - it was a quicktime atom written by ffmpeg. To see if any files had this, and how AP should listed them (before and after source code changes), this script was made to go through the contents of a folder that I had "cd /some/folder" into already and drag and dropped this APscript icon onto the Terminal window.
-
-Read the script contents by dropping the APscript icon onto TextEdit, and read/adapt as necessary.
