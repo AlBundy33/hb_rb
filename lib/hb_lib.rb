@@ -232,7 +232,7 @@ module HandbrakeCLI
         opts.separator("output-options")
         opts.on("--compatibility", "enables iPod compatible output (only m4v and mp4)") { |arg| options.ipodCompatibility = arg }
         opts.on("--autocrop", "automatically crop black bars") { |arg| options.enableAutocrop = arg }
-        opts.on("--quality", "quality to use (current: #{options.quality})") do |arg|
+        opts.on("--quality QUALITY", "quality to use (current: #{options.quality})") do |arg|
           if "#{arg}".strip.empty? or arg.to_f < 0
             options.quality = nil
           else
@@ -951,7 +951,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
   
         if options.preset.nil?
           command << " --encoder #{options.encoder}"
-          command << " --quality #{options.quality}" if !options.quality.nil? and options.quality > 0
+          command << " --quality #{options.quality}" if !options.quality.nil?
           command << " --decomb" if options.enableDecomb
           command << " --detelecine" if options.enableDetelecine
           command << " --crop 0:0:0:0" if not options.enableAutocrop
