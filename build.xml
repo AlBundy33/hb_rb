@@ -1,11 +1,12 @@
 <project name="Handbrake" default="all" basedir=".">
 
-<target name="all" depends="clean,handbrake,ripper"/>
+<target name="all" depends="clean,handbrake"/>
 
 <target name="handbrake" depends="clean">
 	<zip destfile="build/handbrake.zip">
 		<fileset dir=".">
 			<exclude name="**/.svn" />
+			<exclude name="**/.git" />
 			<include name="tools/handbrake/*"/>
 			<include name="tools/atomicparsley/*"/>
 			<include name="tools/subler/*"/>
@@ -24,17 +25,6 @@
 	</zip>
 </target>
 	
-<target name="ripper" depends="clean">
-	<zip destfile="build/ripper.zip">
-		<fileset dir=".">
-			<exclude name="**/.svn" />
-			<include name="ripper/**/*.conf" />
-			<include name="lib/tools.rb" />
-			<include name="rip.rb" />
-		</fileset>
-	</zip>    
-</target>
-
 <target name="clean">
 	<delete>
 		<fileset dir=".">
