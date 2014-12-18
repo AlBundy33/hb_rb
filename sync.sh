@@ -9,4 +9,4 @@ if [ ! -e "$TARGET" ]; then
     exit 1
 fi
 
-rsync --progress --recursive --update --exclude .svn "`dirname $0`" "$TARGET"
+rsync --progress --recursive --update --exclude .svn --exclude .git "`dirname $0`" "$TARGET"
