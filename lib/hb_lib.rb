@@ -619,6 +619,14 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         options.apilist = false
         options.header = false
         plist = Plist::parse_xml( p )
+        plist.each do |e|
+          e["ChildrenArray"] = [] if e["ChildrenArray"].nil?
+          def e.[](key)
+            v = super(key)
+            return v if ["Folder"].include?(key)
+            return v || ""
+          end
+        end
         output = DisplayToString.new(plist, options).output
         mergeHash(result, parsePresets(output))
       end
