@@ -1922,10 +1922,12 @@ class Display
   
 end
 
+# CLI invocation only
 if __FILE__ == $0
+
   # First grab the specified CLI options
   options = readOptions
-  
+
   # Only run if one of the useful CLI flags have been passed
   if options.cliraw == true || options.cliparse == true || options.api == true || options.apilist == true
     # This line is the ignition -- generates hashes of
@@ -1937,4 +1939,5 @@ if __FILE__ == $0
     puts "\n\tUsage: manicure.rb [options]"
     puts "\tSee help with -h or --help"
   end
+
 end

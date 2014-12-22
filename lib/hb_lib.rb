@@ -429,7 +429,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
       showUsageAndExit(optparse,"unknown x264-profile: #{options.x264profile}") if not options.x264profile.nil? and not Handbrake::X264_PROFILES.include?(options.x264profile)
       showUsageAndExit(optparse,"unknown x264-preset: #{options.x264preset}") if not options.x264preset.nil? and not Handbrake::X264_PRESETS.include?(options.x264preset)
       showUsageAndExit(optparse,"unknown x264-tune option: #{options.x264tune}") if not options.x264tune.nil? and not Handbrake::X264_TUNES.include?(options.x264tune)
-      showUsageAndExit(optparse,"unknown preset #{options.preset}") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil?
+      showUsageAndExit(optparse,"unknown preset #{options.preset} (allowed: #{Handbrake::getPresets().keys.join(", ")})") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil?
       options.argv = argv
       return options
     end
@@ -619,7 +619,8 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         options.apilist = false
         options.header = false
         plist = Plist::parse_xml( p )
-        mergeHash(result, parsePresets(DisplayToString.new(plist, options).output))
+        output = DisplayToString.new(plist, options).output
+        mergeHash(result, parsePresets(output))
       end
       return result
     end
@@ -993,12 +994,13 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         end
         
         command << " --title #{title.pos}"
+        
+        use_preset_settings = !options.preset.nil?
   
         # audio
         audio_settings_list = []
         first_audio_track = nil
         tracks.each do |t|
-          use_preset_settings = !options.preset.nil?
   
           HandbrakeCLI::logger.info("checking audio-track #{t}")
           if use_preset_settings
@@ -1122,12 +1124,14 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         command << " --ab #{pab.join(',')}" unless pab.empty?
         command << " --drc #{pdrc.join(',')}" unless pdrc.empty?
         command << " --aname \"#{paname.join('","')}\""
-        if ismp4
-          command << " --audio-fallback faac"
-        else
-          command << " --audio-fallback lame"
+        unless use_preset_settings
+          if ismp4
+            command << " --audio-fallback faac"
+          else
+            command << " --audio-fallback lame"
+          end
         end
-        
+
         # preserve fps to keep encoded audio in sync
         allowed_fps = ["5", "10", "12", "15", "23.976", "24", "25", "29.97", "30", "50", "59.94", "60"]
         if !title.fps.nil? and !title.fps.strip.empty? and allowed_fps.include?(title.fps)
