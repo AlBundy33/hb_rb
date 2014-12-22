@@ -621,13 +621,17 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         plist = Plist::parse_xml( p )
         plist.each do |e|
           e["ChildrenArray"] = [] if e["ChildrenArray"].nil?
+          e["Folder"] = nil if e["Folder"].nil? or e["Folder"] == 0
           def e.[](key)
             v = super(key)
-            return v if ["Folder"].include?(key)
-            return v || ""
+            #puts "#{key} #{v}"
+            return v unless v.nil?
+            return nil if keys.include?(key)
+            return ""
           end
         end
         output = DisplayToString.new(plist, options).output
+        #puts output
         mergeHash(result, parsePresets(output))
       end
       return result
