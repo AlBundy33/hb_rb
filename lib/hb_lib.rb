@@ -1055,7 +1055,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
               if atc["encoder"].eql?("auto") and !options.audioEncoderSettings.nil?
                 use_default = true
                 options.audioEncoderSettings.each do |s|
-                  if !s["track"].eql?("*") and !s["track"].eql?(".*") and t.descr.match(s["track"]) 
+                  if !s["track"].eql?("*") and !s["track"].eql?(".*") and t.to_s.match(s["track"]) 
                     s.each do |k,v|
                       next if k.nil? or k.strip.empty? or v.nil? or v.strip.empty? or k.eql?("track")
                       atc[k] = v
@@ -1102,8 +1102,6 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
               audio_settings_list << audio_settings
               HandbrakeCLI::logger.info("adding audio-track: #{t}")
               first_audio_track = t if first_audio_track.nil?
-              # settings found - so we are done
-              break
             end            
           end
         end
@@ -1198,7 +1196,11 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         unless title.audioTracks.empty?
           HandbrakeCLI::logger.warn "  audio-tracks"
           title.audioTracks.each do |t|
-            HandbrakeCLI::logger.warn "    - track #{t.pos}: [#{t.lang}] #{t.descr}"
+            if options.verbose or options.debug
+              HandbrakeCLI::logger.warn "    - #{t}"
+            else
+              HandbrakeCLI::logger.warn "    - track #{t.pos}: [#{t.lang}] #{t.descr}"
+            end
           end
         end
         unless title.subtitles.empty?
