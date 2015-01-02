@@ -1,4 +1,4 @@
-hb.rb is a "simply" ruby-script to add some more features to HandbrakeCLI.
+hb.rb is a "simple" ruby-script to add some more features to HandbrakeCLI.
 
 This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt (available in archive).
 This is free software, and you are welcome to redistribute it under certain conditions.
