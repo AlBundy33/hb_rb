@@ -21,12 +21,10 @@ else
   log_device = Tools::Loggers::DefaultLogDev.new(STDOUT, File.open(options.logfile, options.logOverride ? "w" : "a"))
 end
 HandbrakeCLI::logger = Tools::Loggers.createLogger(nil, log_device)
-if options.verbose and options.debug
+if options.verbose or options.debug
   HandbrakeCLI::logger.level = Logger::DEBUG
-elsif options.verbose or options.debug
-  HandbrakeCLI::logger.level = Logger::INFO
 else
-  HandbrakeCLI::logger.level = Logger::WARN
+  HandbrakeCLI::logger.level = Logger::INFO
 end 
 
 titleMatcher = PosMatcher.new(options.titles)
@@ -83,7 +81,7 @@ else
 end
 
 write_overview = lambda{|msg|
-  HandbrakeCLI::logger.warn("#{msg}")
+  HandbrakeCLI::logger.info("#{msg}")
   overview.puts("#{msg}") unless overview.nil?  
 }
 

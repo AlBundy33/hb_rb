@@ -658,7 +658,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
       begin
         return Tools::StringTool::encode(str, 'utf-8', 'utf-8')
       rescue => e
-        HandbrakeCLI::logger.warn("error reading line: #{str} (#{e})")
+        HandbrakeCLI::logger.info("error reading line: #{str} (#{e})")
         begin
           return Tools::StringTool::encode(str, 'utf-8', 'utf-8', true)
         rescue => e2
@@ -839,7 +839,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
       end
       
       if source.titles.empty?
-        HandbrakeCLI::logger.info("#{source.path} contains no titles")
+        HandbrakeCLI::logger.debug("#{source.path} contains no titles")
         return created
       end
   
@@ -855,15 +855,15 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         maxLength = TimeTool::timeToSeconds(options.maxLength)
       end
   
-      HandbrakeCLI::logger.warn "processing #{source}"
+      HandbrakeCLI::logger.info "processing #{source}"
       source.titles().each do |title|
-        HandbrakeCLI::logger.info("checking #{title}")
+        HandbrakeCLI::logger.debug("checking #{title}")
         
         if options.mainFeatureOnly and not title.mainFeature
-          HandbrakeCLI::logger.info("skipping title because it's not the main-feature")
+          HandbrakeCLI::logger.debug("skipping title because it's not the main-feature")
           next
         elsif not titleMatcher.matches(title)
-          HandbrakeCLI::logger.info("skipping unwanted title")
+          HandbrakeCLI::logger.debug("skipping unwanted title")
           next
         end
         tracks = audioMatcher.filter(title.audioTracks)
@@ -871,19 +871,19 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         
         duration = TimeTool::timeToSeconds(title.duration)
         if minLength >= 0 and duration < minLength
-          HandbrakeCLI::logger.info("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+          HandbrakeCLI::logger.debug("skipping title because it's duration is too short (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
           next
         end
         if maxLength >= 0 and duration > maxLength
-          HandbrakeCLI::logger.info("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
+          HandbrakeCLI::logger.debug("skipping title because it's duration is too long (#{TimeTool::secondsToTime(minLength)} <= #{TimeTool::secondsToTime(duration)} <= #{TimeTool::secondsToTime(maxLength)})")
           next
         end
         if tracks.empty?()
-          HandbrakeCLI::logger.info("skipping title because it contains no audio-tracks (available: #{title.audioTracks})")
+          HandbrakeCLI::logger.debug("skipping title because it contains no audio-tracks (available: #{title.audioTracks})")
           next
         end
         if options.skipDuplicates and not title.blocks().nil? and title.blocks() >= 0 and converted.include?(title.blocks())
-          HandbrakeCLI::logger.info("skipping because source contains it twice")
+          HandbrakeCLI::logger.debug("skipping because source contains it twice")
           next
         end
         
@@ -915,12 +915,12 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         outputFile.gsub!("#encoder#", options.encoder || "")
         if not options.force
           if File.exists?(outputFile) or Dir.glob("#{File.dirname(outputFile)}/*.#{File.basename(outputFile)}").size() > 0
-            HandbrakeCLI::logger.warn("skipping title because \"#{outputFile}\" already exists")
+            HandbrakeCLI::logger.info("skipping title because \"#{outputFile}\" already exists")
             next
           end
         end
   
-        HandbrakeCLI::logger.info("converting #{title}")
+        HandbrakeCLI::logger.debug("converting #{title}")
   
         ext = File.extname(outputFile).downcase
         ismp4 = false
@@ -1014,7 +1014,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         first_audio_track = nil
         tracks.each do |t|
   
-          HandbrakeCLI::logger.info("checking audio-track #{t}")
+          HandbrakeCLI::logger.debug("checking audio-track #{t}")
           if use_preset_settings
             audio_settings = {}
             value = preset_arguments.match(/(?:-a|--audio) ([^ ]+)/)[1]
@@ -1047,7 +1047,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
               end
               audio_settings_list << as
             end
-            HandbrakeCLI::logger.info("adding audio-track: #{t}")
+            HandbrakeCLI::logger.debug("adding audio-track: #{t}")
             first_audio_track = t if first_audio_track.nil?
           else
             options.audioTrackSettings.each do |at|
@@ -1100,7 +1100,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
               end
               audio_settings["drc"] = "0.0"
               audio_settings_list << audio_settings
-              HandbrakeCLI::logger.info("adding audio-track: #{t}")
+              HandbrakeCLI::logger.debug("adding audio-track: #{t}")
               first_audio_track = t if first_audio_track.nil?
             end            
           end
@@ -1123,7 +1123,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         end
 
         if paudio.empty?()
-           HandbrakeCLI::logger.info("skipping title because found to audio-tracks to add")
+           HandbrakeCLI::logger.debug("skipping title because found to audio-tracks to add")
            next
          end
 
@@ -1191,39 +1191,39 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         end
 
         start_time = Time.now
-        HandbrakeCLI::logger.warn "input: #{source}"
-        HandbrakeCLI::logger.warn "  title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})" 
+        HandbrakeCLI::logger.info "input: #{source}"
+        HandbrakeCLI::logger.info "  title #{title.pos}#{title.mainFeature ? " (main-feature)" : ""} #{title.duration} #{title.size} (blocks: #{title.blocks()})" 
         unless title.audioTracks.empty?
-          HandbrakeCLI::logger.warn "  audio-tracks"
+          HandbrakeCLI::logger.info "  audio-tracks"
           title.audioTracks.each do |t|
             if options.verbose or options.debug
-              HandbrakeCLI::logger.warn "    - #{t}"
+              HandbrakeCLI::logger.info "    - #{t}"
             else
-              HandbrakeCLI::logger.warn "    - track #{t.pos}: [#{t.lang}] #{t.descr}"
+              HandbrakeCLI::logger.info "    - track #{t.pos}: [#{t.lang}] #{t.descr}"
             end
           end
         end
         unless title.subtitles.empty?
-          HandbrakeCLI::logger.warn "  subtitles"
+          HandbrakeCLI::logger.info "  subtitles"
           title.subtitles.each do |s|
-            HandbrakeCLI::logger.warn "    - track #{s.pos}: [#{s.lang}] #{s.descr}"
+            HandbrakeCLI::logger.info "    - track #{s.pos}: [#{s.lang}] #{s.descr}"
           end
         end
-        HandbrakeCLI::logger.warn "output: #{outputFile}"
+        HandbrakeCLI::logger.info "output: #{outputFile}"
         if not tracks.empty?
-          HandbrakeCLI::logger.warn "  audio-tracks"
+          HandbrakeCLI::logger.info "  audio-tracks"
           paudio.each_with_index do |t,i|
-            HandbrakeCLI::logger.warn "    - track #{t}: #{paname[i] rescue nil || t.descr} - #{(AUDIO_ENCODER_DESCR[paencoder[i]] rescue nil) || paencoder[i]}"
+            HandbrakeCLI::logger.info "    - track #{t}: #{paname[i] rescue nil || t.descr} - #{(AUDIO_ENCODER_DESCR[paencoder[i]] rescue nil) || paencoder[i]}"
           end
         end
         if not subtitles.empty?
-          HandbrakeCLI::logger.warn "  subtitles"
+          HandbrakeCLI::logger.info "  subtitles"
           subtitles.each do |s|
-            HandbrakeCLI::logger.warn "    - track #{s.pos}: #{s.descr}"
+            HandbrakeCLI::logger.info "    - track #{s.pos}: #{s.descr}"
           end
         end
   
-        HandbrakeCLI::logger.warn(command)
+        HandbrakeCLI::logger.info(command)
         if not options.testdata.nil?
           result.file = outputFile
           result.command = command
@@ -1242,17 +1242,17 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
           if File.exists?(outputFile)
             size = Tools::FileTool::size(outputFile)
             if return_code != 0
-              HandbrakeCLI::logger.warn("Handbrake exited with return-code #{return_code} - removing file #{File.basename(outputFile)}")
+              HandbrakeCLI::logger.info("Handbrake exited with return-code #{return_code} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
             elsif size >= 0 and size < (1 * 1024 * 1024)
-              HandbrakeCLI::logger.warn("file-size only #{Tools::FileTool::humanReadableSize(size)} - removing file #{File.basename(outputFile)}")
+              HandbrakeCLI::logger.info("file-size only #{Tools::FileTool::humanReadableSize(size)} - removing file #{File.basename(outputFile)}")
               File.delete(outputFile)
               converted.delete(title.blocks())
             else
-              HandbrakeCLI::logger.warn("created file #{outputFile} (#{Tools::FileTool::humanReadableSize(size)})")
+              HandbrakeCLI::logger.info("created file #{outputFile} (#{Tools::FileTool::humanReadableSize(size)})")
               if size >= 4 * 1024 * 1024 * 1024 and !command =~ /--large-file/
-                HandbrakeCLI::logger.warn("file maybe useless because it's over 4GB and --large-file was not specified")
+                HandbrakeCLI::logger.info("file maybe useless because it's over 4GB and --large-file was not specified")
               end
               result.file = outputFile
               result.fileSize = Tools::FileTool::humanReadableSize(Tools::FileTool::size(outputFile) || 0)
@@ -1261,10 +1261,10 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
               options.outputDoneCommands.each do |command|
                 cmd = command.create_command(outputFile)
                 if cmd.nil?
-                  HandbrakeCLI::logger.info("[#{command}] #{outputFile} (#{command.arg})")
+                  HandbrakeCLI::logger.debug("[#{command}] #{outputFile} (#{command.arg})")
                   command.run(outputFile)
                 else
-                  HandbrakeCLI::logger.info("[#{command}] #{cmd}")
+                  HandbrakeCLI::logger.debug("[#{command}] #{cmd}")
                   Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
                 end
                 raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
@@ -1272,22 +1272,22 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
               created << result
             end
           else
-            HandbrakeCLI::logger.warn("file #{outputFile} not created")
+            HandbrakeCLI::logger.info("file #{outputFile} not created")
           end
         end
         end_time = Time.now
         required_time = Tools::TimeTool::secondsToTime((end_time - start_time).round)
-        HandbrakeCLI::logger.warn("== done (required time: #{required_time}) =================================")
+        HandbrakeCLI::logger.info("== done (required time: #{required_time}) =================================")
         raise Interrupt if return_code == 130
       end
       unless created.empty?
         options.inputDoneCommands.each do |command|
           cmd = command.create_command(options.input)
           if cmd.nil?
-            HandbrakeCLI::logger.info("[#{command}] #{options.input} (#{command.arg})")
+            HandbrakeCLI::logger.debug("[#{command}] #{options.input} (#{command.arg})")
             command.run(options.input)
           else
-            HandbrakeCLI::logger.info("[#{command}] #{cmd}")
+            HandbrakeCLI::logger.debug("[#{command}] #{cmd}")
             Tools::Loggers::tee(cmd, HandbrakeCLI::logger)
           end
           raise "command #{cmd} failed (return-code: #{$?}" if $? != 0
