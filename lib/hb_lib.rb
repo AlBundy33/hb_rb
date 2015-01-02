@@ -1123,7 +1123,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         end
 
         if paudio.empty?()
-           HandbrakeCLI::logger.debug("skipping title because found to audio-tracks to add")
+           HandbrakeCLI::logger.debug("skipping title because found no audio-tracks to add")
            next
          end
 

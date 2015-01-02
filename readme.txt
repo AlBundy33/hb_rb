@@ -5,7 +5,7 @@ You can get the current version of ruby for your platfrom from http://www.ruby-l
 
 installation
 ============
-1. download the latest version from https://forum.handbrake.fr/viewtopic.php?f=10&t=26163
+1. download the latest version from https://github.com/AlBundy33/hb_rb/tree/master/build
 2. extract the archive
 3. download Handbrake CLI for your platform from http://handbrake.fr/downloads2.php  
 4. extract/install Hanbrake CLI to the appropriate folder in hb.rb-installation-folder under tools/handbrake (e.g. HandbrakeCLI.exe to tools/handbrake/windows)
