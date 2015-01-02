@@ -1,5 +1,3 @@
-common
-======
 hb.rb is a "simply" ruby-script to add some more features to HandbrakeCLI.
 
 This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt (available in archive).
@@ -27,10 +25,10 @@ installation
 4. extract/install Hanbrake CLI to the appropriate folder in hb.rb-installation-folder under tools/handbrake (e.g. HandbrakeCLI.exe to tools/handbrake/windows)
 5. repeat step 4 for AtomicParsley and/or Subler if you want to tag your files with tag_epsiodes.rb
 6. if you want to work with presets in plist-files you have to install this gem
-   gem install plist
+   ```gem install plist```
 7. if you want to use tag_episodes.rb you have to install some gems with following commands
-   gem install hpricot
-   gem install imdb
+   ```gem install hpricot```
+   ```gem install imdb```
 8. if you use a ruby-version < 1.9.0 you'll get an error-message when loading imdb - in that case simply open series.rb (path is in stacktrace) and add a \ at the end of line 18
    
 run
@@ -43,16 +41,16 @@ To get a list of possible options and example-calls run hb.rb without any argume
 For any questions about hb.rb use also this thread https://forum.handbrake.fr/viewtopic.php?f=10&t=26163
 
 convert main-feature with all original-tracks (audio and subtitle) for languages german and english (override languages with --lang)
-hb.rb --input /dev/rdisk1 --output "~/Movie.m4v" --movie
+```hb.rb --input /dev/rdisk1 --output "~/Movie.m4v" --movie```
 
 convert all episodes with all original-tracks (audio and subtitle) for languages german and english
-hb.rb --input /dev/rdisk1 --output "~/Series_SeasonX_#pos#.m4v" --episodes
+```hb.rb --input /dev/rdisk1 --output "~/Series_SeasonX_#pos#.m4v" --episodes```
 
 convert complete file or DVD with all tracks, languages etc.
-hb.rb --input /dev/rdisk1 --output "~/Output_#pos#.m4v"
+```hb.rb --input /dev/rdisk1 --output "~/Output_#pos#.m4v"```
 
 convert all MKVs recursive in a directory
-hb.rb --input "~/MKV/**/*.mkv" --output "~/#title#.m4v"
+```hb.rb --input "~/MKV/**/*.mkv" --output "~/#title#.m4v"```
 
 tag and or rename converted files
 =================================
@@ -61,6 +59,6 @@ ATJ_S1D1T2.m4v (season 1, disc 1, title 2)
 ATJ_S1D1T3.m4v (season 1, disc 1, title 3)
 ...
 you can run
-./tag_episode.rb --id Accordingtojim --season 1 --episode 1 --tag --rename ATJ_S1*.m4v
+```tag_episode.rb --id Accordingtojim --season 1 --episode 1 --tag --rename ATJ_S1*.m4v```
 So the first file will have the name and tags for episode 1, the second file for episode 2 and so on. 
 
