@@ -58,7 +58,10 @@ begin
       i_list.each do |i|
         opts = options.dup
         unless Tools::FileTool::wait_for(i, options.inputWaitLoops, 2) { |loop, max, age|
-            puts "waiting for #{opts.input}..." if loop == max
+            if loop == max
+              puts "waiting for #{opts.input}..."
+              HandbrakeCLI::logger.warn("modification time of #{i} is in future") if age < 0
+            end
             HandbrakeCLI::logger.debug("input=#{i}, loop=#{loop}, max=#{max}, age=#{age}")
           }
           puts "#{opts.input} does not exist"
