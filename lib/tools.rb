@@ -308,14 +308,14 @@ module Tools
             f_time = tmp if f_time.nil? or tmp > f_time 
           end
           # check if something has changed since last run
-		  diff = Time.new - f_time
-          if !f_time.nil? and (diff > 3 or diff < -3600)
-            # file is at least 3 seconds old
+          age = Time.new - f_time
+          if !f_time.nil? and (age > 3 or age < -3600)
+            # file is at least 3 seconds old or one hour in future
             found = true
             break
           end
         end
-        yield(loop, retry_count) if block_given?
+        yield(loop, retry_count, age) if block_given?
         sleep sleep_time
         loop -= 1
       end
