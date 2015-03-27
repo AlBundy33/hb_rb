@@ -308,7 +308,8 @@ module Tools
             f_time = tmp if f_time.nil? or tmp > f_time 
           end
           # check if something has changed since last run
-          if !f_time.nil? and (Time.new - f_time) > 3
+		  diff = Time.new - f_time
+          if !f_time.nil? and (diff > 3 or diff < -3600)
             # file is at least 3 seconds old
             found = true
             break
