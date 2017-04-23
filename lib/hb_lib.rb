@@ -511,8 +511,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         end
         next unless add
         break if l.start_with?("--")
-        next unless l.start_with?("Options:")
-        result += l[8..-1].strip.split("/")
+        result << l
       end
       return result
     end
@@ -529,7 +528,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
           next
         end
         next unless add
-        break if l.start_with?("copy:* will passthrough")
+        break if l.start_with?("\"copy:<type>\" will pass")
         next if l.start_with?("copy")
         result << l
       end
@@ -1059,8 +1058,8 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
                     s.each do |k,v|
                       next if k.nil? or k.strip.empty? or v.nil? or v.strip.empty? or k.eql?("track")
                       atc[k] = v
-                      use_default = false
                     end
+					use_default = false
                   end
                 end
                 if use_default
@@ -1102,6 +1101,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
               audio_settings_list << audio_settings
               HandbrakeCLI::logger.debug("adding audio-track: #{t}")
               first_audio_track = t if first_audio_track.nil?
+			  break
             end            
           end
         end
