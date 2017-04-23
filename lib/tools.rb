@@ -66,7 +66,7 @@ module Tools
 
     # the uname-command known from linux
     def self.uname()
-      if whereis("ver.dll") and ENV['COMSPEC']
+      if (whereis("ver.dll") or whereis("version.dll")) and ENV['COMSPEC']
         uname = %x[ver]
       elsif command?("uname")
         uname = %x[uname -a]
