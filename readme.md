@@ -1,8 +1,5 @@
 hb.rb is a "simple" ruby-script to add some more features to HandbrakeCLI.
 
-This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt (available in archive).
-This is free software, and you are welcome to redistribute it under certain conditions.
-
 Main advantages of the script are:
 - no need to work with audio-track-numbers - simply use "deu", "eng", etc. to specifiy the wanted language(s)
 - filter tracks by duration (e.g. to convert all episodes from a dvd)
@@ -66,3 +63,7 @@ you can run
 
 So the first file will have the name and tags for episode 1, the second file for episode 2 and so on. 
 
+license
+=======
+This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt (available in archive).
+This is free software, and you are welcome to redistribute it under certain conditions.
