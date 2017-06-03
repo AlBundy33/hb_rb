@@ -494,6 +494,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
       "copy" => "Auto Passthru"
     }
   
+    # https://encodingwissen.de/codecs/x264/referenz/
     X264_PROFILES = %w(baseline main high high10 high422 high444)
     X264_PRESETS = %w(ultrafast superfast veryfast faster fast medium slow slower veryslow placebo)
     X264_TUNES = %w(film animation grain stillimage psnr ssim fastdecode zerolatency)
