@@ -271,7 +271,7 @@ module HandbrakeCLI
           options.audioEncoderSettings = [] if options.audioEncoderSettings.nil?
           options.audioEncoderSettings << arg
         }
-        opts.on("--preset PRESET", "the handbrake-preset to use", "allowed: #{Handbrake::getPresets().keys.sort.join(', ')})") { |arg| options.preset = arg }
+        opts.on("--preset PRESET", "the handbrake-preset to use", "allowed: #{Handbrake::getPresets().keys.sort.join(', ')}") { |arg| options.preset = arg }
         opts.on("--preview [RANGE]", "convert only a preview in RANGE (default: 00:01:00-00:02:00)") { |arg| options.preview = arg || "00:01:00-00:02:00" }
       
         opts.separator("")
@@ -512,7 +512,13 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         end
         next unless add
         break if l.start_with?("--")
-        result << l
+        if l.start_with?("Options: ")
+          # Handbrake 1.0.4 (Ubuntu)
+          result += l[9..-1].split("/")
+          break
+        else
+          result << l
+        end
       end
       return result
     end
@@ -530,6 +536,8 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         end
         next unless add
         break if l.start_with?("\"copy:<type>\" will pass")
+        # Handbrake 1.0.4 (Ubuntu)
+        break if l.start_with?("copy:* will pass")
         next if l.start_with?("copy")
         result << l
       end
@@ -644,8 +652,9 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
     end
     
     def self.parsePresets(output)
-      preset_pattern = /\+ (.*?): (.*)/
       result = {}
+      # does not work with 1.0.7
+      preset_pattern = /\+ (.*?): (.*)/
       output.each_line do |line|
         next if not line =~ preset_pattern
         info = line.scan(preset_pattern)[0]
