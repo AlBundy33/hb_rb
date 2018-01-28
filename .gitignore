@@ -8,6 +8,9 @@
 /tools/handbrake/windows/libbdplus.dll
 /tools/handbrake/windows/libdvdcss-2.dll
 
+# backups
+*.bak
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
