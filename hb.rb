@@ -4,7 +4,7 @@ require 'logger'
 require File.join(File.dirname(File.absolute_path(__FILE__)), "lib", "hb_lib.rb")
 include HandbrakeCLI
 
-puts "#{File.basename($0)} Copyright (C) 2017 AlBundy
+puts "#{File.basename($0)} Copyright (C) 2019 AlBundy
 This program comes with ABSOLUTELY NO WARRANTY; for details see LICENSE.txt.
 This is free software, and you are welcome to redistribute it under certain conditions.
 

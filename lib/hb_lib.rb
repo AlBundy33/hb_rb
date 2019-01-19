@@ -2,6 +2,7 @@
 # for useful settings see: http://roku.yt1300.com/settings.html
 require 'fileutils'
 require 'optparse'
+require 'json'
 
 begin
   #https://trac.handbrake.fr/browser/trunk/scripts/manicure.rb
@@ -429,7 +430,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
       showUsageAndExit(optparse,"unknown x264-profile: #{options.x264profile}") if not options.x264profile.nil? and not Handbrake::X264_PROFILES.include?(options.x264profile)
       showUsageAndExit(optparse,"unknown x264-preset: #{options.x264preset}") if not options.x264preset.nil? and not Handbrake::X264_PRESETS.include?(options.x264preset)
       showUsageAndExit(optparse,"unknown x264-tune option: #{options.x264tune}") if not options.x264tune.nil? and not Handbrake::X264_TUNES.include?(options.x264tune)
-      showUsageAndExit(optparse,"unknown preset #{options.preset} (allowed: #{Handbrake::getPresets().keys.join(", ")})") if not options.preset.nil? and Handbrake::getPresets()[options.preset].nil?
+      showUsageAndExit(optparse,"unknown preset #{options.preset} (allowed: #{Handbrake::getPresets().keys.join(", ")})") if not options.preset.nil? and !Handbrake::getPresets().include?(options.preset)
       options.argv = argv
       return options
     end
@@ -646,14 +647,14 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
     end
     
     def self.loadBuiltInPresets()
+      return @built_in_presets unless @built_in_presets.nil?
       cmd = "\"#{HANDBRAKE_CLI}\" --preset-list 2>&1"
       output = %x[#{cmd}]
-      return parsePresets(output)
+      return @built_in_presets = parsePresets(output)
     end
     
-    def self.parsePresets(output)
+    def self.parsePresetsLegacy(output)
       result = {}
-      # does not work with 1.0.7
       preset_pattern = /\+ (.*?): (.*)/
       output.each_line do |line|
         next if not line =~ preset_pattern
@@ -661,6 +662,134 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         result[info[0].strip] = info[1].strip
       end
       return result
+    end
+    
+    def self.parsePresets(output)
+      result = parsePresetsLegacy(output)
+      # done for older versions
+      return result unless result.empty?
+      preset_pattern = /^    ([^ ].*)$/
+      output.each_line do |line|
+        next if not line =~ preset_pattern
+        info = line.scan(preset_pattern)[0]
+        preset_name = info[0].strip
+        result[preset_name] = nil
+      end
+      return result
+    end
+    
+    def self.getPresetArguments(preset)
+      args = getPresets()[preset]
+      return args unless args.nil?
+      if @built_in_presets.include?(preset)
+        args = loadPresetArguments(preset)
+        @built_in_presets[preset] = args
+        return args
+      end
+      return nil
+    end
+
+    def self.loadPresetArguments(preset)
+      cmd = "\"#{HANDBRAKE_CLI}\" --preset  \"#{preset}\" --preset-export \"#{preset}\" 2>NUL"
+      output = %x[#{cmd}]
+      options = OpenStruct.new
+      options.cliraw = false
+      options.cliparse = true
+      options.api = false
+      options.apilist = false
+      options.header = false
+      plist = JSON.parse(output)["PresetList"]
+      # translated names for manicure.rb
+      translated_encoder = {
+        "copy:ac3" => "AC3 Pass",
+        "ac3" => "AC3",
+        "copy:dts" => "DTS Pass",
+        "copy:dtshd" => "DTS-HD Pass",
+        "copy:aac" => "AAC Pass",
+        "av_aac" => "AAC (avcodec)",
+        "fdk_aac" => "AAC (FDK)",
+        "fdk_haac" => "HE-AAC (FDK)",
+        "ca_aac" => "AAC (CoreAudio)",
+        "ca_haac" => "HE-AAC (CoreAudio)",
+        "vorbis" => "Vorbis",
+        "copy:mp3" => "MP3 Pass",
+        "mp3" => "MP3",
+        "flac16" => "FLAC 16-bit",
+        "flac24" => "FLAC 24-bit",
+        "copy" => "Auto Pass"
+      }
+      translated_mixdowns = {
+        "left_only" => "Mono (Left Only)",
+        "right_only" => "Mono (Right Only)",
+        "mono" => "Mono",
+        "stereo" => "Stereo",
+        "dpl1"=> "Dolby Surround",
+        "dpl2" => "Dolby Pro Logic II",
+        "5point1" => "5.1",
+        "6point1" => "6.1",
+        "5_2_lfe" => "7.1 (5F/2R/LFE)",
+        "7point1" => "7.1",
+        "none" => "None"
+      }
+      plist.each do |e|
+        fix_types(e)
+        e["ChildrenArray"] = [] if e["ChildrenArray"].nil?
+        unless e["AudioList"].nil?
+          e["AudioList"].each_with_index do |a, idx|
+            a["AudioTrack"] ||= "#{idx+1}"
+            encoder_name = a["AudioEncoder"]
+            a["AudioEncoder"] = translated_encoder[encoder_name]
+            raise "missig encoder mapping for #{encoder_name}" if a["AudioEncoder"].nil? and !encoder_name.nil?
+            mixdown_name = a["AudioMixdown"]
+            a["AudioMixdown"] = translated_mixdowns[mixdown_name]
+            raise "missing mixdown mapping for #{mixdown_name}" if a["AudioMixdown"].nil? and !mixdown_name.nil?
+          end
+        end
+        e["AudioTracks"] = "1" if e["AudioTracks"].nil?
+        e["Folder"] = nil if e["Folder"].nil? or e["Folder"] == 0
+        def e.[](key)
+          v = super(key)
+          #puts "#{key} #{v}"
+          return v unless v.nil?
+          return nil if keys.include?(key)
+          return ""
+        end
+      end
+      begin
+        output = DisplayToString.new(plist, options).output
+      rescue => e
+        puts("can not parse #{preset} (#{e.message})")
+        puts output
+        raise e
+        return nil
+      end
+      #puts preset
+      #puts output
+      parsed = parsePresetsLegacy(output)
+      #puts parsed
+      args = parsed[preset]
+      #puts args
+      return args
+    end
+    
+    def self.fix_types(o)
+      if o.kind_of?(Hash)
+        o.each do |k,v|
+          if [true, false].include?(v)
+            o[k] = v ? 1 : 0
+          elsif v.kind_of?(Fixnum) or v.kind_of?(Float)
+            o[k] = v.to_s
+          else
+            fix_types(v)
+          end
+        end
+      elsif o.kind_of?(Array)
+        o.each do |e|
+          fix_types(e)
+        end
+      else
+        #puts "#{o} (#{o.class})"
+      end
     end
     
     def self.fix_str(str)
@@ -950,7 +1079,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
   
         preset_arguments = nil
         if not options.preset.nil?
-          preset_arguments = getPresets()[options.preset]
+          preset_arguments = getPresetArguments(options.preset)
           if not preset_arguments.nil?
             cleaned_preset_arguments = preset_arguments.dup
             [
@@ -1022,7 +1151,6 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
         audio_settings_list = []
         first_audio_track = nil
         tracks.each do |t|
-  
           HandbrakeCLI::logger.debug("checking audio-track #{t}")
           if use_preset_settings
             audio_settings = {}
@@ -1069,7 +1197,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
                       next if k.nil? or k.strip.empty? or v.nil? or v.strip.empty? or k.eql?("track")
                       atc[k] = v
                     end
-					use_default = false
+                    use_default = false
                   end
                 end
                 if use_default
@@ -1111,7 +1239,7 @@ and copy the application-files to #{File::dirname(Handbrake::HANDBRAKE_CLI)}")
               audio_settings_list << audio_settings
               HandbrakeCLI::logger.debug("adding audio-track: #{t}")
               first_audio_track = t if first_audio_track.nil?
-			  break
+              break
             end            
           end
         end
